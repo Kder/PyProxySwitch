@@ -1,0 +1,10 @@
+{
+  "CMD": "polipo", 
+  "DEBUG": 0, 
+  "DEFAULT_ITEM": "NoProxy", 
+  "FISRT_RUN": 0, 
+  "LANG": "zh_CN", 
+  "LAST_ITEM": "NoProxy", 
+  "LOCAL_PORT": 8888, 
+  "SHOW_WELCOME": 0
+}
