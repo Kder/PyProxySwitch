@@ -1,0 +1,151 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-03-04 19:04+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ..\src\pps_config.py:120
+#, python-format
+msgid "\"%s\" added."
+msgstr ""
+
+#: ..\src\pps_config.py:121
+#, python-format
+msgid "Deleting \"%s\" ..."
+msgstr ""
+
+#: ..\src\pps_config.py:122
+#, python-format
+msgid ""
+"Error when deleting proxy: Config files of \"%s\" does not exist or "
+"permission denied."
+msgstr ""
+
+#: ..\src\pps_config.py:124
+msgid ""
+"\n"
+"Usage:\n"
+"\n"
+"Add a Proxy:\n"
+"\n"
+"    pps_config add proxy_name address:port username:password proxy_type\n"
+"\n"
+"    \"username\" and \"password\" are only required when the proxy needs\n"
+"    authorization.\n"
+"    \"proxy_type\" is optional. Default value is HTTP and supported values "
+"are\n"
+"    SOCKS4 and SOCKS5.\n"
+"\n"
+"    Examples:\n"
+"        pps_config add test1 test1.com:8080\n"
+"        pps_config add test2 test2.com:8080 user:pass\n"
+"        pps_config add socks_proxy socksproxy.com:3128 SOCKS5\n"
+"        pps_config add test3 1.2.3.4:80\n"
+"\n"
+"\n"
+"Add multiple proxies:\n"
+"\n"
+"    Edit the file \"proxy.txt\"(with UTF-8 encoding) in \"cfg\" folder,\n"
+"    add one proxy per line with the following format:\n"
+"        proxy_name address:port username:password proxy_type\n"
+"    \"username:password\" and \"proxy_type\" are optional. Refer to the "
+"proxy.txt\n"
+"    file in \"cfg\" folder\n"
+"    or see \"Add a Proxy\" metioned above for details.\n"
+msgstr ""
+
+#: ..\src\pps_config.py:152
+msgid ""
+"Config file reading error: Please make sure that cfg/PPS.conf exists and is "
+"read-writable."
+msgstr ""
+
+#: ..\src\pps_config.py:154
+msgid "Deleted successfully."
+msgstr ""
+
+#: ..\src\pps_config.py:155
+msgid "No special characters, please."
+msgstr ""
+
+#: ..\src\pps_config.py:156
+msgid ""
+"\n"
+"Usage:\n"
+"\n"
+"Delete Proxy/Proxies:\n"
+"    pps_config del proxy_name1 proxy_name2 proxy_name3 ...\n"
+"\n"
+"    Examples:\n"
+"        pps_config del test1\n"
+"        pps_config del test1 test2 test3\n"
+msgstr ""
+
+#: ..\src\pps_config.py:166
+#, python-format
+msgid "The proxy \"%s\" does not exist."
+msgstr ""
+
+#: ..\src\pps_config.py:167
+msgid "Invalid command format.\n"
+msgstr ""
+
+#: ..\src\pps_config.py:168
+msgid ""
+"Config file saving error: Please make sure that each subdirectory of \"cfg\" "
+"directory exists and is read-writable."
+msgstr ""
+
+#: ..\src\pps_config.py:170
+#, python-format
+msgid "Error format of the proxy list file: %s."
+msgstr ""
+
+#: ..\src\pps_config.py:172
+msgid ""
+"\n"
+"= Usage =:\n"
+"\n"
+"== Add a Proxy ==:\n"
+"    pps_config add proxy_name address:port username:password proxy_type\n"
+"\n"
+"    \"username\" and \"password\" are only required when the proxy needs\n"
+"    authorization.\n"
+"    \"proxy_type\" is optional. Default value is HTTP and supported values "
+"are\n"
+"    SOCKS4 and SOCKS5.\n"
+"\n"
+"    Examples:\n"
+"        pps_config add test1 test1.com:8080\n"
+"        pps_config add test2 test2.com:8080 user:pass\n"
+"        pps_config add socks_proxy socksproxy.com:3128 SOCKS5\n"
+"        pps_config add test3 1.2.3.4:80\n"
+"\n"
+"== Add multiple proxies ==:\n"
+"    Edit the file \"proxy.txt\"(with UTF-8 encoding) in \"cfg\" folder,\n"
+"    add one proxy per line with the following format:\n"
+"        proxy_name address:port username:password proxy_type\n"
+"    \"username:password\" and \"proxy_type\" are optional. Refer to the "
+"proxy.txt\n"
+"    file in \"cfg\" folder\n"
+"    or see \"Add a Proxy\" metioned above for details.\n"
+"\n"
+"== Delete Proxy/Proxies ==:\n"
+"    pps_config del proxy_name1 proxy_name2 proxy_name3 ...\n"
+"\n"
+"    Examples:\n"
+"        pps_config del test1\n"
+"        pps_config del test1 test2 test3\n"
+msgstr ""

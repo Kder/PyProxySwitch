@@ -1,0 +1,4 @@
+test_socks testsocks.com:3128 SOCKS5
+test_ip 127.0.0.1:80 HTTP
+test_http testhttp.net:8080 HTTP
+test_auth 192.168.1.80:80 username:password HTTP
