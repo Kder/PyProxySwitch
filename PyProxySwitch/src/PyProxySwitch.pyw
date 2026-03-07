@@ -25,11 +25,11 @@ Welcom to send me your feedback if you feel it useful.
 
 
 __author__ = 'Kder'
-__copyright__ = 'Copyright 2009-2011 Kder'
+__copyright__ = 'Copyright 2009-2026 Kder'
 __credits__ = ['Kder']
 
-__version__ = '3.5.2'
-__date__ = '2011-03-26'
+__version__ = '3.6'
+__date__ = '2026-03-08'
 __maintainer__ = "Kder"
 __email__ = '[kderlin (#) gmail dot com]'
 __url__ = 'http://www.kder.info'
