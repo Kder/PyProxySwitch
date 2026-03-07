@@ -1,15 +1,15 @@
 ﻿# -*- coding: utf-8 -*- 
 
-PyProxySwitch  版本: 3.5.2
+PyProxySwitch  版本: 3.6
 
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件
 网站: http://www.kder.info
 项目主页: http://pyproxyswitch.kder.info/
-最近更新: 2011-03-26
+最近更新: 2026-03-08
 许可: Apache License, Version 2.0
     本程序用到了以下三个开源软件的二进制文件：
-      polipo： http://www.pps.jussieu.fr/~jch/software/polipo/
       3proxy： https://3proxy.org/
+      polipo： http://www.pps.jussieu.fr/~jch/software/polipo/
       iprelay：http://iprelay.sourceforge.net/
     (它们的许可请见licenses目录)
 
@@ -81,18 +81,11 @@ PyProxySwitch  版本: 3.5.2
 
 = 系统要求 =
 
-    * 源代码版本:Python2.6+和PyQt4.7+
-        (在以下环境中测试通过
-        32位:
-         Windows Vista + Python3.1 + PyQt4.7.4
-         Windows Xp + Python2.7 + PyQt4.8.2
-         Windows Xp + Python3.2 + PyQt4.8.3
-         Slackware/Zenwalk Linux + Python2.6 + PyQt4.7.4
-         Slackware/Zenwalk Linux + Python3.1 + PyQt4.7.4
-        )
-  * Windows可执行文件版本：32位 Windows XP/Vista （64位及其他操作系统未做测试） 
+    * 源代码版本: Python3和PyQt6
+
 
 = 更新历史 =
+    * 3.6     新增代理验证模块，实现严格的代理参数验证机制；从PyQt4迁移至PyQt6；重构配置处理逻辑；移除过时的构建脚本 2026-03-08
     * 3.5.2   修复Windows版本启动时找不到模块的问题；修正一个Python3.2相关的input问题；修复一个路径相关的问题 2011-3-26
     * 3.5.1   Windows版本去掉3proxy支持（因3proxy被多个杀软报告为危险程序）；完善对中文路径的支持；清理目录结构，针对不同平台优化打包策略，使bin目录更加清晰；对于windows版本，为生成的exe文件添加版本信息；修复iprelay无法启动的bug
     * 3.5     增加新功能：图形界面批量添加/修改/删除代理；修改代理列表显示控件为tableView，替代treeView；重构与优化代码，改进异常处理，增加一个示例文件proxy.txt.example，更新docstring；界面微调：对话框设置为固定大小，控件间距调整 2011-03-02
