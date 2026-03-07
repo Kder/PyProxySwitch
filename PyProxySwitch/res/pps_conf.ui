@@ -142,6 +142,11 @@
      </property>
      <item>
       <property name="text">
+       <string>3proxy</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
        <string>polipo</string>
       </property>
      </item>

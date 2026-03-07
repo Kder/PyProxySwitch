@@ -64,41 +64,26 @@ __url__ = 'http://www.kder.info'
 __license__ = 'Apache License, Version 2.0'
 __status__ = 'Beta'
 
-import sys
 import os
+import sys
 import codecs
 import traceback
 import json
 import gettext
-#import locale
-#locale.setlocale(locale.LC_ALL, '')
-#enc = locale.getpreferredencoding()
-#enc = 'utf-8'
-#sys.stdout = codecs.getreader(enc)(sys.stdout)
-#sys.stderr = codecs.getreader(enc)(sys.stderr)
-#sys.stdin = codecs.getreader(enc)(sys.stdin)
+import shlex
+from pathlib import Path
+from typing import List, Tuple, Dict, Any
 
-ISPY2 = False
-#if sys.version_info.major == 2:
-if sys.version_info[0] == 2:
-    ISPY2 = True
-
-FENC = sys.getfilesystemencoding()
-PATH0 = ''
 try:
-    PATH0 = os.path.dirname(os.path.abspath(__file__))
+    PATH0 = str(Path(__file__).parent)
 except NameError:
-    PATH0 = os.path.dirname(sys.path[0])
-if os.path.isfile(PATH0):
-    PROGRAM_PATH = os.path.dirname(os.path.dirname(PATH0))
+    PATH0 = str(Path(sys.path[0]).parent)
+if Path(PATH0).is_file():
+    PROGRAM_PATH = str(Path(PATH0).parent.parent)
 else:
-    PROGRAM_PATH = os.path.dirname(PATH0)
-try:
-    PROGRAM_PATH = PROGRAM_PATH.decode(FENC)
-except AttributeError:
-    pass
-CONF = os.path.join(PROGRAM_PATH, 'cfg', 'PPS.conf')
-PROXY_LIST = os.path.join(PROGRAM_PATH, 'cfg', 'proxy.txt')
+    PROGRAM_PATH = str(Path(PATH0).parent)
+CONF = str(Path(PROGRAM_PATH) / 'cfg' / 'PPS.conf')
+PROXY_LIST = str(Path(PROGRAM_PATH) / 'cfg' / 'proxy.txt')
 
 
 def pps_loadcfg(config_file):
@@ -118,7 +103,7 @@ def pps_loadcfg(config_file):
 CONFIG = pps_loadcfg(CONF)
 
 _ = gettext.translation('pps_config',
-    os.path.join(PROGRAM_PATH, 'i18n'), [CONFIG['LANG']]).gettext
+    str(Path(PROGRAM_PATH) / 'i18n'), [CONFIG['LANG']]).gettext
 
 PPS_MSG = {
     'SUCCESS_ADD': _('"%s" added.'),
@@ -212,16 +197,14 @@ except IndexError:
     ACTION = None
 
 
-def pps_output(msg, dest='stdout'):
-    '''PPS控制台字符串输出函数，可同时支持Python2和3，并避免乱码'''
-    try:
-        msg = msg.decode('utf8').encode(FENC)
-    except (AttributeError, UnicodeError):
-        pass
+def pps_output(msg: str, dest: str = 'stdout') -> None:
+    '''PPS控制台字符串输出函数，支持Python 3+'''
+    if not isinstance(msg, str):
+        msg = str(msg)
     if dest == 'stderr':
-        sys.stderr.write(msg + '\n')
+        sys.stderr.buffer.write(msg.encode('utf-8') + b'\n')
     else:
-        sys.stdout.write(msg + '\n')
+        sys.stdout.buffer.write(msg.encode('utf-8') + b'\n')
 
 
 def pps_load_proxylist(list_file):
@@ -232,23 +215,35 @@ def pps_load_proxylist(list_file):
     try:
         with codecs.open(list_file, 'r', 'utf-8') as l_file:
             for line in l_file.readlines():
-                items = line.split()
+                # 使用 shlex 进行安全的分词，支持引号
+                items = shlex.split(line.strip())
+                if len(items) < 2:
+                    continue  # 跳过格式错误的行
+
                 addr_port = items[1].split(':')
                 user_pass = ['', '']
                 proxy_type = 'HTTP'
-                if items[-1] == 'SOCKS4' or items[-1] == 'SOCKS5':
+
+                # 检查最后一个元素是否是代理类型
+                if items[-1] in ['SOCKS4', 'SOCKS5']:
                     proxy_type = items[-1]
+
+                # 如果有第3个参数，尝试解析用户名:密码
                 if len(items) > 2:
-                    user_pass = items[2].split(':')
-                    if len(user_pass) == 1:
-                        user_pass = ['', '']
-                # print items, addr_port, user_pass
+                    if ':' in items[2]:
+                        user_pass = items[2].split(':', 1)
+                        if len(user_pass) == 1:
+                            user_pass = [user_pass[0], '']
+                    # 如果第3个参数不是代理类型，但后面有参数，则第4个可能是代理类型
+                    elif len(items) > 3 and items[3] in ['SOCKS4', 'SOCKS5']:
+                        proxy_type = items[3]
+
                 proxy = (items[0], addr_port[0], addr_port[1], proxy_type,
                     user_pass[0], user_pass[1])
                 proxy_list.append(proxy)
         return proxy_list
     except IndexError:
-        pps_output(PPS_MSG['ERR_LOAD_LIST'] % PROXY_LIST.encode('utf-8'),
+        pps_output(PPS_MSG['ERR_LOAD_LIST'] % PROXY_LIST,
             'stderr')
         sys.exit(11)
 
@@ -257,25 +252,22 @@ PROXIES = pps_load_proxylist(PROXY_LIST)
 PROXY_NAMES = [p_item[0] for p_item in PROXIES]
 
 
-def pps_save_proxylist(proxies, list_file):
+def pps_save_proxylist(proxies: List[Tuple[str, ...]] | List[str], list_file: str) -> None:
     '''保存代理列表到文件，列表可为元组的列表或字符串的列表'''
     try:
         with codecs.open(list_file, 'w', 'utf-8') as l_file:
             lines = []
-            proxy_i = ''
             for i in proxies:
-                if type(i) == type(tuple()):
-                    if i[5] != '':
-                        proxy_i = '%s %s:%s %s:%s %s\r\n' % (i[0], i[1], i[2],
-                            i[4], i[5], i[3])
+                if isinstance(i, tuple):
+                    if i[5]:  # 密码不为空
+                        proxy_i = f'{i[0]} {i[1]}:{i[2]} {i[4]}:{i[5]} {i[3]}\r\n'
                     else:
-                        proxy_i = '%s %s:%s %s\r\n' % (i[0], i[1], i[2], i[3])
+                        proxy_i = f'{i[0]} {i[1]}:{i[2]} {i[3]}\r\n'
                 else:
-                    proxy_i = '%s\r\n' % i
+                    proxy_i = f'{i}\r\n'
                 lines.append(proxy_i)
-            # print proxies
             l_file.writelines(lines)
-    except (IOError, WindowsError):
+    except OSError:
         pps_output(PPS_MSG['ERR_SAVE_CFG'], 'stderr')
 
 
@@ -296,223 +288,211 @@ def pps_savecfg(config_dict):
     #~ return out_str
 
 
-def add_proxy(proxy, proxy_type='HTTP'):
+def add_proxy(proxy: List[str] | Tuple[str, ...], proxy_type: str = 'HTTP') -> None:
     '''添加代理，proxy为一包含(名称, 地址, 端口, 类型, 用户, 密码)
     的列表或元组
     '''
     proxy_check = True
     proxy_name = ''
+
+    # 导入验证器
+    from proxy_validation import ProxyValidator, ValidationError
+    validator = ProxyValidator()
+
     try:
-        proxy_name = proxy[0]  # .decode(FENC).encode('utf-8')
+
+        # 解析代理参数
+        proxy_name = proxy[0]
         proxy_address = proxy[1].rstrip()
-        host_port = proxy_address.split(':')
-        try:
-            proxy_name = proxy_name.decode(FENC)
-        except (AttributeError, UnicodeError):
-            pass
-        # check if address:port has correct format
-        assert (':' in proxy_address) and ('' not in host_port)
-        user_pass = ['', '']
-        if len(proxy) > 2:
-            user_pass = proxy[2].split(':')
-            #保证用户名密码均不为空，且以冒号隔开
-            assert (':' in proxy[2]) and ('' not in user_pass)
+        proxy_port = ''
+        proxy_user = ''
+        proxy_pass = ''
 
-    except (AssertionError, IndexError):
+        # 解析地址和端口
+        if ':' in proxy_address:
+            addr_parts = proxy_address.rsplit(':', 1)
+            proxy_address = addr_parts[0]
+            proxy_port = addr_parts[1]
+        else:
+            proxy_port = proxy[2] if len(proxy) > 2 else ''
+
+        # 解析用户名和密码（如果有）
+        if len(proxy) > 2 and ':' in proxy[2]:
+            user_pass = proxy[2].split(':', 1)
+            proxy_user = user_pass[0]
+            proxy_pass = user_pass[1] if len(user_pass) > 1 else ''
+        else:
+            user_pass = [proxy_user, proxy_pass]
+
+        # 使用验证器验证所有参数
+        validated_proxy = validator.validate_full_proxy(
+            proxy_name, proxy_address, proxy_port, proxy_type, proxy_user, proxy_pass
+        )
+
+        # 使用验证后的参数
+        proxy_name = validated_proxy[0]
+        proxy_address = validated_proxy[1]
+        proxy_port = validated_proxy[2]
+        proxy_type = validated_proxy[3]
+        proxy_user = validated_proxy[4]
+        proxy_pass = validated_proxy[5]
+
+        host_port = [proxy_address, proxy_port]
+
+    except (ValueError, IndexError, ValidationError) as e:
         proxy_check = False
+        pps_output(f"验证错误: {e}")
         pps_exc_handle()
-        # print(sys.exc_info()[2].tb_lasti) #+sys.exc_info()[2].tb_lineno
-        #~ sys.exit(1)
-
-    #避免特殊字符 #, '$', '&', '(', ')',
-
-    if set(['"', '\\', '/', ':', '*', '?',  # {'a', 'b'} syntax is for Py2.7+
-        '<', '>', '|']) & set(proxy_name) != set():
-        pps_output(PPS_MSG['ERR_SPECIAL_CHAR'])
-        proxy_check = False
-            #~ sys.exit(7)
-    #检查有无重复
-# if proxy_name in config['CFG_3proxy'] or \
-#proxy_name in config['CFG_polipo']:
-    # pps_output(PPS_MSG['ERR_NAME_EXISTS'] %
-    # proxy_name, 'stderr')
-    # proxy_check = False
-    #~ sys.exit(2)
 
     if proxy_check:
-        #开始添加代理项目
-        # new_names = []
+        # 开始添加代理项目
         if __name__ == '__main__':
-            # new_names.append(proxy_name)
-            proxy = (proxy_name, host_port[0], host_port[1],
-                proxy_type, user_pass[0], user_pass[1])
+            proxy_tuple = (proxy_name, host_port[0], host_port[1],
+                          proxy_type, user_pass[0], user_pass[1])
             for proxy_ in PROXIES:
                 if proxy_[0] == proxy_name:
                     PROXIES.remove(proxy_)
-            PROXIES.append(proxy)
+            PROXIES.append(proxy_tuple)
 
-        #添加对应的配置文件
+        # 添加对应的配置文件
         isauth = user_pass[0] != ''
         ishttp = proxy_type == 'HTTP'
         type_map = {
-                'HTTP': ['', ''],
-                'SOCKS4': ['socks4a', 'socks4+'],
-                'SOCKS5': ['socks5', 'socks5+']
-                }
+            'HTTP': ['', ''],
+            'SOCKS4': ['socks4a', 'socks4+'],
+            'SOCKS5': ['socks5', 'socks5+']
+        }
 
         conf_file_tpl = {
-        True: {True: [(
-                    'parentProxy = %s\r\n'
-                    'parentAuthCredentials = %s:%s\r\n'
-                    'proxyPort = %s\r\n'
-                    ) % (proxy_address, user_pass[0], user_pass[1],
-                        CONFIG['LOCAL_PORT']),
-                    ('internal 127.0.0.1\r\n'
-                    'auth iponly\r\n'
-                    'allow * 127.0.0.1\r\n'
-                    'parent 1000 http %s %s %s %s\r\n'
-                    'proxy -n -a -p%s\r\n') % \
-                        (host_port[0], host_port[1], user_pass[0],
-                            user_pass[1], CONFIG['LOCAL_PORT'])
-                 ],
-                 False: [
-                    'parentProxy = %s\r\nproxyPort = %s\r\n' % \
-                      (proxy_address, CONFIG['LOCAL_PORT']),
-                    ('internal 127.0.0.1\r\n'
-                    'auth iponly\r\n'
-                    'allow * 127.0.0.1\r\n'
-                    'parent 1000 http %s %s\r\n'
-                    'proxy -n -a -p%s\r\n') % (host_port[0], host_port[1],
-                        CONFIG['LOCAL_PORT'])
-                 ]
-                },
-        False: {True: [('socksProxyType = %s\r\n'
-                        'parentAuthCredentials = %s:%s\r\n'
-                        'socksParentProxy = %s\r\n'
-                        'proxyPort = %s\r\n') % (type_map[proxy_type][0],
-                        user_pass[0], user_pass[1],
-                        proxy_address, CONFIG['LOCAL_PORT']),
-                        ('internal 127.0.0.1\r\n'
-                        'auth iponly\r\n'
-                        'allow * 127.0.0.1\r\n'
-                        'parent 1000 %s %s %s %s %s\r\n'
-                        'proxy -n -a -p%s\r\n') % (type_map[proxy_type][1],
-                            host_port[0], host_port[1],
-                            user_pass[0], user_pass[1], CONFIG['LOCAL_PORT'])
-                        ],
+            True: {True: [(
+                f'parentProxy = {proxy_address}\r\n'
+                f'parentAuthCredentials = {user_pass[0]}:{user_pass[1]}\r\n'
+                f'proxyPort = {CONFIG["LOCAL_PORT"]}\r\n'
+            ), (
+                f'internal 127.0.0.1\r\n'
+                f'auth iponly\r\n'
+                f'allow * 127.0.0.1\r\n'
+                f'parent 1000 http {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]} {CONFIG["LOCAL_PORT"]}\r\n'
+                f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+            )],
                 False: [
-                        ('socksProxyType = %s\r\n'
-                        'socksParentProxy = %s\r\n'
-                        'proxyPort = %s\r\n') % (type_map[proxy_type][0],
-                        proxy_address, CONFIG['LOCAL_PORT']),
-                        ('internal 127.0.0.1\r\n'
-                        'auth iponly\r\n'
-                        'allow * 127.0.0.1\r\n'
-                        'parent 1000 %s %s %s\r\n'
-                        'proxy -n -a -p%s\r\n') % (type_map[proxy_type][1],
-                        host_port[0], host_port[1], CONFIG['LOCAL_PORT'])
+                    f'parentProxy = {proxy_address}\r\nproxyPort = {CONFIG["LOCAL_PORT"]}\r\n',
+                    f'internal 127.0.0.1\r\n'
+                    f'auth iponly\r\n'
+                    f'allow * 127.0.0.1\r\n'
+                    f'parent 1000 http {host_port[0]} {host_port[1]} {CONFIG["LOCAL_PORT"]}\r\n'
+                    f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
                 ]
-                }
+            },
+            False: {True: [(f'socksProxyType = {type_map[proxy_type][0]}\r\n'
+                           f'parentAuthCredentials = {user_pass[0]}:{user_pass[1]}\r\n'
+                           f'socksParentProxy = {proxy_address}\r\n'
+                           f'proxyPort = {CONFIG["LOCAL_PORT"]}\r\n'),
+                           (f'internal 127.0.0.1\r\n'
+                            f'auth iponly\r\n'
+                            f'allow * 127.0.0.1\r\n'
+                            f'parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]} {CONFIG["LOCAL_PORT"]}\r\n'
+                            f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+                           )],
+                    False: [
+                        f'socksProxyType = {type_map[proxy_type][0]}\r\n'
+                        f'socksParentProxy = {proxy_address}\r\n'
+                        f'proxyPort = {CONFIG["LOCAL_PORT"]}\r\n',
+                        f'internal 127.0.0.1\r\n'
+                        f'auth iponly\r\n'
+                        f'allow * 127.0.0.1\r\n'
+                        f'parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {CONFIG["LOCAL_PORT"]}\r\n'
+                        f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+                    ]
+            }
         }
 
         conf_polipo = conf_file_tpl[ishttp][isauth][0]
 
         try:
-            with codecs.open(os.path.join(PROGRAM_PATH, 'cfg', 'polipo',
-                    proxy_name + '.conf'), 'w', 'utf-8') as cfg_file:
+            polipo_path = Path(PROGRAM_PATH) / 'cfg' / 'polipo' / (proxy_name + '.conf')
+            with codecs.open(polipo_path, 'w', 'utf-8') as cfg_file:
                 cfg_file.write(conf_polipo)
-            if os.name != 'nt':
-                conf_3proxy = conf_file_tpl[ishttp][isauth][1]
-                with codecs.open(os.path.join(PROGRAM_PATH, 'cfg', '3proxy',
-                        proxy_name + '.conf'), 'w', 'utf-8') as cfg_file:
-                    cfg_file.write(conf_3proxy)
+            #if os.name != 'nt':
+            conf_3proxy = conf_file_tpl[ishttp][isauth][1]
+            proxy3_path = Path(PROGRAM_PATH) / 'cfg' / '3proxy' / (proxy_name + '.conf')
+            with codecs.open(proxy3_path, 'w', 'utf-8') as cfg_file:
+                cfg_file.write(conf_3proxy)
 
-        except IOError:
-            pps_output(PPS_MSG['ERR_SAVE_CFG'] % proxy_name.encode('utf-8'))
+        except IOError as e:
+            pps_output(PPS_MSG['ERR_SAVE_CFG'] % proxy_name)
             pps_exc_handle()
             sys.exit(2)
         if __name__ == '__main__':
-            # in 2.x, .encode is needed,but in 3.x this will result in b'\xxx'
-            # output
-            pps_output(PPS_MSG['SUCCESS_ADD'] % proxy_name.encode('utf-8'))
-    elif proxy_check == False and ACTION != None:
-        pps_output(PPS_MSG['ERR_CMD_FORMAT'] +
-            PPS_MSG['USAGE_ADD'])
+            pps_output(PPS_MSG['SUCCESS_ADD'] % proxy_name)
+    elif proxy_check is False and ACTION is not None:
+        pps_output(PPS_MSG['ERR_CMD_FORMAT'] + PPS_MSG['USAGE_ADD'])
 
 
-def del_proxy(proxy):
+def del_proxy(proxy: List[str] | Tuple[str, ...] | Set[str]) -> None:
     '''删除代理项，proxy为一由代理名称组成的序列（元组、列表或集合）'''
     deleted = True
 
     for proxy_name in proxy:
-        try:
-            proxy_name = proxy_name.decode(FENC)
-        except (UnicodeError, AttributeError):
-            pass
+        if not isinstance(proxy_name, str):
+            proxy_name = proxy_name
 
         if __name__ == '__main__':
-            for i in PROXIES:
+            for i in PROXIES[:]:  # 使用副本避免迭代时修改
                 if i[0] == proxy_name:
                     PROXIES.remove(i)
-        if __name__ == '__main__':
-            pps_output(PPS_MSG['INFO_DEL'] % proxy_name.encode('utf-8'))
+            pps_output(PPS_MSG['INFO_DEL'] % proxy_name)
 
-        #移除对应的配置文件
+        # 移除对应的配置文件
         try:
-            os.remove(os.path.join(PROGRAM_PATH, 'cfg', 'polipo',
-                      proxy_name + '.conf'))
-            if os.name != 'nt':
-                os.remove(os.path.join(PROGRAM_PATH, 'cfg', '3proxy',
-                      proxy_name + '.conf'))
-        except (OSError, WindowsError):
-            pps_output(PPS_MSG['ERR_DEL_FILE'] % proxy_name.encode('utf-8'),
-                'stderr')
+            polipo_path = Path(PROGRAM_PATH) / 'cfg' / 'polipo' / (proxy_name + '.conf')
+            os.remove(polipo_path)
+            #if os.name != 'nt':
+            proxy3_path = Path(PROGRAM_PATH) / 'cfg' / '3proxy' / (proxy_name + '.conf')
+            os.remove(proxy3_path)
+        except OSError:
+            pps_output(PPS_MSG['ERR_DEL_FILE'] % proxy_name, 'stderr')
             deleted = False
             pps_exc_handle()
-    if __name__ == '__main__' and deleted is True:
+    if __name__ == '__main__' and deleted:
         pps_output(PPS_MSG['SUCCESS_DEL'])
 
 
 if __name__ == '__main__':
     #简单的命令行参数处理
 
-    #添加单个代理
+    # 添加单个代理
     if ACTION == 'add':
         if len(sys.argv) < 4:
-            pps_output(PPS_MSG['ERR_CMD_FORMAT'] +
-                PPS_MSG['USAGE_ADD'])
+            pps_output(PPS_MSG['ERR_CMD_FORMAT'] + PPS_MSG['USAGE_ADD'])
             sys.exit(10)
-#        print(sys.argv)
         if sys.argv[-1] in ['HTTP', 'SOCKS4', 'SOCKS5']:
             add_proxy(sys.argv[2:-1], sys.argv[-1])
         else:
             add_proxy(sys.argv[2:])
 
-    #批量添加代理
-    elif ACTION == None:
+    # 批量添加代理
+    elif ACTION is None:
         with codecs.open(PROXY_LIST, 'r', 'utf-8') as file1:
             for proxy_line in file1.readlines():
                 proxy_item = proxy_line.split()
-                #~ print(proxy)
                 if proxy_item[-1] in ['HTTP', 'SOCKS4', 'SOCKS5']:
                     add_proxy(proxy_item[0:-1], proxy_item[-1])
                 else:
                     add_proxy(proxy_item)
 
-    #删除单个/多个代理
+    # 删除单个/多个代理
     elif ACTION == 'del':
         if len(sys.argv) == 2:
-            pps_output(PPS_MSG['ERR_CMD_FORMAT'] +
-                PPS_MSG['USAGE_DEL'])
+            pps_output(PPS_MSG['ERR_CMD_FORMAT'] + PPS_MSG['USAGE_DEL'])
             sys.exit(8)
         del_proxy(sys.argv[2:])
 
-    #显示帮助信息
+    # 显示帮助信息
     else:
         pps_output(PPS_MSG['ERR_CMD_FORMAT'] + USAGE)
         sys.exit(6)
-#    print(pps_savecfg(config))
-    # pps_savecfg(config)
+
     pps_save_proxylist(PROXIES, PROXY_LIST)
     sys.exit(0)
 

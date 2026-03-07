@@ -9,7 +9,7 @@ PyProxySwitch  版本: 3.5.2
 许可: Apache License, Version 2.0
     本程序用到了以下三个开源软件的二进制文件：
       polipo： http://www.pps.jussieu.fr/~jch/software/polipo/
-      3proxy： http://www.3proxy.ru/
+      3proxy： https://3proxy.org/
       iprelay：http://iprelay.sourceforge.net/
     (它们的许可请见licenses目录)
 

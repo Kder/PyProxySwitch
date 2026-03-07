@@ -1,1 +1,0 @@
-scp $1 kder,pyproxyswitch@frs.sourceforge.net:/home/frs/project/p/py/pyproxyswitch
