@@ -72,7 +72,7 @@ import json
 import gettext
 import shlex
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional, Union
 
 try:
     PATH0 = str(Path(__file__).parent)
@@ -86,7 +86,7 @@ CONF = str(Path(PROGRAM_PATH) / 'cfg' / 'PPS.conf')
 PROXY_LIST = str(Path(PROGRAM_PATH) / 'cfg' / 'proxy.txt')
 
 
-def pps_loadcfg(config_file):
+def pps_loadcfg(config_file: str) -> Dict[str, Any]:
     '''加载程序配置文件'''
     try:
         with codecs.open(config_file, 'r', encoding='utf-8') as json_file:
@@ -207,7 +207,7 @@ def pps_output(msg: str, dest: str = 'stdout') -> None:
         sys.stdout.buffer.write(msg.encode('utf-8') + b'\n')
 
 
-def pps_load_proxylist(list_file):
+def pps_load_proxylist(list_file: str) -> List[Tuple[str, str, str, str, str, str]]:
     '''从文件加载代理列表，返回一个6元组(名称, 地址, 端口, 类型, 用户, 密码)
     组成的代理列表
     '''
@@ -271,13 +271,13 @@ def pps_save_proxylist(proxies: List[Tuple[str, ...]] | List[str], list_file: st
         pps_output(PPS_MSG['ERR_SAVE_CFG'], 'stderr')
 
 
-def pps_exc_handle():
+def pps_exc_handle() -> None:
     '''PPS异常处理函数'''
     if CONFIG['DEBUG'] == 1:
         traceback.print_exc()
 
 
-def pps_savecfg(config_dict):
+def pps_savecfg(config_dict: Dict[str, Any]) -> None:
     '''保存程序配置字典到配置文件
        Use json to dump the config dict to file'''
     try:
@@ -288,7 +288,7 @@ def pps_savecfg(config_dict):
     #~ return out_str
 
 
-def add_proxy(proxy: List[str] | Tuple[str, ...], proxy_type: str = 'HTTP') -> None:
+def add_proxy(proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = 'HTTP') -> None:
     '''添加代理，proxy为一包含(名称, 地址, 端口, 类型, 用户, 密码)
     的列表或元组
     '''

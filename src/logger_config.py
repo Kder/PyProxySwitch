@@ -9,6 +9,7 @@ PyProxySwitch 日志系统配置
 import logging
 import logging.handlers
 from pathlib import Path
+from typing import Optional
 import pps_config
 
 
@@ -20,7 +21,7 @@ LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / 'PyProxySwitch.log'
 
 
-def setup_logger(name='PyProxySwitch', debug_mode=None):
+def setup_logger(name: str = 'PyProxySwitch', debug_mode: Optional[bool] = None) -> logging.Logger:
     """配置并返回日志记录器
 
     Args:

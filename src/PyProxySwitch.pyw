@@ -44,6 +44,7 @@ import shlex
 import subprocess
 import signal
 from pathlib import Path
+from typing import Optional, List, Tuple
 import pps_config
 LIBPATH = str(Path(pps_config.PROGRAM_PATH) / 'lib')
 OSPATH = os.environ.get('PATH', '').split(os.pathsep)
@@ -73,7 +74,7 @@ from logger_config import logger
 
 class Window(QtWidgets.QDialog):
     '''主程序UI'''
-    def __init__(self):
+    def __init__(self) -> None:
         '''初始化系统托盘图标和菜单'''
         super(Window, self).__init__()
         self.cmd = pps_config.CONFIG['CMD']
@@ -150,7 +151,7 @@ class Window(QtWidgets.QDialog):
             #    self.tr('Failed to start proxy service')
             #)
 
-    def refresh_menu(self):
+    def refresh_menu(self) -> None:
         '''重新读取配置文件并更新菜单'''
         pps_config.CONFIG = pps_config.pps_loadcfg(pps_config.CONF)
         self.cmd = pps_config.CONFIG['CMD']
@@ -164,7 +165,7 @@ class Window(QtWidgets.QDialog):
         self.configAction.setText(self.tr('&Config'))
         self.createActions()
 
-    def on_activated(self, reason):
+    def on_activated(self, reason: QtWidgets.QSystemTrayIcon.ActivationReason) -> None:
         '''双击系统托盘图标，弹出设置对话框'''
         if reason == QtWidgets.QSystemTrayIcon.ActivationReason.DoubleClick:
             self.config()
@@ -173,7 +174,7 @@ class Window(QtWidgets.QDialog):
         # if reason == QtWidgets.QSystemTrayIcon.Trigger:
             # pass
 
-    def createActions(self):
+    def createActions(self) -> None:
         '''生成托盘菜单'''
         self.ppsActionGroup = QtGui.QActionGroup(self)  # 使多个代理间互斥
         self.ppsActionList = []
@@ -200,7 +201,7 @@ class Window(QtWidgets.QDialog):
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
     @pyqtSlot()
-    def config(self):
+    def config(self) -> None:
         '''弹出配置对话框'''
         if not self.dialog_exsit:
             self.config_dialog = Config_Dialog(self)
@@ -210,7 +211,7 @@ class Window(QtWidgets.QDialog):
             self.config_dialog.activateWindow()
             self.config_dialog.setFocus()
 
-    def quit(self):
+    def quit(self) -> None:
         '''保存配置，结束代理进程，退出主程序'''
         self.trayIcon.setVisible(False)
         pps_config.CONFIG['LAST_ITEM'] = self.item_text
@@ -262,7 +263,7 @@ Welcom to send me your feedback if you feel it useful.
         message.show()
 
     @pyqtSlot()
-    def switchProxy(self):
+    def switchProxy(self) -> None:
         '''通过结束旧进程，开启新进程的方式，在多个代理间切换
         Switch among proxies by killing old subprocess then opening
          a new one.'''
@@ -421,11 +422,11 @@ Welcom to send me your feedback if you feel it useful.
                 traceback.print_exc()
             raise
 
-    def is_process_running(self):
+    def is_process_running(self) -> bool:
         """检查代理进程是否正在运行"""
         return self.r_process is not None and self.r_process.poll() is None
 
-    def get_process_info(self):
+    def get_process_info(self) -> str:
         """获取进程信息"""
         if self.r_process is None:
             return "No process"
@@ -437,7 +438,7 @@ Welcom to send me your feedback if you feel it useful.
             return f"Exited with code: {self.r_process.returncode}"
 
     @pyqtSlot()
-    def showWelcome(self):
+    def showWelcome(self) -> None:
         '''在系统托盘显示欢迎信息'''
         icon = QtWidgets.QSystemTrayIcon.MessageIcon.Information
         self.trayIcon.showMessage('Hi',
@@ -465,7 +466,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
             # self.validate_proxy
         # )
 
-    def done(self, retcode):
+    def done(self, retcode: int) -> None:
         '''验证代理项目是否符合要求'''
         if retcode == QtWidgets.QDialog.DialogCode.Accepted:
             try:

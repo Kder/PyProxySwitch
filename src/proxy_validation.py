@@ -327,8 +327,8 @@ class ProxyValidator(QObject):
 class BatchImportValidator:
     """批量导入验证器"""
 
-    def __init__(self):
-        self.validator = ProxyValidator()
+    def __init__(self) -> None:
+        self.validator: ProxyValidator = ProxyValidator()
 
     def validate_batch_line(self, line: str, line_number: int) -> Optional[Tuple]:
         """验证批量导入的每一行
