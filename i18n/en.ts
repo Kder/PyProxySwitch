@@ -85,6 +85,14 @@ proxy_name address:port username:password proxy_type
 
 </translation>
     </message>
+    <message>
+        <source>Preview</source>
+        <translation>Preview</translation>
+    </message>
+    <message>
+        <source>Failed to read proxy list file:</source>
+        <translation>Failed to read proxy list file:</translation>
+    </message>
 </context><context>
     <name>Dialog_AddProxy</name>
     <message>
@@ -230,6 +238,7 @@ proxy_name address:port username:password proxy_type
         <source>&amp;Batch Add/Mod/Del</source>
         <translation>&amp;Batch Add/Mod/Del</translation>
     </message>
+
 </context><context>
     <name>Window</name>
     <message>

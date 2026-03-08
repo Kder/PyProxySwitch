@@ -84,6 +84,14 @@ proxy_name address:port username:password proxy_type
 代理类型可以是HTTP、SOCKS4或SOCKS5。
 </translation>
     </message>
+    <message>
+        <source>Preview</source>
+        <translation>预览</translation>
+    </message>
+    <message>
+        <source>Failed to read proxy list file:</source>
+        <translation>读取代理列表文件失败:</translation>
+    </message>
 </context>
 <context>
     <name>Dialog_AddProxy</name>

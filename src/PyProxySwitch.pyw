@@ -450,6 +450,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
         super().__init__(parent)
         # change_language(qApp, pps_config.CONFIG['LANG'])
         self.setupUi(self)
+        self.validator = ProxyValidator()
         self.setFixedSize(381, 242)
         # self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowIcon(QtGui.QIcon(':/img/pps.png'))
@@ -565,7 +566,7 @@ class ProxyNameDelegate(QtWidgets.QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         '''创建LineEdit'''
         editor = QtWidgets.QLineEdit(parent)
-        editor.setValidator(self.validator)
+        editor.setValidator(self.validator.get_name_validator())
 
         return editor
 
@@ -770,7 +771,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     def add_proxy(self):
         '''弹出”添加代理”对话框'''
         dialog = AddProxy_Dialog()
-        dialog.le_proxy_name.setValidator(self.validator)
+        dialog.le_proxy_name.setValidator(self.validator.get_name_validator())
         dialog.exec()
         if dialog.result() == QtWidgets.QDialog.DialogCode.Accepted:
             model = self.data_model
@@ -790,6 +791,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             # dialog.le_password.text())], dialog.comboBox_type.currentText())
 
     @pyqtSlot()
+    @pyqtSlot()
     def import_proxy(self):
         '''图形界面批量添加/修改/删除代理'''
         import_dlg = QtWidgets.QDialog(self)
@@ -798,16 +800,23 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         import_dlg.setWindowTitle(self.tr('Batch Add/Modify/Delete Proxy'))
 
         # 创建提示信息
-        lbl_tip = QtWidgets.QLabel(self.tr(
+        # 使用与翻译文件中相同的字符串
+        lbl_text = self.tr(
         'Please use the following syntax for one proxy per line:\n\n'
         'proxy_name address:port username:password proxy_type\n\n'
         '"username" and "password" are only required when the proxy needs '
         'authorization.\n'
         '"proxy_type" can be HTTP, SOCKS4 or SOCKS5.\n\n'
+        )
+        # 添加示例代码（不需要翻译）
+        lbl_text += (
         'Example:\n'
         'my_proxy 192.168.1.100:8080\n'
         'auth_proxy 10.0.0.1:3120 user:pass HTTP\n'
-        'socks_proxy 203.0.113.5:1080 SOCKS5\n\n'), import_dlg)
+        'socks_proxy 203.0.113.5:1080 SOCKS5\n\n'
+        )
+        
+        lbl_tip = QtWidgets.QLabel(lbl_text, import_dlg)
         lbl_tip.setWordWrap(True)
         lbl_tip.setIndent(2)
 
@@ -819,17 +828,18 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 读取原始内容
         try:
-            with codecs.open(pps_config.PROXY_LIST, 'r', 'utf-8') as f:
+            with open(pps_config.PROXY_LIST, 'r', encoding='utf-8') as f:
                 orgin_str = f.read()
         except Exception as e:
             orgin_str = ""
-            lbl_error.setText(self.tr(f'读取代理列表文件失败: {str(e)}'))
+            error_msg = self.tr('Failed to read proxy list file:') + ' ' + str(e)
+            lbl_error.setText(error_msg)
             lbl_error.show()
 
         txt_editor = QtWidgets.QPlainTextEdit(orgin_str, self)
 
         # 添加预览按钮
-        btn_preview = QtWidgetsQPushButton(self.tr('Preview'))
+        btn_preview = QtWidgets.QPushButton(self.tr('Preview'))
         btn_preview.clicked.connect(lambda: self.preview_import(txt_editor.toPlainText(), lbl_error))
 
         btnbox = QtWidgets.QDialogButtonBox(import_dlg)
@@ -856,12 +866,13 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             valid_proxies = self.batch_validator.validate_batch_content(content)
 
             # 显示预览信息
-            preview_text = self.tr('Valid proxies found:\n\n')
+            preview_text = self.tr('Valid proxies found:')
+            preview_text += '\n\n'
             for i, proxy in enumerate(valid_proxies[:10], 1):  # 最多显示10个
                 preview_text += f'{i}. {proxy[0]} - {proxy[1]}:{proxy[2]} ({proxy[3]})\n'
 
             if len(valid_proxies) > 10:
-                preview_text += f'\n... and {len(valid_proxies) - 10} more'
+                preview_text += '\n... and ' + str(len(valid_proxies) - 10) + ' ' + self.tr('more')
 
             QtWidgets.QMessageBox.information(
                 self,
@@ -890,7 +901,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 return
 
             # 保存到文件
-            with codecs.open(pps_config.PROXY_LIST, 'w', 'utf-8') as outfile:
+            with open(pps_config.PROXY_LIST, 'w', encoding='utf-8') as outfile:
                 for proxy in valid_proxies:
                     # 格式: name address:port type username password
                     if proxy[4] and proxy[5]:  # 有用户名和密码
@@ -980,10 +991,11 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
             except ValidationError as e:
                 # 显示警告但不中断整个保存过程
+                error_msg = self.tr('Proxy configuration error, skipped:') + '\n' + str(e)
                 QtWidgets.QMessageBox.warning(
                     self,
-                    self.tr('配置保存警告'),
-                    self.tr(f'代理"{name}"配置有误，已跳过:\n{str(e)}'),
+                    self.tr('Configuration Save Warning'),
+                    error_msg,
                     QtWidgets.QMessageBox.StandardButton.Ok
                 )
                 continue

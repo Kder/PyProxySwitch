@@ -29,7 +29,7 @@ class ProxyValidator(QObject):
         super().__init__(parent)
 
         # 代理名称验证：允许字母、数字、中文、下划线、连字符，长度限制
-        name_regex = QRegularExpression(r'^[a-zA-Z0-9\u4e00-\u9fa5_\-]{1,50}$')
+        name_regex = QRegularExpression('[a-zA-Z0-9\u4e00-\u9fa5_\\-]{1,50}')
         self.name_validator = QRegularExpressionValidator(name_regex, self)
 
         # 端口验证
@@ -47,12 +47,12 @@ class ProxyValidator(QObject):
 
         # 用户名验证
         self.username_validator = QRegularExpressionValidator(
-            QRegularExpression(r'^[a-zA-Z0-9_\-@.+]{1,50}$'), self
+            QRegularExpression('[a-zA-Z0-9_\\-@.+]{1,50}'), self
         )
 
         # 密码验证（允许更宽松的字符集）
         self.password_validator = QRegularExpressionValidator(
-            QRegularExpression(r'^.{0,100}$'), self
+            QRegularExpression('.{0,100}'), self
         )
 
     def validate_proxy_name(self, name: str) -> str:
