@@ -12,6 +12,7 @@ import shlex
 from typing import Tuple, Optional, List
 from PyQt6.QtGui import QRegularExpressionValidator, QIntValidator, QValidator
 from PyQt6.QtCore import QRegularExpression, pyqtSignal, QObject
+from logger_config import logger
 
 
 class ValidationError(Exception):
@@ -432,7 +433,7 @@ class BatchImportValidator:
                     valid_lines += 1
             except ValidationError as e:
                 # 继续验证其他行，但记录错误
-                print(f"警告: {str(e)}")
+                logger.warning(f"{str(e)}")
 
         if valid_lines == 0:
             raise ValidationError("没有找到有效的代理配置")

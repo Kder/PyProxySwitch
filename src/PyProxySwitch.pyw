@@ -68,6 +68,7 @@ import pps_qrc
 from pps_conf_ui import Ui_Dialog_Config
 from add_proxy_ui import Ui_Dialog_AddProxy
 from proxy_validation import ProxyValidator, ValidationError, BatchImportValidator
+from logger_config import logger
 
 
 class Window(QtWidgets.QDialog):
@@ -141,7 +142,7 @@ class Window(QtWidgets.QDialog):
             self.run_cmd(self.cmd, self.item, self.port)
         except ValueError as e:
             # 记录错误但不显示给用户（可能暴露系统信息）
-            print(f"Command execution error: {e}")
+            logger.error(f"Command execution error: {e}")
             # 可以在这里添加日志记录或显示用户友好的错误信息
             #QtWidgets.QMessageBox.warning(
             #    self,
@@ -234,7 +235,7 @@ class Window(QtWidgets.QDialog):
                     os.killpg(os.getpgid(self.r_process.pid), signal.SIGKILL)
                 self.r_process.wait()
             except Exception as e:
-                print(f"Error terminating process: {e}")
+                logger.error(f"Error terminating process: {e}")
 
         QCoreApplication.instance().quit()
 
@@ -299,7 +300,7 @@ Welcom to send me your feedback if you feel it useful.
             self.run_cmd(self.cmd, self.item, self.port)
         except ValueError as e:
             # 记录错误但不显示给用户（可能暴露系统信息）
-            print(f"Command execution error: {e}")
+            logger.error(f"Command execution error: {e}")
             # 可以在这里添加日志记录或显示用户友好的错误信息
             #QtWidgets.QMessageBox.warning(
             #    self,
@@ -380,7 +381,7 @@ Welcom to send me your feedback if you feel it useful.
 
             # 如果开启了调试模式，打印命令
             if pps_config.CONFIG.get('DEBUG', 0) == 1:
-                print(f"Executing command: {' '.join(cmd_parts)}")
+                logger.info(f"Executing command: {' '.join(cmd_parts)}")
 
             # 在 Windows 和 Unix-like 系统上使用不同的启动方式
             if os.name == 'nt':
@@ -413,7 +414,7 @@ Welcom to send me your feedback if you feel it useful.
             time.sleep(0.1)
 
         except Exception as e:
-            print(f"Failed to start process: {e}")
+            logger.error(f"Failed to start process: {e}")
             # 在调试模式下，打印更多信息
             if pps_config.CONFIG.get('DEBUG', 0) == 1:
                 import traceback
@@ -791,7 +792,6 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             # dialog.le_password.text())], dialog.comboBox_type.currentText())
 
     @pyqtSlot()
-    @pyqtSlot()
     def import_proxy(self):
         '''图形界面批量添加/修改/删除代理'''
         import_dlg = QtWidgets.QDialog(self)
@@ -1006,7 +1006,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         try:
             to_del.remove('NoProxy')
         except KeyError:
-            pass
+            logger.error("NoProxy not found in proxy set, skipping removal from deletion list.")
         # to_del = set(pps_config.CONFIG['CFG_polipo'].keys()) - proxy_set
         # print(to_del)
         # sys.exit()
