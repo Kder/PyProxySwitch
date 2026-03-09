@@ -1,0 +1,8 @@
+PyQt6>=6.0.0
+
+# Core dependencies for the proxy switcher application
+# PyQt6 - GUI framework (required)
+# All other imports are from Python standard library:
+# - os, sys, re, socket, shlex, subprocess, signal, time
+# - pathlib, json, gettime, typing, logging
+# - traceback
