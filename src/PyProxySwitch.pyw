@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright 2009-2011 Kder Lin
+# Copyright 2009-2026 Kder Lin
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -43,33 +43,28 @@ import os
 import shlex
 import subprocess
 import signal
+import time
 from pathlib import Path
-from typing import Optional, List, Tuple
-import pps_config
-LIBPATH = str(Path(pps_config.PROGRAM_PATH) / 'lib')
+
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtGui import QStandardItemModel
+from PyQt6.QtCore import QCoreApplication, pyqtSlot
+
+import pps_config  # noqa: E402
+LIBPATH = str(Path(pps_config.PROGRAM_PATH) / 'lib')  # noqa: F821
 OSPATH = os.environ.get('PATH', '').split(os.pathsep)
 if LIBPATH not in OSPATH:
     OSPATH.insert(0, LIBPATH)
     os.environ["PATH"] = os.pathsep.join(OSPATH)
 #    os.execv(sys.executable, sys.argv)
 
-sys.path.append(str(Path(pps_config.PROGRAM_PATH) / 'res'))
+sys.path.append(str(Path(pps_config.PROGRAM_PATH) / 'res'))  # noqa: F821
 sys.path.append(LIBPATH)
-
-# PyQt6 不再需要 sip.setapi 调用
-
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QStandardItemModel
-from PyQt6.QtCore import QCoreApplication, QRegularExpression, pyqtSlot
-
-import time
-import codecs
-
-import pps_qrc
-from pps_conf_ui import Ui_Dialog_Config
-from add_proxy_ui import Ui_Dialog_AddProxy
-from proxy_validation import ProxyValidator, ValidationError, BatchImportValidator
-from logger_config import logger
+import pps_qrc  # 初始化Qt资源  # noqa: E402, F401
+from logger_config import logger  # noqa: E402
+from pps_conf_ui import Ui_Dialog_Config  # noqa: E402
+from add_proxy_ui import Ui_Dialog_AddProxy  # noqa: E402
+from proxy_validation import ProxyValidator, ValidationError, BatchImportValidator  # noqa: E402
 
 
 class Window(QtWidgets.QDialog):
@@ -279,7 +274,7 @@ Welcom to send me your feedback if you feel it useful.
                 else:
                     os.killpg(os.getpgid(self.r_process.pid), signal.SIGTERM)
                     self.r_process.wait(timeout=3)
-            except:
+            except Exception:
                 # 如果终止失败，强制杀死
                 if os.name == 'nt':
                     self.r_process.kill()

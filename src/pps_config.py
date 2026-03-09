@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright 2011 Kder Lin
+# Copyright 2009-2026 Kder
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -53,11 +53,11 @@ proxies.
 '''
 
 __author__ = 'Kder'
-__copyright__ = 'Copyright 2009-2011 Kder'
+__copyright__ = 'Copyright 2009-2026 Kder'
 __credits__ = ['Kder']
 
-__version__ = '2.4.7'
-__date__ = '2011-03-26'
+__version__ = '2.4.8'
+__date__ = '2026-03-09'
 __maintainer__ = "Kder"
 __email__ = '<kderlin (#) gmail dot com>'
 __url__ = 'http://www.kder.info'
@@ -66,13 +66,12 @@ __status__ = 'Beta'
 
 import os
 import sys
-import codecs
 import traceback
 import json
 import gettext
 import shlex
 from pathlib import Path
-from typing import List, Tuple, Dict, Any, Optional, Union
+from typing import List, Set, Tuple, Dict, Any, Union
 
 try:
     PATH0 = str(Path(__file__).parent)
@@ -89,7 +88,7 @@ PROXY_LIST = str(Path(PROGRAM_PATH) / 'cfg' / 'proxy.txt')
 def pps_loadcfg(config_file: str) -> Dict[str, Any]:
     '''加载程序配置文件'''
     try:
-        with codecs.open(config_file, 'r', encoding='utf-8') as json_file:
+        with open(config_file, 'r', encoding='utf-8') as json_file:
             config = json.load(json_file)
             return config
     #    config = imp.load_source('config', CONF)
@@ -213,7 +212,7 @@ def pps_load_proxylist(list_file: str) -> List[Tuple[str, str, str, str, str, st
     '''
     proxy_list = []
     try:
-        with codecs.open(list_file, 'r', 'utf-8') as l_file:
+        with open(list_file, 'r', encoding='utf-8') as l_file:
             for line in l_file.readlines():
                 # 使用 shlex 进行安全的分词，支持引号
                 items = shlex.split(line.strip())
@@ -255,7 +254,7 @@ PROXY_NAMES = [p_item[0] for p_item in PROXIES]
 def pps_save_proxylist(proxies: List[Tuple[str, ...]] | List[str], list_file: str) -> None:
     '''保存代理列表到文件，列表可为元组的列表或字符串的列表'''
     try:
-        with codecs.open(list_file, 'w', 'utf-8') as l_file:
+        with open(list_file, 'w', encoding='utf-8') as l_file:
             lines = []
             for i in proxies:
                 if isinstance(i, tuple):
@@ -281,7 +280,7 @@ def pps_savecfg(config_dict: Dict[str, Any]) -> None:
     '''保存程序配置字典到配置文件
        Use json to dump the config dict to file'''
     try:
-        with codecs.open(CONF, 'w', encoding='utf-8') as c_file:
+        with open(CONF, 'w', encoding='utf-8') as c_file:
             json.dump(config_dict, c_file, indent=2, sort_keys=True)
     except (IOError, TypeError):
         pps_exc_handle()
@@ -372,16 +371,16 @@ def add_proxy(proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = 'HTTP'
                 f'internal 127.0.0.1\r\n'
                 f'auth iponly\r\n'
                 f'allow * 127.0.0.1\r\n'
-                f'parent 1000 http {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]} {CONFIG["LOCAL_PORT"]}\r\n'
-                f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+                f'parent 1000 http {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]}\r\n'
+                f'socks -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
             )],
                 False: [
                     f'parentProxy = {proxy_address}\r\nproxyPort = {CONFIG["LOCAL_PORT"]}\r\n',
                     f'internal 127.0.0.1\r\n'
                     f'auth iponly\r\n'
                     f'allow * 127.0.0.1\r\n'
-                    f'parent 1000 http {host_port[0]} {host_port[1]} {CONFIG["LOCAL_PORT"]}\r\n'
-                    f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+                    f'parent 1000 http {host_port[0]} {host_port[1]}\r\n'
+                    f'socks -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
                 ]
             },
             False: {True: [(f'socksProxyType = {type_map[proxy_type][0]}\r\n'
@@ -391,8 +390,8 @@ def add_proxy(proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = 'HTTP'
                            (f'internal 127.0.0.1\r\n'
                             f'auth iponly\r\n'
                             f'allow * 127.0.0.1\r\n'
-                            f'parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]} {CONFIG["LOCAL_PORT"]}\r\n'
-                            f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+                            f'parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]}\r\n'
+                            f'socks -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
                            )],
                     False: [
                         f'socksProxyType = {type_map[proxy_type][0]}\r\n'
@@ -401,8 +400,8 @@ def add_proxy(proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = 'HTTP'
                         f'internal 127.0.0.1\r\n'
                         f'auth iponly\r\n'
                         f'allow * 127.0.0.1\r\n'
-                        f'parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {CONFIG["LOCAL_PORT"]}\r\n'
-                        f'proxy -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
+                        f'parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]}\r\n'
+                        f'socks -n -a -p{CONFIG["LOCAL_PORT"]}\r\n'
                     ]
             }
         }
@@ -411,15 +410,15 @@ def add_proxy(proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = 'HTTP'
 
         try:
             polipo_path = Path(PROGRAM_PATH) / 'cfg' / 'polipo' / (proxy_name + '.conf')
-            with codecs.open(polipo_path, 'w', 'utf-8') as cfg_file:
+            with open(polipo_path, 'w', encoding='utf-8') as cfg_file:
                 cfg_file.write(conf_polipo)
             #if os.name != 'nt':
             conf_3proxy = conf_file_tpl[ishttp][isauth][1]
             proxy3_path = Path(PROGRAM_PATH) / 'cfg' / '3proxy' / (proxy_name + '.conf')
-            with codecs.open(proxy3_path, 'w', 'utf-8') as cfg_file:
+            with open(proxy3_path, 'w', encoding='utf-8') as cfg_file:
                 cfg_file.write(conf_3proxy)
 
-        except IOError as e:
+        except IOError:
             pps_output(PPS_MSG['ERR_SAVE_CFG'] % proxy_name)
             pps_exc_handle()
             sys.exit(2)
@@ -473,7 +472,7 @@ if __name__ == '__main__':
 
     # 批量添加代理
     elif ACTION is None:
-        with codecs.open(PROXY_LIST, 'r', 'utf-8') as file1:
+        with open(PROXY_LIST, 'r', encoding='utf-8') as file1:
             for proxy_line in file1.readlines():
                 proxy_item = proxy_line.split()
                 if proxy_item[-1] in ['HTTP', 'SOCKS4', 'SOCKS5']:
