@@ -269,14 +269,14 @@ proxy_name address:port username:password proxy_type
         <source>
 PyProxySwitch is a cross-platform proxy switcher based on 3proxy, polipo and
 IP Relay to fast change proxy for browsers(Firefox,Chrome,Opera,IE, etc.) and
-other internet applications, writen in Python and PyQt.
+other internet applications, writen in Python and PySide6.
 
 Welcom to send me your feedback if you feel it useful.
 </source>
         <translation>
 PyProxySwitch is a cross-platform proxy switcher based on 3proxy, polipo and
 IP Relay to fast change proxy for browsers(Firefox,Chrome,Opera,IE, etc.) and
-other internet applications, writen in Python and PyQt.
+other internet applications, writen in Python and PySide6.
 
 Welcom to send me your feedback if you feel it useful.</translation>
     </message>

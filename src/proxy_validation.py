@@ -10,8 +10,8 @@ import re
 import socket
 import shlex
 from typing import Tuple, Optional, List
-from PyQt6.QtGui import QRegularExpressionValidator, QIntValidator, QValidator
-from PyQt6.QtCore import QRegularExpression, pyqtSignal, QObject
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator, QValidator
+from PySide6.QtCore import QRegularExpression, Signal, QObject
 from logger_config import logger
 
 
@@ -24,7 +24,7 @@ class ProxyValidator(QObject):
     """代理参数验证器"""
 
     # 信号：验证失败时发出
-    validation_error = pyqtSignal(str)
+    validation_error = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)

@@ -18,7 +18,7 @@
 '''
 PyProxySwitch is a cross-platform proxy switcher based on polipo, 3proxy and
 IP Relay to fast change proxy for browsers(Firefox,Chrome,Opera,IE, etc.) and
-other internet applications, writen in Python and PyQt.
+other internet applications, writen in Python and PySide6.
 
 Welcom to send me your feedback if you feel it useful.
 '''
@@ -28,8 +28,8 @@ __author__ = 'Kder'
 __copyright__ = 'Copyright 2009-2026 Kder'
 __credits__ = ['Kder']
 
-__version__ = '3.6'
-__date__ = '2026-03-08'
+__version__ = '3.7'
+__date__ = '2026-03-10'
 __maintainer__ = "Kder"
 __email__ = '[kderlin (#) gmail dot com]'
 __url__ = 'http://www.kder.info'
@@ -46,9 +46,9 @@ import signal
 import time
 from pathlib import Path
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QStandardItemModel
-from PyQt6.QtCore import QCoreApplication, pyqtSlot
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtGui import QStandardItemModel
+from PySide6.QtCore import QCoreApplication, Slot
 
 import pps_config  # noqa: E402
 LIBPATH = str(Path(pps_config.PROGRAM_PATH) / 'lib')  # noqa: F821
@@ -126,12 +126,12 @@ class Window(QtWidgets.QDialog):
             triggered=self.config)
         self.createActions()
 
-        self.trayIcon.activated.connect(self.on_activated)  # PyQt6新语法
+        self.trayIcon.activated.connect(self.on_activated)  # PySide6新语法
 
         if pps_config.CONFIG['SHOW_WELCOME'] == 1 or \
                 pps_config.CONFIG['FISRT_RUN'] == 1:
             self.showWelcome()
-            self.trayIcon.messageClicked.connect(self.config)  # PyQt6新语法
+            self.trayIcon.messageClicked.connect(self.config)  # PySide6新语法
             # pps_config.CONFIG['FISRT_RUN'] = 0
         # print(self.cmd, self.item, self.port)
         try:
@@ -183,7 +183,7 @@ class Window(QtWidgets.QDialog):
                 act.setChecked(False)
             self.ppsActionList.append(act)
         for i in self.ppsActionList:
-            i.triggered.connect(self.switchProxy)  # PyQt6新语法
+            i.triggered.connect(self.switchProxy)  # PySide6新语法
             self.ppsActionGroup.addAction(i)
 
         self.trayIconMenu.clear()
@@ -195,7 +195,7 @@ class Window(QtWidgets.QDialog):
 
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
-    @pyqtSlot()
+    @Slot()
     def config(self) -> None:
         '''弹出配置对话框'''
         if not self.dialog_exsit:
@@ -235,14 +235,14 @@ class Window(QtWidgets.QDialog):
 
         QCoreApplication.instance().quit()
 
-    @pyqtSlot()
+    @Slot()
     def about(self):
         '''”关于”对话框'''
         msg_about = f'''PyProxySwitch &nbsp;&nbsp;&nbsp;&nbsp; {self.tr('Version: ')}{__version__}<br/><br/>
         {self.tr('''
 PyProxySwitch is a cross-platform proxy switcher based on 3proxy, polipo and
 IP Relay to fast change proxy for browsers(Firefox,Chrome,Opera,IE, etc.) and
-other internet applications, writen in Python and PyQt.
+other internet applications, writen in Python and PySide6.
 
 Welcom to send me your feedback if you feel it useful.
 ''')}
@@ -257,7 +257,7 @@ Welcom to send me your feedback if you feel it useful.
         message.setIconPixmap(QtGui.QPixmap(':/img/PyProxySwitch.png'))
         message.show()
 
-    @pyqtSlot()
+    @Slot()
     def switchProxy(self) -> None:
         '''通过结束旧进程，开启新进程的方式，在多个代理间切换
         Switch among proxies by killing old subprocess then opening
@@ -432,7 +432,7 @@ Welcom to send me your feedback if you feel it useful.
             # 进程已退出，获取退出码
             return f"Exited with code: {self.r_process.returncode}"
 
-    @pyqtSlot()
+    @Slot()
     def showWelcome(self) -> None:
         '''在系统托盘显示欢迎信息'''
         icon = QtWidgets.QSystemTrayIcon.MessageIcon.Information
@@ -456,7 +456,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
         self.le_proxy_name.setValidator(self.validator.get_name_validator())
         self.le_username.setValidator(self.validator.get_username_validator())
         self.le_password.setValidator(self.validator.get_password_validator())
-        # 传统信号槽连接语法已更新为PyQt6新语法
+        # 传统信号槽连接语法已更新为PySide6新语法
         # self.connect(self.btn_ok, QtCore.SIGNAL("clicked()"),
             # self.validate_proxy
         # )
@@ -649,7 +649,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             # self.old_values.append(
                 # self.data_model.item(i, self.proxy_name).text())
 
-        # 传统信号槽连接语法已更新为PyQt6新语法
+        # 传统信号槽连接语法已更新为PySide6新语法
         # self.connect(self.data_model,
             # QtCore.SIGNAL('itemChanged(QStandardItem *)'),
             # self.change_item)
@@ -658,27 +658,27 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.m_addAction = QtGui.QAction(self.tr('Add'), self.tableView)
         self.m_modAction = QtGui.QAction(self.tr('Modify'), self.tableView)
         self.m_delAction = QtGui.QAction(self.tr('Delete'), self.tableView)
-        self.m_addAction.triggered.connect(self.add_proxy)  # PyQt6新语法
-        self.m_modAction.triggered.connect(self.mod_proxy)  # PyQt6新语法
-        self.m_delAction.triggered.connect(self.del_proxy)  # PyQt6新语法
-        self.tableView.customContextMenuRequested.connect(self.show_context_menu)  # PyQt6新语法
+        self.m_addAction.triggered.connect(self.add_proxy)  # PySide6新语法
+        self.m_modAction.triggered.connect(self.mod_proxy)  # PySide6新语法
+        self.m_delAction.triggered.connect(self.del_proxy)  # PySide6新语法
+        self.tableView.customContextMenuRequested.connect(self.show_context_menu)  # PySide6新语法
 
-        self.comboBox_lang.currentIndexChanged.connect(self.change_language)  # PyQt6新语法
+        self.comboBox_lang.currentIndexChanged.connect(self.change_language)  # PySide6新语法
 
         self.change_language(self.comboBox_lang.currentIndex())
 
-        self.finished.connect(self.dialog_checker)  # PyQt6新语法
-        self.buttonBox.accepted.connect(self.save_config)  # PyQt6新语法
-        self.btn_add_proxy.clicked.connect(self.add_proxy)  # PyQt6新语法
-        self.btn_batch.clicked.connect(self.import_proxy)  # PyQt6新语法
-        self.btn_mod.clicked.connect(self.mod_proxy)  # PyQt6新语法
-        self.btn_del.clicked.connect(self.del_proxy)  # PyQt6新语法
+        self.finished.connect(self.dialog_checker)  # PySide6新语法
+        self.buttonBox.accepted.connect(self.save_config)  # PySide6新语法
+        self.btn_add_proxy.clicked.connect(self.add_proxy)  # PySide6新语法
+        self.btn_batch.clicked.connect(self.import_proxy)  # PySide6新语法
+        self.btn_mod.clicked.connect(self.mod_proxy)  # PySide6新语法
+        self.btn_del.clicked.connect(self.del_proxy)  # PySide6新语法
 
     # def change_item(self, item):
         # if item.column() == self.proxy_name:
             # print(item.text(), self.old_values[item.row()])
 
-    @pyqtSlot(QtCore.QPoint)
+    @Slot(QtCore.QPoint)
     def show_context_menu(self, pnt):
         '''显示tableView右键菜单'''
         menu = QtWidgets.QMenu()
@@ -699,7 +699,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             QtWidgets.QMessageBox.StandardButton.Ok
         )
 
-    @pyqtSlot(int)
+    @Slot(int)
     def change_language(self, idx):
         '''实时改变界面语言'''
         translator = QtCore.QTranslator(QCoreApplication.instance())
@@ -759,12 +759,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     # def setSourceModel(self, model):
         # self.proxyModel.setSourceModel(model)
 
-    @pyqtSlot(int)
+    @Slot(int)
     def dialog_checker(self, i):
         '''配置对话框已被关闭'''
         self.parentWidget().dialog_exsit = False
 
-    @pyqtSlot()
+    @Slot()
     def add_proxy(self):
         '''弹出”添加代理”对话框'''
         dialog = AddProxy_Dialog()
@@ -787,7 +787,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             # '%s:%s' % (dialog.le_username.text(),
             # dialog.le_password.text())], dialog.comboBox_type.currentText())
 
-    @pyqtSlot()
+    @Slot()
     def import_proxy(self):
         '''图形界面批量添加/修改/删除代理'''
         import_dlg = QtWidgets.QDialog(self)
@@ -923,12 +923,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 QtWidgets.QMessageBox.StandardButton.Ok
             )
 
-    @pyqtSlot()
+    @Slot()
     def mod_proxy(self):
         '''修改代理项目'''
         self.tableView.edit(self.tableView.currentIndex())
 
-    @pyqtSlot()
+    @Slot()
     def del_proxy(self):
         '''删除代理项目（仅从tableView中移除，删除操作会在点击确定按钮之后）'''
         # model = self.data_model
@@ -940,7 +940,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         # for i in self.tableView.selectedIndexes():
             # self.proxyModel.removeRow(i.row())
 
-    @pyqtSlot()
+    @Slot()
     def save_config(self):
         '''开始执行添加、修改、删除代理的操作，保存配置文件和代理列表文件'''
         pps_config.CONFIG['LOCAL_PORT'] = int(self.le_localport.text())
