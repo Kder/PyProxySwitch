@@ -1,3 +1,10 @@
 .claude/
 utils/
+*.pyc
 */__pycache__/
+logs/PyProxySwitch.log
+PyProxySwitch.build/
+AGENTS.md
+CLAUDE.md
+dist
+compilation-report.xml

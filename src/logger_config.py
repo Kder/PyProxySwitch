@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 from pathlib import Path
 from typing import Optional
-import pps_config
+import src.pps_config as pps_config
 
 
 # 创建日志目录

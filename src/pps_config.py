@@ -295,7 +295,7 @@ def add_proxy(proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = 'HTTP'
     proxy_name = ''
 
     # 导入验证器
-    from proxy_validation import ProxyValidator, ValidationError
+    from src.proxy_validation import ProxyValidator, ValidationError
     validator = ProxyValidator()
 
     try:

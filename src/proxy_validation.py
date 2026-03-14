@@ -12,7 +12,7 @@ import shlex
 from typing import Tuple, Optional, List
 from PySide6.QtGui import QRegularExpressionValidator, QIntValidator, QValidator
 from PySide6.QtCore import QRegularExpression, Signal, QObject
-from logger_config import logger
+from src.logger_config import logger
 
 
 class ValidationError(Exception):

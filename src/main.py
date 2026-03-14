@@ -50,21 +50,21 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtCore import QCoreApplication, Slot
 
-import pps_config  # noqa: E402
-LIBPATH = str(Path(pps_config.PROGRAM_PATH) / 'lib')  # noqa: F821
-OSPATH = os.environ.get('PATH', '').split(os.pathsep)
-if LIBPATH not in OSPATH:
-    OSPATH.insert(0, LIBPATH)
-    os.environ["PATH"] = os.pathsep.join(OSPATH)
+import src.pps_config as pps_config # noqa: E402
+#LIBPATH = str(Path(pps_config.PROGRAM_PATH) / 'lib')  # noqa: F821
+#OSPATH = os.environ.get('PATH', '').split(os.pathsep)
+#if LIBPATH not in OSPATH:
+#    OSPATH.insert(0, LIBPATH)
+#    os.environ["PATH"] = os.pathsep.join(OSPATH)
 #    os.execv(sys.executable, sys.argv)
 
-sys.path.append(str(Path(pps_config.PROGRAM_PATH) / 'res'))  # noqa: F821
-sys.path.append(LIBPATH)
-import pps_qrc  # 初始化Qt资源  # noqa: E402, F401
-from logger_config import logger  # noqa: E402
-from pps_conf_ui import Ui_Dialog_Config  # noqa: E402
-from add_proxy_ui import Ui_Dialog_AddProxy  # noqa: E402
-from proxy_validation import ProxyValidator, ValidationError, BatchImportValidator  # noqa: E402
+#sys.path.append(str(Path(pps_config.PROGRAM_PATH) / 'res'))  # noqa: F821
+#sys.path.append(LIBPATH)
+import res.pps_qrc  # 初始化Qt资源  # noqa: E402, F401
+from res.pps_conf_ui import Ui_Dialog_Config  # noqa: E402
+from res.add_proxy_ui import Ui_Dialog_AddProxy  # noqa: E402
+from src.logger_config import logger  # noqa: E402
+from src.proxy_validation import ProxyValidator, ValidationError, BatchImportValidator  # noqa: E402
 
 
 class Window(QtWidgets.QDialog):
@@ -386,7 +386,8 @@ Welcom to send me your feedback if you feel it useful.
                     cmd_parts,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                    # creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
                     shell=False
                 )
             else:
