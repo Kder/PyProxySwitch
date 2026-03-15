@@ -90,6 +90,8 @@ def pps_loadcfg(config_file: str) -> Dict[str, Any]:
     try:
         with open(config_file, 'r', encoding='utf-8') as json_file:
             config = json.load(json_file)
+            if 'FISRT_RUN' in config and 'FIRST_RUN' not in config:
+                config['FIRST_RUN'] = config.pop('FISRT_RUN')
             return config
     #    config = imp.load_source('config', CONF)
     except (ValueError, IOError):

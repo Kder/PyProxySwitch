@@ -129,11 +129,9 @@ class Window(QtWidgets.QDialog):
         self.trayIcon.activated.connect(self.on_activated)  # PySide6新语法
 
         if pps_config.CONFIG['SHOW_WELCOME'] == 1 or \
-                pps_config.CONFIG['FISRT_RUN'] == 1:
+                pps_config.CONFIG['FIRST_RUN'] == 1:
             self.showWelcome()
             self.trayIcon.messageClicked.connect(self.config)  # PySide6新语法
-            # pps_config.CONFIG['FISRT_RUN'] = 0
-        # print(self.cmd, self.item, self.port)
         try:
             self.run_cmd(self.cmd, self.item, self.port)
         except ValueError as e:
