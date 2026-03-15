@@ -4,7 +4,7 @@ PyProxySwitch 包初始化文件
 
 该包包含了PyProxySwitch代理切换器应用程序的所有核心组件：
 
-- PyProxySwitch.pyw: 主应用程序，包含系统托盘界面和核心逻辑
+- main.py: 主应用程序，包含系统托盘界面和核心逻辑
 - pps_config.py: 配置管理模块，处理JSON配置和命令行接口
 - proxy_validation.py: 输入验证模块，提供代理参数验证和Qt验证器集成
 - logger_config.py: 日志配置模块，提供统一的日志处理

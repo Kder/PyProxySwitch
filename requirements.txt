@@ -1,4 +1,4 @@
-PySide6>=6.0.0
+PySide6>=6.5.0
 
 # Core dependencies for the proxy switcher application
 # PySide6 - GUI framework (required)

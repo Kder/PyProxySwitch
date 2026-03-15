@@ -206,35 +206,6 @@ class Window(QtWidgets.QDialog):
             self.config_dialog.activateWindow()
             self.config_dialog.setFocus()
 
-    def quit(self) -> None:
-        '''保存配置，结束代理进程，退出主程序'''
-        self.trayIcon.setVisible(False)
-        pps_config.CONFIG['LAST_ITEM'] = self.item_text
-        pps_config.pps_savecfg(pps_config.CONFIG)
-
-        # 使用 subprocess 终止进程
-        if self.r_process is not None:
-            try:
-                if os.name == 'nt':
-                    # Windows 上使用 terminate
-                    self.r_process.terminate()
-                    self.r_process.wait(timeout=5)  # 等待最多5秒
-                else:
-                    # Unix-like 系统上，使用 terminate 并发送信号到整个进程组
-                    os.killpg(os.getpgid(self.r_process.pid), signal.SIGTERM)
-                    self.r_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                # 如果进程没有在5秒内终止，强制杀死
-                if os.name == 'nt':
-                    self.r_process.kill()
-                else:
-                    os.killpg(os.getpgid(self.r_process.pid), signal.SIGKILL)
-                self.r_process.wait()
-            except Exception as e:
-                logger.error(f"Error terminating process: {e}")
-
-        QCoreApplication.instance().quit()
-
     @Slot()
     def about(self):
         '''”关于”对话框'''
@@ -263,28 +234,14 @@ Welcom to send me your feedback if you feel it useful.
         Switch among proxies by killing old subprocess then opening
          a new one.'''
         sender = self.sender()
-        self.item_text = sender.text()
+        self.item_text: str = sender.text()
 
         # 先终止现有的代理进程
-        if self.r_process is not None:
-            try:
-                if os.name == 'nt':
-                    self.r_process.terminate()
-                    self.r_process.wait(timeout=3)
-                else:
-                    os.killpg(os.getpgid(self.r_process.pid), signal.SIGTERM)
-                    self.r_process.wait(timeout=3)
-            except Exception:
-                # 如果终止失败，强制杀死
-                if os.name == 'nt':
-                    self.r_process.kill()
-                else:
-                    os.killpg(os.getpgid(self.r_process.pid), signal.SIGKILL)
-                self.r_process.wait()
+        self.terminate_process(timeout=5)
 
         for i in self.proxy_names:
             if i == self.item_text:
-                self.item = i
+                self.item: str = i
                 # self.item = self.cfg[i][0]
                 if self.cmd == 'ip_relay':
                     i_index = self.proxy_names.index(i)
@@ -304,13 +261,55 @@ Welcom to send me your feedback if you feel it useful.
             #    self.tr('Failed to start proxy service')
             #)
 
-    def run_cmd(self, cmd, item, port):
+    def quit(self) -> None:
+        '''保存配置，结束代理进程，退出主程序'''
+        self.trayIcon.setVisible(False)
+        pps_config.CONFIG['LAST_ITEM'] = self.item_text
+        pps_config.pps_savecfg(pps_config.CONFIG)
+        self.terminate_process(timeout=5)
+        QCoreApplication.instance().quit()
+
+    def terminate_process(self, timeout: int = 5) -> bool:
+        """
+        终止代理进程
+        
+        Args:
+            timeout: 等待超时秒数
+            
+        Returns:
+            bool: 成功为 True，失败为 False
+        """
+        if self.r_process is None:
+            return True
+            
+        try:
+            if os.name == 'nt':
+                self.r_process.terminate()
+                self.r_process.wait(timeout=timeout)
+            else:
+                os.killpg(os.getpgid(self.r_process.pid), signal.SIGTERM)
+                self.r_process.wait(timeout=timeout)
+            return True
+        except subprocess.TimeoutExpired:
+            logger.warning("Process did not terminate gracefully, killing...")
+            if os.name == 'nt':
+                self.r_process.kill()
+            else:
+                os.killpg(os.getpgid(self.r_process.pid), signal.SIGKILL)
+            self.r_process.wait()
+            return False
+        except Exception as e:
+            logger.error(f"Process termination error: {e}")
+            return False
+
+    def run_cmd(self, cmd: str, item: str, port: str) -> None:
         '''开启代理进程'''
         # 验证参数
         if not isinstance(cmd, str) or not isinstance(item, str) or port is None:
             raise ValueError("Invalid command parameters")
 
         # 验证端口
+        port_int = None
         if cmd == 'ip_relay':
             try:
                 port_int = int(port)

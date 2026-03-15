@@ -1,4 +1,4 @@
-SOURCES += ../src/PyProxySwitch.pyw \ 
+SOURCES += ../src/main.py \ 
            ../res/add_proxy_ui.py \            
            ../res/pps_conf_ui.py 
 FORMS = ../res/add_proxy.ui \ 
