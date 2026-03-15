@@ -2,7 +2,7 @@
 utils/
 *.pyc
 */__pycache__/
-logs/PyProxySwitch.log
+*.log
 PyProxySwitch.build/
 AGENTS.md
 CLAUDE.md

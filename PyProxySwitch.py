@@ -62,8 +62,8 @@ def parse_arguments():
 def check_environment():
     """检查运行环境"""
     # 检查Python版本
-    if sys.version_info < (3, 7):
-        print("错误: 需要Python 3.7或更高版本")
+    if sys.version_info < (3, 10):
+        print("错误: 需要Python 3.10或更高版本")
         print(f"当前Python版本: {sys.version}")
         return False
 

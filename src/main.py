@@ -65,6 +65,7 @@ from res.pps_conf_ui import Ui_Dialog_Config  # noqa: E402
 from res.add_proxy_ui import Ui_Dialog_AddProxy  # noqa: E402
 from src.logger_config import logger  # noqa: E402
 from src.proxy_validation import ProxyValidator, ValidationError, BatchImportValidator  # noqa: E402
+from src.errors import ProxyStartError, ProxyStopError, ConfigError  # noqa: E402
 
 
 class Window(QtWidgets.QDialog):
@@ -134,15 +135,15 @@ class Window(QtWidgets.QDialog):
             self.trayIcon.messageClicked.connect(self.config)  # PySide6新语法
         try:
             self.run_cmd(self.cmd, self.item, self.port)
-        except ValueError as e:
-            # 记录错误但不显示给用户（可能暴露系统信息）
-            logger.error(f"Command execution error: {e}")
-            # 可以在这里添加日志记录或显示用户友好的错误信息
-            #QtWidgets.QMessageBox.warning(
-            #    self,
-            #    self.tr('Error'),
-            #    self.tr('Failed to start proxy service')
-            #)
+        except (ProxyStartError, ConfigError) as e:
+            # 记录详细错误信息
+            logger.error(e.log_message)
+            # 显示用户友好的错误信息
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr('Error'),
+                e.user_message
+            )
 
     def refresh_menu(self) -> None:
         '''重新读取配置文件并更新菜单'''
@@ -205,7 +206,7 @@ class Window(QtWidgets.QDialog):
             self.config_dialog.setFocus()
 
     @Slot()
-    def about(self):
+    def about(self) -> None:
         '''”关于”对话框'''
         msg_about = f'''PyProxySwitch &nbsp;&nbsp;&nbsp;&nbsp; {self.tr('Version: ')}{__version__}<br/><br/>
         {self.tr('''
@@ -249,15 +250,15 @@ Welcom to send me your feedback if you feel it useful.
         time.sleep(0.1)
         try:
             self.run_cmd(self.cmd, self.item, self.port)
-        except ValueError as e:
-            # 记录错误但不显示给用户（可能暴露系统信息）
-            logger.error(f"Command execution error: {e}")
-            # 可以在这里添加日志记录或显示用户友好的错误信息
-            #QtWidgets.QMessageBox.warning(
-            #    self,
-            #    self.tr('Error'),
-            #    self.tr('Failed to start proxy service')
-            #)
+        except (ProxyStartError, ConfigError) as e:
+            # 记录详细错误信息
+            logger.error(e.log_message)
+            # 显示用户友好的错误信息
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr('Error'),
+                e.user_message
+            )
 
     def quit(self) -> None:
         '''保存配置，结束代理进程，退出主程序'''
@@ -304,7 +305,7 @@ Welcom to send me your feedback if you feel it useful.
         '''开启代理进程'''
         # 验证参数
         if not isinstance(cmd, str) or not isinstance(item, str) or port is None:
-            raise ValueError("Invalid command parameters")
+            raise ConfigError("Invalid command parameters", "Invalid command parameters provided to run_cmd")
 
         # 验证端口
         port_int = None
@@ -312,9 +313,13 @@ Welcom to send me your feedback if you feel it useful.
             try:
                 port_int = int(port)
                 if port_int < 1 or port_int > 65535:
-                    raise ValueError("Invalid port number "+str(port))
+                    user_msg = f"Invalid port number: {port}"
+                    log_msg = f"Invalid port number: {port}. Must be between 1 and 65535"
+                    raise ConfigError(user_msg, log_msg)
             except (ValueError, TypeError):
-                raise ValueError("Invalid port number "+str(port))
+                user_msg = f"Invalid port number: {port}"
+                log_msg = f"Invalid port number: {port}. Must be a valid integer"
+                raise ConfigError(user_msg, log_msg)
 
         # 验证代理名称，只允许字母、数字、中文、下划线、连字符
         import re
@@ -400,20 +405,29 @@ Welcom to send me your feedback if you feel it useful.
             if self.r_process.poll() is not None:
                 # 如果进程已经退出，读取错误输出
                 stderr_output = self.r_process.stderr.read().decode('utf-8', errors='ignore')
-                raise RuntimeError(f"Process exited immediately. Error: {stderr_output}")
+                user_msg = "Failed to start proxy service"
+                log_msg = f"Process exited immediately. Error: {stderr_output}"
+                raise ProxyStartError(user_msg, log_msg)
 
             # 等待进程启动
             # subprocess.Popen 立即返回，所以我们需要短暂等待
             import time
             time.sleep(0.1)
 
-        except Exception as e:
-            logger.error(f"Failed to start process: {e}")
-            # 在调试模式下，打印更多信息
-            if pps_config.CONFIG.get('DEBUG', 0) == 1:
-                import traceback
-                traceback.print_exc()
+        except FileNotFoundError:
+            user_msg = f"Cannot find proxy executable: {self.cmd}"
+            log_msg = f"Cannot find proxy executable at {cmd_bin}"
+            raise ProxyStartError(user_msg, log_msg)
+        except PermissionError:
+            user_msg = "Permission denied to execute proxy"
+            log_msg = f"Permission denied to execute {cmd_bin}"
+            raise ProxyStartError(user_msg, log_msg)
+        except ProxyStartError:
+            # Re-raise our custom exception
             raise
+        except Exception as e:
+            logger.error(f"Unexpected error starting proxy: {e}")
+            raise ProxyStartError("Failed to start proxy service", str(e))
 
     def is_process_running(self) -> bool:
         """检查代理进程是否正在运行"""
@@ -1035,7 +1049,7 @@ def main():
     sys.exit(app.exec())
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
 #vim: tabstop=4 expandtab shiftwidth=4 softtabstop=
