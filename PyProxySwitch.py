@@ -92,10 +92,30 @@ def main():
         sys.exit(1)
 
     # 设置日志
-    import src.pps_config as pps_config
+    import logging
+    import json
     from src.logger_config import setup_logger
-    debug_mode = args.debug or pps_config.CONFIG.get('DEBUG', 0) == 1
-    logger = setup_logger(debug_mode=debug_mode)
+    
+    # 确定日志级别：命令行参数优先，其次配置文件，默认 INFO
+    log_level = logging.INFO  # 默认值
+    
+    # 尝试从配置文件加载 DEBUG 设置
+    config_file = Path(args.config)
+    if config_file.exists():
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config_data = json.load(f)
+                # 如果配置文件中 DEBUG 为 1，且未使用 --debug 参数，则使用 DEBUG 级别
+                if not args.debug and config_data.get('DEBUG', 0) == 1:
+                    log_level = logging.DEBUG
+        except (json.JSONDecodeError, IOError):
+            pass  # 配置文件读取失败，继续使用默认级别
+    
+    # 命令行 --debug 参数最高优先级
+    if args.debug:
+        log_level = logging.DEBUG
+    
+    logger = setup_logger(log_level=log_level)
 
     logger.info("=" * 50)
     logger.info("PyProxySwitch 启动")
