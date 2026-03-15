@@ -66,6 +66,7 @@ from res.add_proxy_ui import Ui_Dialog_AddProxy  # noqa: E402
 from src.logger_config import logger  # noqa: E402
 from src.proxy_validation import ProxyValidator, ValidationError, BatchImportValidator  # noqa: E402
 from src.errors import ProxyStartError, ProxyStopError, ConfigError  # noqa: E402
+from src.config import ConfigManager  # noqa: E402
 
 
 class Window(QtWidgets.QDialog):
@@ -73,13 +74,17 @@ class Window(QtWidgets.QDialog):
     def __init__(self) -> None:
         '''初始化系统托盘图标和菜单'''
         super(Window, self).__init__()
-        self.cmd = pps_config.CONFIG['CMD']
+        
+        # 初始化配置管理器（单例模式）
+        self._config = ConfigManager()
+        
+        self.cmd = self._config.get('CMD')
         self.r_process = None  # subprocess.Popen 对象
 
         self.dialog_exsit = False
 
         translator = QtCore.QTranslator(self)
-        translator.load(str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (pps_config.CONFIG['LANG'] + '.qm')))
+        translator.load(str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (self._config.get('LANG') + '.qm')))
         QCoreApplication.instance().installTranslator(translator)
         # self.retranslateUi(self)
 
@@ -90,13 +95,13 @@ class Window(QtWidgets.QDialog):
             sys.exit(1)
 
         # self.cfg = eval("pps_config.CONFIG['CFG_%s']" % self.cmd)
-        self.proxy_list = pps_config.PROXIES
+        self.proxy_list = self._config.get_proxies()
         self.proxy_names = [i[0] for i in self.proxy_list]
 
         #根据上次退出时记录的代理项目，读取对应的ip和端口
-        self.item_text = pps_config.CONFIG['LAST_ITEM']
+        self.item_text = self._config.get('LAST_ITEM')
         if self.item_text not in self.proxy_names:
-            self.item_text = pps_config.CONFIG['DEFAULT_ITEM']
+            self.item_text = self._config.get('DEFAULT_ITEM')
         #
         self.item = self.item_text
         self.port = ''
@@ -129,8 +134,8 @@ class Window(QtWidgets.QDialog):
 
         self.trayIcon.activated.connect(self.on_activated)  # PySide6新语法
 
-        if pps_config.CONFIG['SHOW_WELCOME'] == 1 or \
-                pps_config.CONFIG['FIRST_RUN'] == 1:
+        if self._config.get('SHOW_WELCOME') == 1 or \
+                self._config.get('FIRST_RUN') == 1:
             self.showWelcome()
             self.trayIcon.messageClicked.connect(self.config)  # PySide6新语法
         try:
@@ -147,9 +152,9 @@ class Window(QtWidgets.QDialog):
 
     def refresh_menu(self) -> None:
         '''重新读取配置文件并更新菜单'''
-        pps_config.CONFIG = pps_config.pps_loadcfg(pps_config.CONF)
-        self.cmd = pps_config.CONFIG['CMD']
-        self.proxy_list = pps_config.pps_load_proxylist(pps_config.PROXY_LIST)
+        self._config.reload()
+        self.cmd = self._config.get('CMD')
+        self.proxy_list = self._config.get_proxies()
         self.proxy_names = [i[0] for i in self.proxy_list]
         if self.cmd != 'ip_relay':
             self.proxy_names.append('NoProxy')
@@ -263,8 +268,8 @@ Welcom to send me your feedback if you feel it useful.
     def quit(self) -> None:
         '''保存配置，结束代理进程，退出主程序'''
         self.trayIcon.setVisible(False)
-        pps_config.CONFIG['LAST_ITEM'] = self.item_text
-        pps_config.pps_savecfg(pps_config.CONFIG)
+        self._config.set('LAST_ITEM', self.item_text)
+        self._config.save()
         self.terminate_process(timeout=5)
         QCoreApplication.instance().quit()
 
@@ -350,7 +355,7 @@ Welcom to send me your feedback if you feel it useful.
             cmd_option = ''
             # 使用 shlex.quote 安全地拼接 ip_relay 的所有参数
             cmd_args = ' '.join([
-                shlex.quote(str(pps_config.CONFIG['LOCAL_PORT'])),
+                shlex.quote(str(self._config.get('LOCAL_PORT'))),
                 shlex.quote(item),
                 str(port_int)  # 端口已经是数字，且由系统执行，不需要引号
             ])
@@ -378,7 +383,7 @@ Welcom to send me your feedback if you feel it useful.
                 cmd_parts.extend(cmd_args_parts)
 
             # 如果开启了调试模式，打印命令
-            if pps_config.CONFIG.get('DEBUG', 0) == 1:
+            if self._config.get('DEBUG', 0) == 1:
                 logger.info(f"Executing command: {' '.join(cmd_parts)}")
 
             # 在 Windows 和 Unix-like 系统上使用不同的启动方式
@@ -604,6 +609,9 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.setWindowIcon(QtGui.QIcon(':/img/pps.png'))
         self.parentWidget().dialog_exsit = True
 
+        # 获取配置管理器
+        self._config = ConfigManager()
+
         (self.proxy_name, self.proxy_address, self.proxy_port, self.proxy_type,
             self.proxy_user, self.proxy_pass) = range(6)
         self.langs = ['zh_CN', 'en']
@@ -611,15 +619,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.cmds = ['3proxy', 'polipo', 'ip_relay']
 
         self.comboBox_lang.setCurrentIndex(
-            self.langs.index(pps_config.CONFIG['LANG']))
-        self.checkBox_debug.setChecked(self.f_or_t[pps_config.CONFIG['DEBUG']])
+            self.langs.index(self._config.get('LANG')))
+        self.checkBox_debug.setChecked(self.f_or_t[self._config.get('DEBUG')])
         self.checkBox_show_welcome.setChecked(
-            self.f_or_t[pps_config.CONFIG['SHOW_WELCOME']])
+            self.f_or_t[self._config.get('SHOW_WELCOME')])
         self.comboBox_cmd.setCurrentIndex(
-            self.cmds.index(pps_config.CONFIG['CMD']))
+            self.cmds.index(self._config.get('CMD')))
 
         self.le_localport.setValidator(QtGui.QIntValidator(0, 65535, self))
-        self.le_localport.setText(str(pps_config.CONFIG['LOCAL_PORT']))
+        self.le_localport.setText(str(self._config.get('LOCAL_PORT')))
 
         # 使用增强的验证器
         # 使用增强的验证器
@@ -763,7 +771,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.tr('Username', 'Config_Dialog'))
         model.setHeaderData(self.proxy_pass, QtCore.Qt.Orientation.Horizontal,
             self.tr('Password', 'Config_Dialog'))
-        for proxy in pps_config.pps_load_proxylist(pps_config.PROXY_LIST):
+        for proxy in self._config.get_proxies():
             self.add_item(model, proxy)
         model.sort(0)
         return model
@@ -836,7 +844,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 读取原始内容
         try:
-            with open(pps_config.PROXY_LIST, 'r', encoding='utf-8') as f:
+            with open(self._config.proxy_list_path, 'r', encoding='utf-8') as f:
                 orgin_str = f.read()
         except Exception as e:
             orgin_str = ""
@@ -909,7 +917,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 return
 
             # 保存到文件
-            with open(pps_config.PROXY_LIST, 'w', encoding='utf-8') as outfile:
+            with open(self._config.proxy_list_path, 'w', encoding='utf-8') as outfile:
                 for proxy in valid_proxies:
                     # 格式: name address:port type username password
                     if proxy[4] and proxy[5]:  # 有用户名和密码
@@ -920,6 +928,9 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                         line = f'{proxy[0]} {proxy[1]}:{proxy[2]}\n'
                     outfile.write(line)
 
+            # 重新加载代理列表
+            self._config.reload()
+            
             # 更新界面
             self.tableView.setModel(self.create_model(self.parentWidget()))
             dialog.accept()
@@ -955,16 +966,11 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     @Slot()
     def save_config(self):
         '''开始执行添加、修改、删除代理的操作，保存配置文件和代理列表文件'''
-        pps_config.CONFIG['LOCAL_PORT'] = int(self.le_localport.text())
-
-        pps_config.CONFIG['DEBUG'] = self.f_or_t.index(
-            self.checkBox_debug.isChecked())
-        pps_config.CONFIG['SHOW_WELCOME'] = self.f_or_t.index(
-            self.checkBox_show_welcome.isChecked())
-        pps_config.CONFIG['LANG'] = self.langs[
-            self.comboBox_lang.currentIndex()]
-
-        pps_config.CONFIG['CMD'] = self.comboBox_cmd.currentText()
+        self._config.set('LOCAL_PORT', int(self.le_localport.text()))
+        self._config.set('DEBUG', self.f_or_t.index(self.checkBox_debug.isChecked()))
+        self._config.set('SHOW_WELCOME', self.f_or_t.index(self.checkBox_show_welcome.isChecked()))
+        self._config.set('LANG', self.langs[self.comboBox_lang.currentIndex()])
+        self._config.set('CMD', self.comboBox_cmd.currentText())
 
         model = self.tableView.model()
         proxy_lst = []
@@ -993,6 +999,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 else:
                     line = f'{validated_proxy[0]} {validated_proxy[1]}:{validated_proxy[2]} {validated_proxy[3]}'
 
+                # 同步配置到 pps_config 以便 add_proxy 使用
+                pps_config.CONFIG['LOCAL_PORT'] = self._config.get('LOCAL_PORT')
                 pps_config.add_proxy(shlex.split(line), validated_proxy[3])
                 proxy_lst.append(line)
                 proxy_set.add(validated_proxy[0])
@@ -1019,8 +1027,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         # print(to_del)
         # sys.exit()
         pps_config.del_proxy(to_del)
-        pps_config.pps_savecfg(pps_config.CONFIG)
-        pps_config.pps_save_proxylist(proxy_lst, pps_config.PROXY_LIST)
+        
+        # 保存配置
+        self._config.save()
+        
+        # 保存代理列表到文件
+        with open(self._config.proxy_list_path, 'w', encoding='utf-8') as outfile:
+            for line in proxy_lst:
+                outfile.write(line + '\n')
+        
         self.parentWidget().refresh_menu()
 
 
