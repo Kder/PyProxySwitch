@@ -31,10 +31,10 @@ PyProxySwitch UI资源包
     # 导入资源
     import res.pps_qrc
 
-版本: 1.0.0
+版本: 3.8.0
 """
 
-__version__ = "1.0.0"
+__version__ = "3.8.0"
 __description__ = "PyProxySwitch UI资源包"
 
 # 自动导入编译后的UI模块，便于外部使用

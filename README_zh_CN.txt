@@ -1,11 +1,11 @@
 ﻿# -*- coding: utf-8 -*- 
 
-PyProxySwitch  版本: 3.7
+PyProxySwitch  版本: 3.8.0
 
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件
 网站: http://www.kder.info
 项目主页: http://pyproxyswitch.kder.info/
-最近更新: 2026-03-10
+最近更新: 2026-03-17
 许可: Apache License, Version 2.0
     本程序用到了以下三个开源软件的二进制文件：
       3proxy： https://3proxy.org/
@@ -85,6 +85,7 @@ PyProxySwitch  版本: 3.7
 
 
 = 更新历史 =
+    * 3.8.0 重构代码，改进进程处理、异常处理和日志功能 2026-03-17
     * 3.7   迁移至PySide6 2026-03-09
     * 3.6   新增代理验证模块，实现严格的代理参数验证机制；从PyQt4迁移至PyQt6；重构配置处理逻辑；移除过时的构建脚本 2026-03-08
     * 3.5.2   修复Windows版本启动时找不到模块的问题；修正一个Python3.2相关的input问题；修复一个路径相关的问题 2011-3-26

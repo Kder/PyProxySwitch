@@ -10,7 +10,7 @@ PyProxySwitch 启动脚本
     python PyProxySwitch.py --debug
     python PyProxySwitch.py --config /path/to/config
 
-版本: 1.0.0
+版本: 3.8.0
 """
 
 import sys

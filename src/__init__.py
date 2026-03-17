@@ -11,7 +11,7 @@ PyProxySwitch 包初始化文件
 
 """
 
-__version__ = "1.0.0"
+__version__ = "3.8.0"
 __description__ = "PyProxySwitch - 跨平台代理切换器"
 
 # 包级别的导入，便于外部使用

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- 
 
-PyProxySwitch  Version: 3.7
+PyProxySwitch  Version: 3.8.0
 
 Description: PyProxySwitch is a cross-platform proxy switcher based on 3proxy, polipo and IP Relay
 to fast change proxy for browsers(Firefox,Chrome,Opera,IE,etc.) and other Internet applications,
@@ -9,7 +9,7 @@ writen in Python and PySide6. Welcom to send me your feedback if you feel it use
 Author:   Kder <kderlin (#) gmail dot com>
 Author Website:  http://www.kder.info
 Project Website: http://pyproxyswitch.kder.info
-Last Update: 2026-03-10
+Last Update: 2026-03-17
 Licence: Apache License, Version 2.0
          For licence of 3Proxy, polipo & IP Relay,please refer files in 'licenses' directory 
          For more details, visit:
