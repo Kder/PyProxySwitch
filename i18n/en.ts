@@ -93,6 +93,22 @@ proxy_name address:port username:password proxy_type
         <source>Failed to read proxy list file:</source>
         <translation>Failed to read proxy list file:</translation>
     </message>
+    <message>
+        <source>Valid proxies found:</source>
+        <translation>Valid proxies found:</translation>
+    </message>
+    <message>
+        <source>Import Preview</source>
+        <translation>Import Preview</translation>
+    </message>
+    <message>
+        <source>Confirm Delete</source>
+        <translation>Confirm Delete</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete this proxy?</source>
+        <translation>Are you sure you want to delete this proxy?</translation>
+    </message>
 </context><context>
     <name>Dialog_AddProxy</name>
     <message>
@@ -152,6 +168,7 @@ proxy_name address:port username:password proxy_type
         <comment>lable_name</comment>
         <translation>Name</translation>
     </message>
+
 </context><context>
     <name>Dialog_Config</name>
     <message>
@@ -303,5 +320,93 @@ Author website: </translation>
 PyProxySwitch cannot start.</source>
         <translation>I've not detected any system tray on this system.
 PyProxySwitch cannot start.</translation>
+    </message>
+    <message>
+        <source>Add Proxy</source>
+        <translation>Add Proxy</translation>
+    </message>
+    <message>
+        <source>Delete Proxy</source>
+        <translation>Delete Proxy</translation>
+    </message>
+    <message>
+        <source>Import Proxies</source>
+        <translation>Import Proxies</translation>
+    </message>
+    <message>
+        <source>Export Proxies</source>
+        <translation>Export Proxies</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>Error</translation>
+    </message>
+    <message>
+        <source>Port must be between 1 and 65535</source>
+        <translation>Port must be between 1 and 65535</translation>
+    </message>
+    <message>
+        <source>Port must be a valid number</source>
+        <translation>Port must be a valid number</translation>
+    </message>
+    <message>
+        <source>Please select a proxy to modify</source>
+        <translation>Please select a proxy to modify</translation>
+    </message>
+    <message>
+        <source>Invalid proxy file format</source>
+        <translation>Invalid proxy file format</translation>
+    </message>
+    <message>
+        <source>Successfully imported {0} proxies</source>
+        <translation>Successfully imported {0} proxies</translation>
+    </message>
+    <message>
+        <source>Failed to import proxies: {0}</source>
+        <translation>Failed to import proxies: {0}</translation>
+    </message>
+    <message>
+        <source>Proxies exported successfully</source>
+        <translation>Proxies exported successfully</translation>
+    </message>
+    <message>
+        <source>Failed to export proxies: {0}</source>
+        <translation>Failed to export proxies: {0}</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>Success</translation>
+    </message>
+    <message>
+        <source> - PyProxySwitch({0})</source>
+        <translation> - PyProxySwitch({0})</translation>
+    </message>
+    <message>
+        <source>About PyProxySwitch</source>
+        <translation>About PyProxySwitch</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;PyProxySwitch 3.8.0&lt;/h2&gt;&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher based on 3proxy, polipo and IP Relay.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href='http://pyproxyswitch.kder.info'&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation>&lt;h2&gt;PyProxySwitch 3.8.0&lt;/h2&gt;&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher based on 3proxy, polipo and IP Relay.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href='http://pyproxyswitch.kder.info'&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Config</source>
+        <translation>Config</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation>Quit</translation>
+    </message>
+    <message>
+        <source>Text Files (*.txt);;All Files (*)</source>
+        <translation>Text Files (*.txt);;All Files (*)</translation>
+    </message>
+    <message>
+        <source>Validation Error</source>
+        <translation>Validation Error</translation>
+    </message>
+    <message>
+        <source>more</source>
+        <translation>more</translation>
     </message>
 </context></TS>

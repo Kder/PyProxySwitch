@@ -92,6 +92,22 @@ proxy_name address:port username:password proxy_type
         <source>Failed to read proxy list file:</source>
         <translation>读取代理列表文件失败:</translation>
     </message>
+        <message>
+        <source>Valid proxies found:</source>
+        <translation>找到有效代理：</translation>
+    </message>
+    <message>
+        <source>Import Preview</source>
+        <translation>导入预览</translation>
+    </message>
+    <message>
+        <source>Confirm Delete</source>
+        <translation>确认删除</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete this proxy?</source>
+        <translation>您确定要删除此代理吗？</translation>
+    </message>
 </context>
 <context>
     <name>Dialog_AddProxy</name>
@@ -152,6 +168,7 @@ proxy_name address:port username:password proxy_type
         <comment>lable_name</comment>
         <translation>代理名称</translation>
     </message>
+
 </context>
 <context>
     <name>Dialog_Config</name>
@@ -299,6 +316,94 @@ Author website: </source>
 PyProxySwitch cannot start.</source>
         <translation>错误：未找到系统托盘。
 PyProxySwitch无法启动。</translation>
+    </message>
+    <message>
+        <source>Add Proxy</source>
+        <translation>添加代理</translation>
+    </message>
+    <message>
+        <source>Delete Proxy</source>
+        <translation>删除代理</translation>
+    </message>
+    <message>
+        <source>Import Proxies</source>
+        <translation>导入代理</translation>
+    </message>
+    <message>
+        <source>Export Proxies</source>
+        <translation>导出代理</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <source>Port must be between 1 and 65535</source>
+        <translation>端口必须在1到65535之间</translation>
+    </message>
+    <message>
+        <source>Port must be a valid number</source>
+        <translation>端口必须是有效的数字</translation>
+    </message>
+    <message>
+        <source>Please select a proxy to modify</source>
+        <translation>请选择要修改的代理</translation>
+    </message>
+    <message>
+        <source>Invalid proxy file format</source>
+        <translation>无效的代理文件格式</translation>
+    </message>
+    <message>
+        <source>Successfully imported {0} proxies</source>
+        <translation>成功导入了{0}个代理</translation>
+    </message>
+    <message>
+        <source>Failed to import proxies: {0}</source>
+        <translation>导入代理失败: {0}</translation>
+    </message>
+    <message>
+        <source>Proxies exported successfully</source>
+        <translation>代理已成功导出</translation>
+    </message>
+    <message>
+        <source>Failed to export proxies: {0}</source>
+        <translation>导出代理失败: {0}</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>成功</translation>
+    </message>
+    <message>
+        <source> - PyProxySwitch({0})</source>
+        <translation> - PyProxySwitch({0})</translation>
+    </message>
+    <message>
+        <source>About PyProxySwitch</source>
+        <translation>关于PyProxySwitch</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;PyProxySwitch 3.8.0&lt;/h2&gt;&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher based on 3proxy, polipo and IP Relay.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href='http://pyproxyswitch.kder.info'&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation>&lt;h2&gt;PyProxySwitch 3.8.0&lt;/h2&gt;&lt;p&gt;Copyright © 2009-2026 Kder&lt;/p&gt;&lt;p&gt;基于3proxy、polipo和IP Relay的跨平台代理切换程序。&lt;/p&gt;&lt;p&gt;采用Apache许可证2.0授权。&lt;/p&gt;&lt;p&gt;更多信息请访问 &lt;a href='http://pyproxyswitch.kder.info'&gt;http://pyproxyswitch.kder.info&lt;/a&gt;。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Config</source>
+        <translation>设置</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation>退出</translation>
+    </message>
+    <message>
+        <source>Text Files (*.txt);;All Files (*)</source>
+        <translation>文本文件 (*.txt);;所有文件 (*)</translation>
+    </message>
+    <message>
+        <source>Validation Error</source>
+        <translation>验证错误</translation>
+    </message>
+    <message>
+        <source>more</source>
+        <translation>更多</translation>
     </message>
 </context>
 </TS>

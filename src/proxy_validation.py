@@ -10,13 +10,14 @@ import re
 import socket
 import shlex
 from typing import Tuple, Optional, List
-from PySide6.QtGui import QRegularExpressionValidator, QIntValidator, QValidator
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 from PySide6.QtCore import QRegularExpression, Signal, QObject
 from src.logger_config import logger
 
 
 class ValidationError(Exception):
     """验证错误异常"""
+
     pass
 
 
@@ -30,30 +31,31 @@ class ProxyValidator(QObject):
         super().__init__(parent)
 
         # 代理名称验证：允许字母、数字、中文、下划线、连字符，长度限制
-        name_regex = QRegularExpression('[a-zA-Z0-9\u4e00-\u9fa5_\\-]{1,50}')
+        name_regex = QRegularExpression("[a-zA-Z0-9\u4e00-\u9fa5_\\-]{1,50}")
         self.name_validator = QRegularExpressionValidator(name_regex, self)
 
         # 端口验证
         self.port_validator = QIntValidator(1, 65535, self)
 
-        # 地址验证正则表达式
+        # 地址验证正则表达式 - Fixed to properly validate 0-255
+        # Each octet pattern: 0-9, 10-99, 100-199, 200-249, 250-255
         self.ipv4_pattern = re.compile(
-            r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            r"^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$"
         )
         # 使用更简单的IPv6验证，实际使用socket验证
         self.ipv6_pattern = None
         self.domain_pattern = re.compile(
-            r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
+            r"^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$"
         )
 
         # 用户名验证
         self.username_validator = QRegularExpressionValidator(
-            QRegularExpression('[a-zA-Z0-9_\\-@.+]{1,50}'), self
+            QRegularExpression("[a-zA-Z0-9_\\-@.+]{1,50}"), self
         )
 
         # 密码验证（允许更宽松的字符集）
         self.password_validator = QRegularExpressionValidator(
-            QRegularExpression('.{0,100}'), self
+            QRegularExpression(".{0,100}"), self
         )
 
     def validate_proxy_name(self, name: str) -> str:
@@ -79,11 +81,13 @@ class ProxyValidator(QObject):
             raise ValidationError("代理名称长度不能超过50个字符")
 
         # 使用正则表达式直接验证
-        if not re.match(r'^[a-zA-Z0-9\u4e00-\u9fa5_\-]{1,50}$', name):
-            raise ValidationError("代理名称只能包含字母、数字、中文、下划线和连字符，长度1-50")
+        if not re.match(r"^[a-zA-Z0-9\u4e00-\u9fa5_\-]{1,50}$", name):
+            raise ValidationError(
+                "代理名称只能包含字母、数字、中文、下划线和连字符，长度1-50"
+            )
 
         # 检查保留名称
-        reserved_names = {'NoProxy', 'Default', 'System', 'None'}
+        reserved_names = {"NoProxy", "Default", "System", "None"}
         if name in reserved_names:
             raise ValidationError(f"'{name}'是保留名称，不能使用")
 
@@ -107,25 +111,31 @@ class ProxyValidator(QObject):
             raise ValidationError("代理地址不能为空")
 
         # 检查是否包含端口
-        if ':' in address:
+        if ":" in address:
             # 检查是否是IPv6地址带端口 [::1]:8080
-            if address.startswith('[') and ']:' in address:
+            if address.startswith("[") and "]:" in address:
                 # IPv6格式 [2001:db8::1]:8080
-                split_pos = address.rfind(']:')
+                split_pos = address.rfind("]:")
                 if split_pos != -1:
                     address = address[1:split_pos]
-                    port_part = address[split_pos+2:]
+                    port_part = address[split_pos + 2 :]
                     if port_part.isdigit():
                         self.validate_proxy_port(port_part)
-            elif address.count(':') == 1:
+            elif address.count(":") == 1:
                 # 普通格式 IPv4或域名:端口
-                host, port = address.rsplit(':', 1)
+                host, port = address.rsplit(":", 1)
                 if port.isdigit():
                     self.validate_proxy_port(port)
                 address = host
 
+        # 首先检查是否包含危险字符（适用于所有地址格式）
+        dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`"]
+        for char in dangerous_chars:
+            if char in address:
+                raise ValidationError(f"域名包含危险字符: {char}")
+
         # 处理IPv6地址（可能包含方括号）
-        if address.startswith('[') and address.endswith(']'):
+        if address.startswith("[") and address.endswith("]"):
             ipv6_inner = address[1:-1]
             try:
                 # 尝试解析IPv6地址
@@ -133,7 +143,7 @@ class ProxyValidator(QObject):
                 address = ipv6_inner  # 去掉方括号
             except (socket.error, UnicodeError):
                 raise ValidationError("无效的IPv6地址格式")
-        elif ':' in address:
+        elif ":" in address:
             # 可能是IPv6地址
             try:
                 socket.inet_pton(socket.AF_INET6, address)
@@ -141,11 +151,17 @@ class ProxyValidator(QObject):
                 pass
             except (socket.error, UnicodeError):
                 # 不是有效的IPv6，继续检查其他格式
-                if not self.ipv4_pattern.match(address) and not self.domain_pattern.match(address):
+                if not self.ipv4_pattern.match(
+                    address
+                ) and not self.domain_pattern.match(address):
                     raise ValidationError("无效的IP地址或域名格式")
-        elif self.ipv4_pattern.match(address):
-            # 验证IPv4地址
-            parts = address.split('.')
+        # 检查是否为纯数字+点号格式（IP类地址）
+        elif address.replace(".", "").isdigit() and "." in address:
+            # 这是IP类地址，必须符合IPv4格式
+            if not self.ipv4_pattern.match(address):
+                raise ValidationError("无效的IP地址格式")
+            # 额外检查每个八位组
+            parts = address.split(".")
             for part in parts:
                 if int(part) > 255:
                     raise ValidationError("IPv4地址包含无效数值")
@@ -153,12 +169,6 @@ class ProxyValidator(QObject):
             # 验证域名
             if len(address) > 253:
                 raise ValidationError("域名长度不能超过253个字符")
-
-            # 检查是否包含危险字符
-            dangerous_chars = ['<', '>', '"', "'", ';', '|', '&', '`']
-            for char in dangerous_chars:
-                if char in address:
-                    raise ValidationError(f"域名包含危险字符: {char}")
         else:
             raise ValidationError("无效的IP地址或域名格式")
 
@@ -211,7 +221,7 @@ class ProxyValidator(QObject):
         """
         proxy_type = proxy_type.strip().upper()
 
-        valid_types = ['HTTP', 'SOCKS4', 'SOCKS5']
+        valid_types = ["HTTP", "SOCKS4", "SOCKS5"]
 
         if proxy_type not in valid_types:
             raise ValidationError(f"代理类型必须是以下之一: {', '.join(valid_types)}")
@@ -239,7 +249,7 @@ class ProxyValidator(QObject):
             raise ValidationError("用户名长度不能超过50个字符")
 
         # 检查是否包含危险字符
-        dangerous_chars = ['<', '>', '"', "'", ';', '|', '&', '`', '\n', '\r']
+        dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`", "\n", "\r"]
         for char in dangerous_chars:
             if char in username:
                 raise ValidationError(f"用户名包含危险字符: {char}")
@@ -267,14 +277,20 @@ class ProxyValidator(QObject):
             raise ValidationError("密码长度不能超过100个字符")
 
         # 检查是否包含控制字符
-        if any(ord(char) < 32 and char not in ['\t', '\n', '\r'] for char in password):
+        if any(ord(char) < 32 and char not in ["\t", "\n", "\r"] for char in password):
             raise ValidationError("密码包含非法控制字符")
 
         return password
 
-    def validate_full_proxy(self, name: str, address: str, port: str,
-                          proxy_type: str = 'HTTP', username: str = "",
-                          password: str = "") -> Tuple[str, str, int, str, str, str]:
+    def validate_full_proxy(
+        self,
+        name: str,
+        address: str,
+        port: str,
+        proxy_type: str = "HTTP",
+        username: str = "",
+        password: str = "",
+    ) -> Tuple[str, str, str, str, str, str]:
         """完整验证代理的所有参数
 
         Args:
@@ -300,8 +316,14 @@ class ProxyValidator(QObject):
             validated_username = self.validate_username(username)
             validated_password = self.validate_password(password)
 
-            return (validated_name, validated_address, validated_port,
-                   validated_type, validated_username, validated_password)
+            return (
+                validated_name,
+                validated_address,
+                validated_port,
+                validated_type,
+                validated_username,
+                validated_password,
+            )
 
         except ValidationError as e:
             self.validation_error.emit(str(e))
@@ -330,7 +352,77 @@ class BatchImportValidator:
     def __init__(self) -> None:
         self.validator: ProxyValidator = ProxyValidator()
 
-    def validate_batch_line(self, line: str, line_number: int) -> Optional[Tuple]:
+    @staticmethod
+    def parse_proxy_line(line: str) -> Tuple[str, str, str, str, str, str]|None:
+        """解析代理列表行，返回标准化的代理元组(名称, 地址, 端口, 类型, 用户, 密码)"""
+
+        # 跳过空行和注释行
+        if not line.strip() or line.startswith("#"):
+            return None
+
+        # 使用 shlex 进行安全的分词，支持引号和转义字符
+        try:
+            line_items = shlex.split(line.strip())
+        except ValueError:
+            # 如果引号不匹配，尝试使用更宽松的分词
+            line_items = line.strip().split()
+        if len(line_items) < 2:
+            raise ValidationError(
+                f"{line}: 格式错误，至少需要代理名称和地址"
+        )
+        # 解析地址和端口
+        if ":" not in line_items[1]:
+            raise ValidationError(
+                f"{line}: 地址格式错误，必须包含端口（格式：地址:端口）"
+            )
+        user_pass = ["", ""]
+        proxy_type = "HTTP"
+        
+        # 检查最后一个元素是否是代理类型
+        if line_items[-1] in ["HTTP", "SOCKS4", "SOCKS5"]:
+            proxy_type = line_items[-1]
+
+        # 分割地址和端口（从右边分割，支持IPv6）
+        if line_items[1].startswith("[") and "]:" in line_items[1]:
+            # IPv6格式 [2001:db8::1]:8080
+            split_pos = line_items[1].rfind("]:")
+            if split_pos != -1:
+                address = line_items[1][1:split_pos]
+                port = line_items[1][split_pos + 2 :]
+            else:
+                raise ValidationError(f"{line}: IPv6地址格式错误")
+        else:
+            # 普通格式或IPv6不带端口
+            address, port = line_items[1].rsplit(":", 1)
+            # 检查是否是IPv6地址（包含多个冒号）
+            if address.count(":") > 1:
+                # 这可能是IPv6，但我们已经从右边分割了，应该没问题
+                pass
+
+        # 如果有第3个参数，尝试解析用户名:密码
+        if len(line_items) > 2 and line_items[2] not in ["HTTP", "SOCKS4", "SOCKS5"]:
+            if ":" in line_items[2]:
+                user_pass = line_items[2].split(":", 1)
+                if len(user_pass) == 1:
+                    user_pass = [user_pass[0], ""]
+            else:
+                #logger.error(f"proxy format error: {':'.join(line_items)}")
+                raise ValidationError(f"{line}: 代理信息格式错误，每行第三个元素若不是代理类型，则必须是用户名:密码")
+        
+        # 参数大于3，则第4个是代理类型
+        if len(line_items) > 3 and line_items[3] in ["HTTP", "SOCKS4", "SOCKS5"]:
+            proxy_type = line_items[3]
+        
+        return (
+            line_items[0],
+            address,
+            port,
+            proxy_type,
+            user_pass[0],
+            user_pass[1],
+        )
+
+    def validate_batch_line(self, line: str, line_number: int) -> Optional[Tuple[str, str, str, str, str, str]]:
         """验证批量导入的每一行
 
         Args:
@@ -340,67 +432,11 @@ class BatchImportValidator:
         Returns:
             Tuple: 验证后的代理参数元组，验证失败返回None
         """
-        line = line.strip()
-
-        # 跳过空行和注释行
-        if not line or line.startswith('#'):
+        proxy_tuple = self.parse_proxy_line(line)
+        if not proxy_tuple:
             return None
 
-        # 使用 shlex 进行安全的分词，支持引号和转义字符
-        try:
-            parts = shlex.split(line.strip())
-        except ValueError:
-            # 如果引号不匹配，尝试使用更宽松的分词
-            parts = line.strip().split()
-
-        # 检查基本格式
-        if len(parts) < 2:
-            raise ValidationError(
-                f"第{line_number}行: 格式错误，至少需要代理名称和地址"
-            )
-
-        name = parts[0]
-        address_part = parts[1]
-
-        # 解析地址和端口
-        if ':' not in address_part:
-            raise ValidationError(
-                f"第{line_number}行: 地址格式错误，必须包含端口（格式：地址:端口）"
-            )
-
-        # 分割地址和端口（从右边分割，支持IPv6）
-        if address_part.startswith('[') and ']:' in address_part:
-            # IPv6格式 [2001:db8::1]:8080
-            split_pos = address_part.rfind(']:')
-            if split_pos != -1:
-                address = address_part[1:split_pos]
-                port = address_part[split_pos+2:]
-            else:
-                raise ValidationError(
-                    f"第{line_number}行: IPv6地址格式错误"
-                )
-        else:
-            # 普通格式或IPv6不带端口
-            address, port = address_part.rsplit(':', 1)
-            # 检查是否是IPv6地址（包含多个冒号）
-            if address.count(':') > 1:
-                # 这可能是IPv6，但我们已经从右边分割了，应该没问题
-                pass
-
-        proxy_type = 'HTTP'  # 默认
-        username = ""
-        password = ""
-
-        # 如果有更多参数
-        if len(parts) >= 3:
-            # 检查是否是代理类型
-            if parts[2] in ['HTTP', 'SOCKS4', 'SOCKS5']:
-                proxy_type = parts[2]
-                # 如果还有第4个参数，可能是用户名:密码
-                if len(parts) >= 4 and ':' in parts[3]:
-                    username, password = parts[3].split(':', 1)
-            elif ':' in parts[2]:
-                username, password = parts[2].split(':', 1)
+        name, address, port, proxy_type, username, password = proxy_tuple
 
         try:
             return self.validator.validate_full_proxy(
@@ -409,7 +445,7 @@ class BatchImportValidator:
         except ValidationError as e:
             raise ValidationError(f"第{line_number}行: {str(e)}")
 
-    def validate_batch_content(self, content: str) -> List[Tuple]:
+    def validate_batch_content(self, content: str) -> List[Tuple[str, str, str, str, str, str]]:
         """验证批量导入内容
 
         Args:
@@ -422,7 +458,7 @@ class BatchImportValidator:
             ValidationError: 验证失败时抛出
         """
         proxies = []
-        lines = content.split('\n')
+        lines = content.split("\n")
         valid_lines = 0
 
         for i, line in enumerate(lines, 1):

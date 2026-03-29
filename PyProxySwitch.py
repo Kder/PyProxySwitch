@@ -53,11 +53,16 @@ def parse_arguments():
     parser.add_argument(
         "--port",
         type=int,
-        default=8888,
-        help="本地代理端口 (默认: 8888)"
+        default=None,  # 使用None作为默认值，以便区分是否指定了端口
+        help="本地代理端口 (默认: 从配置文件读取)"
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # 标记端口是否被显式指定
+    args.port_specified = args.port is not None
+
+    return args
 
 def check_environment():
     """检查运行环境"""
@@ -99,8 +104,9 @@ def main():
     # 确定日志级别：命令行参数优先，其次配置文件，默认 INFO
     log_level = logging.INFO  # 默认值
     
-    # 尝试从配置文件加载 DEBUG 设置
+    # 尝试从配置文件加载 DEBUG 和 LOCAL_PORT 设置
     config_file = Path(args.config)
+    config_port = None
     if config_file.exists():
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
@@ -108,6 +114,16 @@ def main():
                 # 如果配置文件中 DEBUG 为 1，且未使用 --debug 参数，则使用 DEBUG 级别
                 if not args.debug and config_data.get('DEBUG', 0) == 1:
                     log_level = logging.DEBUG
+
+                # 保存配置文件中的端口值
+                config_port = config_data.get('LOCAL_PORT')
+
+                # 如果配置文件中指定了 LOCAL_PORT，且未使用 --port 参数，则使用配置文件中的端口
+                if not args.port_specified and config_port:
+                    args.port = config_port
+                elif not args.port_specified:
+                    # 如果既没有指定端口，配置文件中也没有，使用默认值8888
+                    args.port = 8888
         except (json.JSONDecodeError, IOError):
             pass  # 配置文件读取失败，继续使用默认级别
     
@@ -126,12 +142,64 @@ def main():
     logger.info("=" * 50)
 
     try:
+        # 检查是否需要重新生成配置文件
+        port_changed = False
+        if args.port_specified and config_port is not None and args.port != config_port:
+            logger.info(f"检测到端口变更: 配置文件端口 {config_port} -> 命令行端口 {args.port}")
+            port_changed = True
+
         # 导入并启动主应用程序
         import src.main
 
+        # 导入必要的模块
+        import src.pps_config as pps_config
+        from src.config import ConfigManager
+
+        # 初始化配置管理器
+        config_mgr = ConfigManager()
+
+        # 如果需要，重新生成配置文件
+        if port_changed:
+            logger.info("正在重新生成代理配置文件...")
+            try:
+                # 更新配置文件中的端口
+                config_mgr.set('LOCAL_PORT', args.port)
+                config_mgr.save()
+
+                # 更新pps_config中的全局CONFIG
+                pps_config.update_config()
+
+                # 重新生成所有配置文件
+                proxies = config_mgr.get_proxies()
+                if proxies:
+                    # 使用独立的函数重新生成配置文件，避免QWidget依赖
+                    pps_config.regenerate_all_configs(proxies, args.port)
+                    logger.info("代理配置文件重新生成完成")
+                else:
+                    logger.info("没有代理配置需要重新生成")
+
+            except Exception as e:
+                logger.error(f"重新生成配置文件失败: {e}")
+                # 继续执行，不阻止程序启动
+
+        # 检查是否有缺失的配置文件
+        try:
+            proxies = config_mgr.get_proxies()
+            if proxies:
+                missing_proxies = pps_config.check_missing_configs(proxies)
+                if missing_proxies:
+                    logger.info(f"检测到 {len(missing_proxies)} 个代理缺失配置文件，正在重新生成...")
+                    pps_config.regenerate_all_configs(proxies, args.port)
+                    logger.info("缺失的配置文件已重新生成")
+                else:
+                    logger.debug("所有代理配置文件完整")
+            else:
+                logger.debug("没有代理配置需要检查")
+        except Exception as e:
+            logger.warning(f"配置文件检查失败: {e}，跳过检查继续启动")
+
         # 启动应用
-        logger.info("正在启动PyProxySwitch应用程序...")
-        src.main.main()
+        src.main.main(log_level=log_level)
 
     except ImportError as e:
         logger.error(f"导入错误: {e}")

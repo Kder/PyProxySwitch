@@ -52,8 +52,12 @@ def setup_logger(
     """
     logger = logging.getLogger(name)
     
-    # 避免重复添加处理器
+    # 避免重复添加处理器，但要更新console_handler的级别
     if logger.handlers:
+        # 更新现有console_handler的级别
+        for handler in logger.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                handler.setLevel(log_level)
         return logger
     
     logger.setLevel(logging.DEBUG)
