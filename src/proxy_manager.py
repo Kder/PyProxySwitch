@@ -9,7 +9,6 @@
 """
 
 import os
-import sys
 import shlex
 import subprocess
 import signal
@@ -92,23 +91,6 @@ class ProxyManager:
             # 进程已退出，获取退出码
             return f"Exited with code: {self.r_process.returncode}"
 
-    def switch_proxy(self, proxy_name: str, proxy_address: str = "",
-                    proxy_port: str = "", proxy_type: str = "HTTP") -> None:
-        """
-        切换到指定的代理
-
-        Args:
-            proxy_name: 代理名称
-            proxy_address: 代理地址（ip_relay模式需要）
-            proxy_port: 代理端口（ip_relay模式需要）
-            proxy_type: 代理类型
-
-        Raises:
-            ProxyStartError: 启动代理失败时抛出
-            ConfigError: 配置错误时抛出
-        """
-        self.start_proxy(proxy_name, proxy_address, proxy_port, proxy_type)
-
     def stop_proxy(self, timeout: int = 5) -> bool:
         """
         停止当前运行的代理
@@ -188,7 +170,8 @@ class ProxyManager:
         # 构建配置文件路径
         # 验证文件名，防止路径遍历
         safe_filename = re.sub(r'[^\w\-\.]', '_', item)
-        conf_path = Path(pps_config.PROGRAM_PATH) / 'cfg' / cmd / (safe_filename + '.conf')
+        # 使用 pps_config.get_backend_config_dir 获取配置目录，并拼接安全的文件名
+        conf_path = pps_config.get_backend_config_dir(cmd) / (safe_filename + '.conf')
         cmd_args = shlex.quote(str(conf_path))
 
         # 3proxy 和 ip_relay 的特殊处理
@@ -274,34 +257,3 @@ class ProxyManager:
             logger.error(f"Unexpected error starting proxy: {e}")
             raise ProxyStartError("Failed to start proxy service", str(e))
 
-    def is_process_running(self) -> bool:
-        """检查代理进程是否正在运行"""
-        return self.r_process is not None and self.r_process.poll() is None
-
-    def get_process_info(self) -> str:
-        """获取进程信息"""
-        if self.r_process is None:
-            return "No process"
-
-        if self.r_process.poll() is None:
-            return f"Running (PID: {self.r_process.pid})"
-        else:
-            # 进程已退出，获取退出码
-            return f"Exited with code: {self.r_process.returncode}"
-
-    def switch_proxy(self, proxy_name: str, proxy_address: str = "",
-                    proxy_port: str = "", proxy_type: str = "HTTP") -> None:
-        """
-        切换到指定的代理
-
-        Args:
-            proxy_name: 代理名称
-            proxy_address: 代理地址（ip_relay模式需要）
-            proxy_port: 代理端口（ip_relay模式需要）
-            proxy_type: 代理类型
-
-        Raises:
-            ProxyStartError: 启动代理失败时抛出
-            ConfigError: 配置错误时抛出
-        """
-        self.start_proxy(proxy_name, proxy_address, proxy_port, proxy_type)

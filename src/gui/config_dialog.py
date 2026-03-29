@@ -99,23 +99,31 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
     def show_context_menu(self, pnt):
         '''显示右键菜单'''
-        menu = QtWidgets.QMenu()
+        # 使用缓存的菜单或创建新菜单
+        if not hasattr(self, '_context_menu'):
+            self._context_menu = QtWidgets.QMenu()
 
-        add_action = menu.addAction(self.tr("Add Proxy"))
-        add_action.triggered.connect(lambda: self.add_proxy())
+            self._add_action = self._context_menu.addAction(self.tr("Add Proxy"))
+            self._add_action.triggered.connect(lambda: self.add_proxy())
 
-        del_action = menu.addAction(self.tr("Delete Proxy"))
-        del_action.triggered.connect(lambda: self.del_proxy())
+            self._del_action = self._context_menu.addAction(self.tr("Delete Proxy"))
+            self._del_action.triggered.connect(lambda: self.del_proxy())
 
-        menu.addSeparator()
+            self._context_menu.addSeparator()
 
-        import_action = menu.addAction(self.tr("Import Proxies"))
-        import_action.triggered.connect(lambda: self.show_batch_dialog())
+            self._import_action = self._context_menu.addAction(self.tr("Import Proxies"))
+            self._import_action.triggered.connect(lambda: self.show_batch_dialog())
 
-        export_action = menu.addAction(self.tr("Export Proxies"))
-        export_action.triggered.connect(lambda: self.export_proxies())
+            self._export_action = self._context_menu.addAction(self.tr("Export Proxies"))
+            self._export_action.triggered.connect(lambda: self.export_proxies())
+        else:
+            # 更新缓存菜单的翻译
+            self._add_action.setText(self.tr("Add Proxy"))
+            self._del_action.setText(self.tr("Delete Proxy"))
+            self._import_action.setText(self.tr("Import Proxies"))
+            self._export_action.setText(self.tr("Export Proxies"))
 
-        menu.exec(self.tableView.mapToGlobal(pnt))
+        self._context_menu.exec(self.tableView.mapToGlobal(pnt))
 
     def show_error(self, message: str):
         '''显示错误消息'''
@@ -125,40 +133,41 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         '''实时改变界面语言'''
         lang = self.langs[idx]
 
-        # 立即加载新语言的翻译器
-        translator_path = str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (lang + '.qm'))
-        translator = QtCore.QTranslator(QtCore.QCoreApplication.instance())
-        translator.load(translator_path)
-        QtCore.QCoreApplication.instance().installTranslator(translator)
-
-        # 重新翻译UI元素
-        self.retranslateUi(self)
-
-        model = self.data_model
-        model.setHeaderData(self.proxy_name, Qt.Horizontal,
-            self.tr('Name', 'Config_Dialog'))
-        model.setHeaderData(self.proxy_address, Qt.Horizontal,
-            self.tr('Address', 'Config_Dialog'))
-        model.setHeaderData(self.proxy_port, Qt.Horizontal,
-            self.tr('Port', 'Config_Dialog'))
-        model.setHeaderData(self.proxy_type, Qt.Horizontal,
-            self.tr('Type', 'Config_Dialog'))
-        model.setHeaderData(self.proxy_user, Qt.Horizontal,
-            self.tr('Username', 'Config_Dialog'))
-        model.setHeaderData(self.proxy_pass, Qt.Horizontal,
-            self.tr('Password', 'Config_Dialog'))
-
-
-
         # 保存新语言设置并通知主窗口
         self._config.set('LANG', lang)
+        self._config.save()
+
         parent = self.parentWidget()
         if hasattr(parent, 'on_language_changed'):
             parent.on_language_changed(lang)
-        # 更新菜单项文本
-        parent.configAction.setText(self.tr("Config"))
-        parent.aboutAction.setText(self.tr("About"))
-        parent.quitAction.setText(self.tr("Quit"))
+
+    def changeEvent(self, event):
+        '''处理语言变更事件'''
+        if event.type() == QtCore.QEvent.LanguageChange:
+            # 重新翻译UI元素
+            self.retranslateUi(self)
+
+            # 更新数据模型的列标题
+            model = self.data_model
+            model.setHeaderData(self.proxy_name, Qt.Horizontal,
+                self.tr('Name', 'Config_Dialog'))
+            model.setHeaderData(self.proxy_address, Qt.Horizontal,
+                self.tr('Address', 'Config_Dialog'))
+            model.setHeaderData(self.proxy_port, Qt.Horizontal,
+                self.tr('Port', 'Config_Dialog'))
+            model.setHeaderData(self.proxy_type, Qt.Horizontal,
+                self.tr('Type', 'Config_Dialog'))
+            model.setHeaderData(self.proxy_user, Qt.Horizontal,
+                self.tr('Username', 'Config_Dialog'))
+            model.setHeaderData(self.proxy_pass, Qt.Horizontal,
+                self.tr('Password', 'Config_Dialog'))
+
+            # 清除右键菜单缓存，强制下次显示时重新创建（使用新语言）
+            if hasattr(self, '_context_menu'):
+                delattr(self, '_context_menu')
+
+        # 调用父类的changeEvent处理其他事件
+        super().changeEvent(event)
 
     def change_cmd(self, idx):
         '''改变代理命令'''
@@ -615,53 +624,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
     def _generate_noproxy_configs(self, local_port):
         """生成NoProxy配置文件"""
-        try:
-            from pathlib import Path
+        pps_config.generate_noproxy_configs(local_port)
 
-            # 生成3proxy NoProxy配置
-            proxy3_dir = Path(pps_config.PROGRAM_PATH) / "cfg" / "3proxy"
-            proxy3_dir.mkdir(parents=True, exist_ok=True)
-
-            example_3proxy = proxy3_dir / "NoProxy.conf.example"
-            noproxy_3proxy = proxy3_dir / "NoProxy.conf"
-
-            if example_3proxy.exists():
-                with open(example_3proxy, 'r', encoding='utf-8') as f:
-                    content = f.read()
-
-                # 替换端口配置
-                # 查找并替换 proxy -n -a -p8888 中的端口
-                import re
-                content = re.sub(r'proxy -n -a -p\d+', f'proxy -n -a -p{local_port}', content)
-
-                with open(noproxy_3proxy, 'w', encoding='utf-8') as f:
-                    f.write(content)
-
-                logger.info(f"Generated 3proxy NoProxy.conf with port {local_port}")
-
-            # 生成polipo NoProxy配置
-            polipo_dir = Path(pps_config.PROGRAM_PATH) / "cfg" / "polipo"
-            polipo_dir.mkdir(parents=True, exist_ok=True)
-
-            example_polipo = polipo_dir / "NoProxy.conf.example"
-            noproxy_polipo = polipo_dir / "NoProxy.conf"
-
-            if example_polipo.exists():
-                with open(example_polipo, 'r', encoding='utf-8') as f:
-                    content = f.read()
-
-                # 替换端口配置
-                # 查找并替换 proxyPort = 8888 中的端口
-                import re
-                content = re.sub(r'proxyPort = \d+', f'proxyPort = {local_port}', content)
-
-                with open(noproxy_polipo, 'w', encoding='utf-8') as f:
-                    f.write(content)
-
-                logger.info(f"Generated polipo NoProxy.conf with port {local_port}")
-
-        except Exception as e:
-            logger.error(f"Failed to generate NoProxy configurations: {e}")
 
     def _generate_backend_configs(self, proxies, local_port=None):
         """生成后端代理配置文件"""

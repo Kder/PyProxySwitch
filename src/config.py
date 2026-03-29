@@ -85,7 +85,7 @@ class ConfigManager:
     _instance: Optional["ConfigManager"] = None
     _initialized: bool = False
 
-    def __new__(cls, config_path: Optional[str] = None, use_singleton: bool = True):
+    def __new__(cls, config_path: Optional[str] = None, proxy_list_path: Optional[str] = None, backend_config_base: Optional[str] = None, use_singleton: bool = True):
         """创建或返回单例实例"""
         # 如果启用单例模式且已有实例，则返回现有实例
         if use_singleton and cls._instance is not None:
@@ -104,6 +104,7 @@ class ConfigManager:
         self,
         config_path: Optional[str] = None,
         proxy_list_path: Optional[str] = None,
+        backend_config_base: Optional[str] = None,
         use_singleton: bool = True,
     ):
         """
@@ -112,6 +113,7 @@ class ConfigManager:
         Args:
             config_path: 配置文件路径，默认为 {PROGRAM_PATH}/cfg/PPS.conf
             proxy_list_path: 代理列表文件路径，默认为 {PROGRAM_PATH}/cfg/proxy.txt
+            backend_config_base: 后端配置基础路径，默认为 {PROGRAM_PATH}/cfg
             use_singleton: 是否使用单例模式（默认True）
         """
         # 单例模式下，防止重复初始化
@@ -149,6 +151,12 @@ class ConfigManager:
             self.proxy_list_path = Path(program_path) / "cfg" / "proxy.txt"
         else:
             self.proxy_list_path = Path(proxy_list_path)
+
+        # 设置后端配置基础路径
+        if backend_config_base is None:
+            self.backend_config_base = Path(program_path) / "cfg"
+        else:
+            self.backend_config_base = Path(backend_config_base)
 
         # 配置数据存储
         self._config: Dict[str, Any] = {}
@@ -360,6 +368,19 @@ class ConfigManager:
     def __repr__(self) -> str:
         """字符串表示"""
         return f"ConfigManager(config_path={self.config_path}, proxies={len(self._proxies)})"
+
+    # ============ 路径管理方法 ============
+    def get_backend_config_dir(self, backend_type: str) -> Path:
+        """获取后端特定的配置目录"""
+        return self.backend_config_base / backend_type
+
+    def get_config_path(self) -> Path:
+        """获取主配置文件路径"""
+        return self.config_path
+
+    def get_proxy_list_path(self) -> Path:
+        """获取代理列表文件路径"""
+        return self.proxy_list_path
 
     # ============ 单例相关方法 ============
     @classmethod

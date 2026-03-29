@@ -43,7 +43,7 @@ class Window(QtWidgets.QDialog):
         """加载并安装翻译器"""
         lang = self._config.get('LANG', 'zh_CN')
         translator_path = str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (lang + '.qm'))
-
+        logger.debug(f"Main Window - loading translator from: {translator_path}")
         # 加载新翻译器
         self.translator.load(translator_path)
 
@@ -56,7 +56,7 @@ class Window(QtWidgets.QDialog):
 
             # 安装新的翻译器
             app.installTranslator(self.translator)
-        # self.retranslateUi(self)
+        #self.retranslateUi(self)
 
         if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
             QtWidgets.QMessageBox.critical(None, self.tr('System Tray'),

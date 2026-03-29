@@ -56,8 +56,8 @@ __author__ = "Kder"
 __copyright__ = "Copyright 2009-2026 Kder"
 __credits__ = ["Kder"]
 
-__version__ = "3.8.0"
-__date__ = "2026-03-17"
+__version__ = "3.9.0"
+__date__ = "2026-03-30"
 __maintainer__ = "Kder"
 __email__ = "<kderlin (#) gmail dot com>"
 __url__ = "http://www.kder.info"
@@ -74,6 +74,9 @@ from pathlib import Path
 from typing import List, Set, Tuple, Dict, Any, Union, Optional
 
 from src.proxy_validation import BatchImportValidator, ValidationError
+
+# 全局变量存储配置管理器实例
+_config_mgr = None
 
 # 延迟导入logger以避免循环依赖
 def _get_logger():
@@ -133,7 +136,7 @@ def cleanup_backend_configs():
         from pathlib import Path
 
         # 清理 3proxy 配置文件
-        proxy3_dir = Path(PROGRAM_PATH) / "cfg" / "3proxy"
+        proxy3_dir = get_backend_config_dir("3proxy")
         if proxy3_dir.exists():
             for conf_file in proxy3_dir.glob("*.conf"):
                 if conf_file.name != "NoProxy.conf":  # 保留NoProxy配置
@@ -143,7 +146,7 @@ def cleanup_backend_configs():
                         _get_logger().warning(f"Failed to remove {conf_file}: {e}")
 
         # 清理 polipo 配置文件
-        polipo_dir = Path(PROGRAM_PATH) / "cfg" / "polipo"
+        polipo_dir = get_backend_config_dir("polipo")
         if polipo_dir.exists():
             for conf_file in polipo_dir.glob("*.conf"):
                 if conf_file.name != "NoProxy.conf":  # 保留NoProxy配置
@@ -163,10 +166,11 @@ def generate_noproxy_configs(local_port):
         import re
 
         # 生成3proxy NoProxy配置
-        proxy3_dir = Path(PROGRAM_PATH) / "cfg" / "3proxy"
+        proxy3_dir = get_backend_config_dir("3proxy")
         proxy3_dir.mkdir(parents=True, exist_ok=True)
 
-        example_3proxy = proxy3_dir / "NoProxy.conf.example"
+        # 示例配置位于程序目录下，下同
+        example_3proxy = Path(PROGRAM_PATH) / "cfg" / "3proxy" / "NoProxy.conf.example"
         noproxy_3proxy = proxy3_dir / "NoProxy.conf"
 
         if example_3proxy.exists():
@@ -182,10 +186,10 @@ def generate_noproxy_configs(local_port):
             _get_logger().info(f"Generated 3proxy NoProxy.conf with port {local_port}")
 
         # 生成polipo NoProxy配置
-        polipo_dir = Path(PROGRAM_PATH) / "cfg" / "polipo"
+        polipo_dir = get_backend_config_dir("polipo")
         polipo_dir.mkdir(parents=True, exist_ok=True)
 
-        example_polipo = polipo_dir / "NoProxy.conf.example"
+        example_polipo = Path(PROGRAM_PATH) / "cfg" / "polipo" / "NoProxy.conf.example"
         noproxy_polipo = polipo_dir / "NoProxy.conf"
 
         if example_polipo.exists():
@@ -260,15 +264,41 @@ def check_missing_configs(proxies):
             proxy_name = proxy[0]
 
             # 检查3proxy配置文件
-            proxy3_path = Path(PROGRAM_PATH) / "cfg" / "3proxy" / f"{proxy_name}.conf"
+            proxy3_path = get_backend_config_dir("3proxy") / f"{proxy_name}.conf"
             # 检查polipo配置文件
-            polipo_path = Path(PROGRAM_PATH) / "cfg" / "polipo" / f"{proxy_name}.conf"
+            polipo_path = get_backend_config_dir("polipo") / f"{proxy_name}.conf"
 
             if not proxy3_path.exists() or not polipo_path.exists():
                 missing_proxies.append(proxy)
                 _get_logger().debug(f"Missing config for proxy {proxy_name}: 3proxy={not proxy3_path.exists()}, polipo={not polipo_path.exists()}")
 
     return missing_proxies
+
+
+def set_config_manager(config_mgr):
+    """设置配置管理器实例用于路径解析"""
+    global _config_mgr
+    _config_mgr = config_mgr
+    _update_paths()
+
+
+def _update_paths():
+    """根据config_mgr更新所有路径"""
+    global CONF, PROXY_LIST
+
+    if _config_mgr:
+        CONF = str(_config_mgr.get_config_path())
+        PROXY_LIST = str(_config_mgr.get_proxy_list_path())
+        # 注意：不修改PROGRAM_PATH，保持静态文件(i18n, bin)路径不变
+
+
+def get_backend_config_dir(backend_type: str) -> Path:
+    """获取后端配置目录"""
+    if _config_mgr:
+        return _config_mgr.get_backend_config_dir(backend_type)
+    else:
+        # 向后兼容：使用原来的硬编码路径
+        return Path(PROGRAM_PATH) / "cfg" / backend_type
 
 
 _ = gettext.translation(
@@ -646,12 +676,16 @@ def add_proxy(
         conf_polipo = conf_file_tpl[ishttp][isauth][0]
 
         try:
-            polipo_path = Path(PROGRAM_PATH) / "cfg" / "polipo" / (proxy_name + ".conf")
+            polipo_dir = get_backend_config_dir("polipo")
+            polipo_dir.mkdir(parents=True, exist_ok=True)
+            polipo_path = polipo_dir / (proxy_name + ".conf")
             with open(polipo_path, "w", encoding="utf-8") as cfg_file:
                 cfg_file.write(conf_polipo)
             # if os.name != 'nt':
             conf_3proxy = conf_file_tpl[ishttp][isauth][1]
-            proxy3_path = Path(PROGRAM_PATH) / "cfg" / "3proxy" / (proxy_name + ".conf")
+            proxy3_dir = get_backend_config_dir("3proxy")
+            proxy3_dir.mkdir(parents=True, exist_ok=True)
+            proxy3_path = proxy3_dir / (proxy_name + ".conf")
             with open(proxy3_path, "w", encoding="utf-8") as cfg_file:
                 cfg_file.write(conf_3proxy)
 
@@ -692,10 +726,10 @@ def del_proxy(proxy: List[str] | Tuple[str, ...] | Set[str]) -> None:
 
         # 移除对应的配置文件
         try:
-            polipo_path = Path(PROGRAM_PATH) / "cfg" / "polipo" / (proxy_name + ".conf")
+            polipo_path = get_backend_config_dir("polipo") / (proxy_name + ".conf")
             os.remove(polipo_path)
             # if os.name != 'nt':
-            proxy3_path = Path(PROGRAM_PATH) / "cfg" / "3proxy" / (proxy_name + ".conf")
+            proxy3_path = get_backend_config_dir("3proxy") / (proxy_name + ".conf")
             os.remove(proxy3_path)
         except OSError:
             pps_output(PPS_MSG["ERR_DEL_FILE"] % proxy_name, "stderr")

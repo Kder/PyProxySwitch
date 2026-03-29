@@ -10,7 +10,7 @@ PyProxySwitch 启动脚本
     python PyProxySwitch.py --debug
     python PyProxySwitch.py --config /path/to/config
 
-版本: 3.8.0
+版本: 3.9.0
 """
 
 import sys
@@ -155,8 +155,22 @@ def main():
         import src.pps_config as pps_config
         from src.config import ConfigManager
 
+        # 根据--config参数计算相关路径
+        config_path = Path(args.config)
+        base_config_dir = config_path.parent
+
+        # 计算相关配置文件路径
+        proxy_list_path = base_config_dir / "proxy.txt"
+
         # 初始化配置管理器
-        config_mgr = ConfigManager()
+        config_mgr = ConfigManager(
+            config_path=str(config_path),
+            proxy_list_path=str(proxy_list_path),
+            backend_config_base=str(base_config_dir)
+        )
+
+        # 设置pps_config使用相同的配置管理器
+        pps_config.set_config_manager(config_mgr)
 
         # 如果需要，重新生成配置文件
         if port_changed:
