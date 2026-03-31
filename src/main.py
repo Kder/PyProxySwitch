@@ -29,7 +29,7 @@ __copyright__ = 'Copyright 2009-2026 Kder'
 __credits__ = ['Kder']
 
 __version__ = '3.9.0'
-__date__ = '2026-03-30'
+__date__ = '2026-04-01'
 __maintainer__ = "Kder"
 __email__ = '[kderlin (#) gmail dot com]'
 __url__ = 'http://www.kder.info'

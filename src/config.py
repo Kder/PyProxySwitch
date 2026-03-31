@@ -35,27 +35,37 @@ __all__ = ["ConfigManager"]
 def _get_logger():
     """获取日志记录器（延迟导入）"""
     try:
-        from .logger_config import logger as _logger
-
-        return _logger
+        from .logger_config import get_logger
+        return get_logger()
     except ImportError:
         import logging
-
         return logging.getLogger("ConfigManager")
 
 
 def _import_pps_funcs():
     """导入pps_config中的函数（延迟导入）"""
     try:
+        # 首先尝试相对导入（在包内部时）
         from . import pps_config
+    except ImportError as e1:
+        try:
+            # 如果相对导入失败，尝试绝对导入
+            import sys
+            import os
+            # 确保项目根目录在路径中
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
 
-        return (
-            pps_config.pps_load_proxylist,
-            pps_config.pps_save_proxylist,
-            pps_config.PROGRAM_PATH,
-        )
-    except ImportError:
-        raise ImportError("无法导入 pps_config 模块")
+            from src import pps_config
+        except ImportError as e2:
+            raise ImportError(f"无法导入 pps_config 模块。相对导入错误: {e1}, 绝对导入错误: {e2}")
+
+    return (
+        pps_config.pps_load_proxylist,
+        pps_config.pps_save_proxylist,
+        pps_config.PROGRAM_PATH,
+    )
 
 
 class ConfigManager:
@@ -237,8 +247,18 @@ class ConfigManager:
             key: 配置键名
             value: 配置值
         """
+        old_value = self._config.get(key)
         self._config[key] = value
         self.logger.debug(f"配置已更新: {key} = {value}")
+
+        # 如果修改了LOG_PATH，更新日志记录器
+        if key == 'LOG_PATH' and old_value != value:
+            try:
+                from .logger_config import update_log_path
+                update_log_path()
+                self.logger.info(f"日志路径已更新: {value or '默认路径'}")
+            except Exception as e:
+                self.logger.warning(f"更新日志路径失败: {e}")
 
     def get_proxies(self) -> List[Tuple[str, str, str, str, str, str]]:
         """
@@ -338,6 +358,7 @@ class ConfigManager:
             "LAST_ITEM": "NoProxy",
             "LOCAL_PORT": 8888,
             "SHOW_WELCOME": 0,
+            "LOG_PATH": "",  # 空字符串表示使用默认路径
         }
 
     # ============ 字典接口兼容性方法 ============

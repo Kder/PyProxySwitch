@@ -5,7 +5,7 @@ PyProxySwitch  版本: 3.9.0
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件
 网站: http://www.kder.info
 项目主页: http://pyproxyswitch.kder.info/
-最近更新: 2026-03-30
+最近更新: 2026-04-01
 许可: Apache License, Version 2.0
     本程序用到了以下三个开源软件的二进制文件：
       3proxy： https://3proxy.org/

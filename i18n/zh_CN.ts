@@ -108,6 +108,22 @@ proxy_name address:port username:password proxy_type
         <source>Are you sure you want to delete this proxy?</source>
         <translation>您确定要删除此代理吗？</translation>
     </message>
+    <message>
+        <source>Add Proxy</source>
+        <translation>添加代理</translation>
+    </message>
+    <message>
+        <source>Delete Proxy</source>
+        <translation>删除代理</translation>
+    </message>
+    <message>
+        <source>Import Proxies</source>
+        <translation>导入代理</translation>
+    </message>
+    <message>
+        <source>Export Proxies</source>
+        <translation>导出代理</translation>
+    </message>
 </context>
 <context>
     <name>Dialog_AddProxy</name>

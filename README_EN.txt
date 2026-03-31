@@ -9,7 +9,7 @@ writen in Python and PySide6. Welcom to send me your feedback if you feel it use
 Author:   Kder <kderlin (#) gmail dot com>
 Author Website:  http://www.kder.info
 Project Website: http://pyproxyswitch.kder.info
-Last Update: 2026-03-30
+Last Update: 2026-04-01
 Licence: Apache License, Version 2.0
          For licence of 3Proxy, polipo & IP Relay,please refer files in 'licenses' directory 
          For more details, visit:

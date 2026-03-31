@@ -109,6 +109,22 @@ proxy_name address:port username:password proxy_type
         <source>Are you sure you want to delete this proxy?</source>
         <translation>Are you sure you want to delete this proxy?</translation>
     </message>
+    <message>
+        <source>Add Proxy</source>
+        <translation>Add Proxy</translation>
+    </message>
+    <message>
+        <source>Delete Proxy</source>
+        <translation>Delete Proxy</translation>
+    </message>
+    <message>
+        <source>Import Proxies</source>
+        <translation>Import Proxies</translation>
+    </message>
+    <message>
+        <source>Export Proxies</source>
+        <translation>Export Proxies</translation>
+    </message>
 </context><context>
     <name>Dialog_AddProxy</name>
     <message>

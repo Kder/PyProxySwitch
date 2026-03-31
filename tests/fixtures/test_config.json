@@ -1,0 +1,7 @@
+{
+    "LANG": "zh_CN",
+    "LOCAL_PORT": 8123,
+    "DEBUG": false,
+    "FIRST_RUN": true,
+    "TEST_MODE": true
+}

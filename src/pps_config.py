@@ -57,7 +57,7 @@ __copyright__ = "Copyright 2009-2026 Kder"
 __credits__ = ["Kder"]
 
 __version__ = "3.9.0"
-__date__ = "2026-03-30"
+__date__ = "2026-04-01"
 __maintainer__ = "Kder"
 __email__ = "<kderlin (#) gmail dot com>"
 __url__ = "http://www.kder.info"
@@ -82,8 +82,8 @@ _config_mgr = None
 def _get_logger():
     """获取已配置的logger"""
     try:
-        from src.logger_config import logger as _logger
-        return _logger
+        from src.logger_config import get_logger
+        return get_logger()
     except ImportError:
         return logging.getLogger(__name__)
 
@@ -431,10 +431,21 @@ def pps_load_proxylist(list_file: str) -> List[Tuple[str, str, str, str, str, st
     try:
         with open(list_file, "r", encoding="utf-8") as l_file:
             for line in l_file.readlines():
-                proxy = BatchImportValidator.parse_proxy_line(line)
-                if proxy:
-                    _get_logger().info(f"pps config loaded proxy: {proxy}")
-                    proxy_list.append(proxy)
+                try:
+                    proxy = BatchImportValidator.parse_proxy_line(line)
+                    if proxy:
+                        _get_logger().info(f"pps config loaded proxy: {proxy}")
+                        proxy_list.append(proxy)
+                except ValidationError:
+                    # 跳过格式错误的行
+                    continue
+                except IndexError as e:
+                    # 只有当错误信息包含"地址格式错误，必须包含端口"时才退出
+                    if "地址格式错误，必须包含端口" in str(e):
+                        raise
+                    else:
+                        # 其他IndexError也跳过
+                        continue
         return proxy_list
     except IndexError:
         pps_output(PPS_MSG["ERR_LOAD_LIST"] % PROXY_LIST, "stderr")

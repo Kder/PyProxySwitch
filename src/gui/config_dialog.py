@@ -65,9 +65,14 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         self.tableView.setAlternatingRowColors(True)
         self.tableView.setSortingEnabled(True)
+        # 启用双击编辑
+        self.tableView.setEditTriggers(QtWidgets.QTableView.DoubleClicked | QtWidgets.QTableView.EditKeyPressed)
         self.tableView.setModel(self.create_model(parent))
         self.data_model = self.tableView.model()
         self.tableView.setCurrentIndex(self.data_model.index(0, 0))
+
+        # 连接数据更改信号
+        self.data_model.dataChanged.connect(self.on_data_changed)
         self.tableView.setColumnWidth(self.proxy_name, 80)
         self.tableView.setColumnWidth(self.proxy_address, 100)
         self.tableView.setColumnWidth(self.proxy_port, 40)
@@ -99,31 +104,24 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
     def show_context_menu(self, pnt):
         '''显示右键菜单'''
-        # 使用缓存的菜单或创建新菜单
-        if not hasattr(self, '_context_menu'):
-            self._context_menu = QtWidgets.QMenu()
+        # 每次都创建新的菜单，确保使用最新的翻译
+        context_menu = QtWidgets.QMenu()
 
-            self._add_action = self._context_menu.addAction(self.tr("Add Proxy"))
-            self._add_action.triggered.connect(lambda: self.add_proxy())
+        add_action = context_menu.addAction(self.tr("Add Proxy"))
+        add_action.triggered.connect(lambda: self.add_proxy())
 
-            self._del_action = self._context_menu.addAction(self.tr("Delete Proxy"))
-            self._del_action.triggered.connect(lambda: self.del_proxy())
+        del_action = context_menu.addAction(self.tr("Delete Proxy"))
+        del_action.triggered.connect(lambda: self.del_proxy())
 
-            self._context_menu.addSeparator()
+        context_menu.addSeparator()
 
-            self._import_action = self._context_menu.addAction(self.tr("Import Proxies"))
-            self._import_action.triggered.connect(lambda: self.show_batch_dialog())
+        import_action = context_menu.addAction(self.tr("Import Proxies"))
+        import_action.triggered.connect(lambda: self.show_batch_dialog())
 
-            self._export_action = self._context_menu.addAction(self.tr("Export Proxies"))
-            self._export_action.triggered.connect(lambda: self.export_proxies())
-        else:
-            # 更新缓存菜单的翻译
-            self._add_action.setText(self.tr("Add Proxy"))
-            self._del_action.setText(self.tr("Delete Proxy"))
-            self._import_action.setText(self.tr("Import Proxies"))
-            self._export_action.setText(self.tr("Export Proxies"))
+        export_action = context_menu.addAction(self.tr("Export Proxies"))
+        export_action.triggered.connect(lambda: self.export_proxies())
 
-        self._context_menu.exec(self.tableView.mapToGlobal(pnt))
+        context_menu.exec(self.tableView.mapToGlobal(pnt))
 
     def show_error(self, message: str):
         '''显示错误消息'''
@@ -228,15 +226,21 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             return False
 
         row = [
-            QStandardItem(name),
-            QStandardItem(address),
-            QStandardItem(port),
-            QStandardItem(ptype),
-            QStandardItem(user),
-            QStandardItem(pwd)
+            self._create_editable_item(name),
+            self._create_editable_item(address),
+            self._create_editable_item(port),
+            self._create_editable_item(ptype),
+            self._create_editable_item(user),
+            self._create_editable_item(pwd)
         ]
         model.appendRow(row)
         return True
+
+    def _create_editable_item(self, text):
+        '''创建可编辑的表格项'''
+        item = QStandardItem(text)
+        item.setEditable(True)
+        return item
 
     def create_model(self, parent):
         '''创建数据模型'''
@@ -263,6 +267,59 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.add_item(model, proxy_data)
 
         return model
+
+    def on_data_changed(self, top_left, bottom_right, roles):
+        '''处理表格数据更改'''
+        # 只处理编辑角色的更改
+        if Qt.EditRole not in roles:
+            return
+
+        row = top_left.row()
+        col = top_left.column()
+        new_value = self.data_model.data(top_left, Qt.EditRole)
+
+        # 验证新值
+        if not self._validate_cell_data(row, col, new_value):
+            # 如果验证失败，恢复原值
+            self._revert_cell_change(row, col)
+            return
+
+        # 保存更改
+        self.save_proxies()
+        self.refresh_menu()
+
+        # 生成后端配置文件
+        proxies = self._config.get_proxies()
+        self._generate_backend_configs(proxies)
+
+    def _validate_cell_data(self, row, col, value):
+        '''验证单元格数据'''
+        try:
+            if col == self.proxy_name:
+                self.validator.validate_proxy_name(value)
+            elif col == self.proxy_address:
+                self.validator.validate_proxy_address(value)
+            elif col == self.proxy_port:
+                self.validator.validate_proxy_port(str(value))
+            elif col == self.proxy_type:
+                self.validator.validate_proxy_type(value)
+            elif col == self.proxy_user:
+                self.validator.validate_username(value)
+            elif col == self.proxy_pass:
+                self.validator.validate_password(value)
+            return True
+        except Exception as e:
+            self.show_error(str(e))
+            return False
+
+    def _revert_cell_change(self, row, col):
+        '''恢复单元格更改'''
+        # 重新从配置加载数据
+        proxies = self._config.get_proxies()
+        if row < len(proxies):
+            proxy = proxies[row]
+            original_value = proxy[col] if col < len(proxy) else ""
+            self.data_model.setData(self.data_model.index(row, col), original_value)
 
     def dialog_checker(self, i):
         '''对话框检查器'''

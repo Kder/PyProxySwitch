@@ -372,9 +372,8 @@ class BatchImportValidator:
         )
         # 解析地址和端口
         if ":" not in line_items[1]:
-            raise ValidationError(
-                f"{line}: 地址格式错误，必须包含端口（格式：地址:端口）"
-            )
+            # 为了与旧行为兼容，抛出IndexError
+            raise IndexError(f"{line}: 地址格式错误，必须包含端口（格式：地址:端口）")
         user_pass = ["", ""]
         proxy_type = "HTTP"
         
@@ -406,8 +405,8 @@ class BatchImportValidator:
                 if len(user_pass) == 1:
                     user_pass = [user_pass[0], ""]
             else:
-                #logger.error(f"proxy format error: {':'.join(line_items)}")
-                raise ValidationError(f"{line}: 代理信息格式错误，每行第三个元素若不是代理类型，则必须是用户名:密码")
+                # 支持单个用户名（没有冒号）
+                user_pass = [line_items[2], ""]
         
         # 参数大于3，则第4个是代理类型
         if len(line_items) > 3 and line_items[3] in ["HTTP", "SOCKS4", "SOCKS5"]:
@@ -432,7 +431,12 @@ class BatchImportValidator:
         Returns:
             Tuple: 验证后的代理参数元组，验证失败返回None
         """
-        proxy_tuple = self.parse_proxy_line(line)
+        try:
+            proxy_tuple = self.parse_proxy_line(line)
+        except IndexError as e:
+            # 将IndexError转换为ValidationError以保持一致性
+            raise ValidationError(str(e))
+
         if not proxy_tuple:
             return None
 
@@ -467,9 +471,13 @@ class BatchImportValidator:
                 if result:
                     proxies.append(result)
                     valid_lines += 1
-            except ValidationError as e:
+            except (ValidationError, IndexError) as e:
                 # 继续验证其他行，但记录错误
-                logger.warning(f"{str(e)}")
+                if logger:
+                    logger.warning(f"{str(e)}")
+                else:
+                    import logging
+                    logging.getLogger(__name__).warning(f"{str(e)}")
 
         if valid_lines == 0:
             raise ValidationError("没有找到有效的代理配置")
