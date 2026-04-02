@@ -304,7 +304,6 @@ class ConfigManager:
         """
         # 转换为内部格式 (名称, 地址, 端口, 类型, 用户名, 密码)
         self._proxies = []
-        #self.logger.info(f"config.py get proxies: {proxies}")
         for proxy in proxies:
             if len(proxy) >= 3:
                 name, address, port = proxy[0], proxy[1], proxy[2]
@@ -312,7 +311,6 @@ class ConfigManager:
                 user = proxy[4] if len(proxy) > 4 else ""
                 pwd = proxy[5] if len(proxy) > 5 else ""
                 self._proxies.append((name, address, port, ptype, user, pwd))
-            #self.logger.debug(f"config.py set: {proxy}")
 
         self.logger.info(f"代理列表已更新，共 {len(self._proxies)} 个代理")
 

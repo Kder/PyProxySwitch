@@ -20,11 +20,9 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
     def __init__(self, parent=None):
         '''初始化UI'''
         super().__init__(parent)
-        # change_language(qApp, pps_config.CONFIG['LANG'])
         self.setupUi(self)
         self.validator = ProxyValidator()
         self.setFixedSize(381, 242)
-        # self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowIcon(QtGui.QIcon(':/img/pps.png'))
         self.le_proxy_name.setFocus()
         self.le_port.setValidator(self.validator.get_port_validator())

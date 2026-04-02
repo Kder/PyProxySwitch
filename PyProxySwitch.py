@@ -16,13 +16,11 @@ PyProxySwitch 启动脚本
 import sys
 import os
 import argparse
+import logging
+import json
 from pathlib import Path
+from src.logger_config import setup_logger
 
-# 添加src目录到Python路径
-#src_path = Path(__file__).parent / "src"
-#sys.path.insert(0, str(src_path))
-
-# 日志配置已移至 src/logger_config.py
 
 def parse_arguments():
     """解析命令行参数"""
@@ -67,8 +65,8 @@ def parse_arguments():
 def check_environment():
     """检查运行环境"""
     # 检查Python版本
-    if sys.version_info < (3, 10):
-        print("错误: 需要Python 3.10或更高版本")
+    if sys.version_info < (3, 9):
+        print("错误: 需要Python 3.9或更高版本")
         print(f"当前Python版本: {sys.version}")
         return False
 
@@ -77,13 +75,6 @@ def check_environment():
     for dir_name in required_dirs:
         if not Path(dir_name).exists():
             print(f"警告: 缺少必要目录 {dir_name}")
-
-    # 检查必要的文件
-    #required_files = ["src/main.py"]
-    #for file_name in required_files:
-    #    if not Path(file_name).exists():
-    #        print(f"错误: 缺少必要文件 {file_name}")
-    #        return False
 
     return True
 
@@ -96,11 +87,6 @@ def main():
     if not check_environment():
         sys.exit(1)
 
-    # 设置日志
-    import logging
-    import json
-    from src.logger_config import setup_logger
-    
     # 确定日志级别：命令行参数优先，其次配置文件，默认 INFO
     log_level = logging.INFO  # 默认值
     

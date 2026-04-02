@@ -73,7 +73,7 @@ import logging
 from pathlib import Path
 from typing import List, Set, Tuple, Dict, Any, Union, Optional
 
-from src.proxy_validation import BatchImportValidator, ValidationError
+from src.proxy_validation import ProxyValidator, BatchImportValidator, ValidationError
 
 # 全局变量存储配置管理器实例
 _config_mgr = None
@@ -112,7 +112,6 @@ def pps_loadcfg(config_file: str) -> Dict[str, Any]:
             if "FISRT_RUN" in config and "FIRST_RUN" not in config:
                 config["FIRST_RUN"] = config.pop("FISRT_RUN")
             return config
-    #    config = imp.load_source('config', CONF)
     except (ValueError, IOError, FileNotFoundError):
         # 在测试环境中，返回默认配置
         if "test" in str(config_file).lower() or "pytest" in sys.argv[0].lower():
@@ -575,9 +574,6 @@ def add_proxy(
     host_port = []
     user_pass = []
 
-    # 导入验证器
-    from src.proxy_validation import ProxyValidator, BatchImportValidator, ValidationError
-
     validator = ProxyValidator()
 
     try:
@@ -692,7 +688,7 @@ def add_proxy(
             polipo_path = polipo_dir / (proxy_name + ".conf")
             with open(polipo_path, "w", encoding="utf-8") as cfg_file:
                 cfg_file.write(conf_polipo)
-            # if os.name != 'nt':
+
             conf_3proxy = conf_file_tpl[ishttp][isauth][1]
             proxy3_dir = get_backend_config_dir("3proxy")
             proxy3_dir.mkdir(parents=True, exist_ok=True)
@@ -739,7 +735,7 @@ def del_proxy(proxy: List[str] | Tuple[str, ...] | Set[str]) -> None:
         try:
             polipo_path = get_backend_config_dir("polipo") / (proxy_name + ".conf")
             os.remove(polipo_path)
-            # if os.name != 'nt':
+
             proxy3_path = get_backend_config_dir("3proxy") / (proxy_name + ".conf")
             os.remove(proxy3_path)
         except OSError:

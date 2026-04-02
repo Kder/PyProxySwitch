@@ -321,16 +321,6 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             original_value = proxy[col] if col < len(proxy) else ""
             self.data_model.setData(self.data_model.index(row, col), original_value)
 
-    def dialog_checker(self, i):
-        '''对话框检查器'''
-        # 验证端口
-        if i == self.proxy_port:
-            return
-
-        # 验证代理类型
-        if i == self.proxy_type:
-            return
-
     def show_batch_dialog(self):
         '''显示批量操作对话框'''
 
@@ -696,17 +686,4 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     
     def done(self, r):
         '''对话框完成时调用'''
-        # # 保存配置
-        # self._config.save()
-
-        # # 生成代理配置文件
-        # try:
-        #     proxies = self._config.get_proxies()
-        #     pps_config.pps_save_proxylist(proxies, pps_config.PROXY_LIST)
-
-        #     # 生成后端配置文件
-        #     self._generate_backend_configs(proxies)
-        # except Exception as e:
-        #     logger.error(f"Failed to save proxy configuration: {e}")
-
         super().done(r)

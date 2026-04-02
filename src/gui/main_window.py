@@ -56,7 +56,6 @@ class Window(QtWidgets.QDialog):
 
             # 安装新的翻译器
             app.installTranslator(self.translator)
-        #self.retranslateUi(self)
 
         if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
             QtWidgets.QMessageBox.critical(None, self.tr('System Tray'),
@@ -64,7 +63,6 @@ class Window(QtWidgets.QDialog):
             'PyProxySwitch cannot start.'))
             sys.exit(1)
 
-        # self.cfg = eval("pps_config.CONFIG['CFG_%s']" % self.cmd)
         self.proxy_list = self._config.get_proxies()
         self.proxy_names = [i[0] for i in self.proxy_list]
 
@@ -72,7 +70,7 @@ class Window(QtWidgets.QDialog):
         self.item_text = self._config.get('LAST_ITEM')
         if self.item_text not in self.proxy_names:
             self.item_text = self._config.get('DEFAULT_ITEM')
-        #
+
         self.item = self.item_text
         self.port = ''
         if self.cmd == 'ip_relay':
