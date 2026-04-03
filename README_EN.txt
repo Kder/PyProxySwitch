@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*- 
 
 PyProxySwitch  Version: 3.9.0
 
