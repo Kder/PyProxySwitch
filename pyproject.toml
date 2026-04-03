@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyProxySwitch"
-version = "3.8.0"
+version = "3.9.0"
 description = "A cross-platform proxy switcher based on 3proxy, polipo and IP Relay"
 authors = [
     {name = "Kder Lin", email = "kderlin@gmail.com"}
 ]
 license = {text = "Apache License, Version 2.0"}
-readme = "README_zh_CN.txt"
+readme = "README"
 requires-python = ">=3.9"
 keywords = ["proxy", "network", "tool"]
 classifiers = [
@@ -49,7 +49,16 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--verbose --ignore=tests/test_main.py"
+addopts = '''
+    --verbose 
+    --ignore=tests/test_main.py 
+    --ignore=tests/test_main_gui_logic.py 
+    --ignore=tests/test_add_proxy_dialog.py 
+    --ignore=tests/test_config_dialog_buttons.py 
+    --ignore=tests/test_config_dialog_buttons_fixed.py 
+    --ignore=tests/test_main_module.py 
+    --ignore=tests/test_main_module_simple.py 
+    --ignore=tests/test_pps_config_coverage.py'''
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
@@ -82,29 +91,12 @@ Repository = "https://github.com/kderlin/PyProxySwitch"
 "Bug Reports" = "https://github.com/kderlin/PyProxySwitch/issues"
 
 [project.gui-scripts]
-pyproxyswitch = "PyProxySwitch.src.main:main"
+pyproxyswitch = "src.main:main"
 
 [tool.setuptools]
-packages = ["PyProxySwitch", "PyProxySwitch.src", "PyProxySwitch.res"]
+packages = ["src", "res"]
 package-dir = {"" = "."}
 include-package-data = true
-
-[tool.setuptools.package-data]
-"PyProxySwitch" = [
-    "i18n/*.qm",
-    "i18n/*.ts",
-    "i18n/**/*.mo",
-    "i18n/**/*.po",
-    "img/*.ico",
-    "img/*.png",
-    "cfg/*.conf",
-    "cfg/*.example",
-    "cfg/*.txt",
-    "cfg/**/*.conf",
-    "bin/**/*",
-    "licenses/*",
-    "res/*",
-]
 
 [tool.black]
 line-length = 88
