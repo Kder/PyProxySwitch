@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*- 
+﻿[![Tests](https://github.com/Kder/PyProxySwitch/actions/workflows/test.yml/badge.svg)](https://github.com/Kder/PyProxySwitch/actions/workflows/test.yml)
 
 PyProxySwitch  版本: 3.9.0
 
@@ -13,16 +13,16 @@ PyProxySwitch  版本: 3.9.0
       iprelay：http://iprelay.sourceforge.net/
     (它们的许可请见licenses目录)
 
-= 简介 =
+# 简介 #
 
     PyProxySwitch(PPS)是一个跨平台的代理切换程序，本程序的主要结构是 本地代理服务器（基于polipo/3proxy/iprelay） + 快速切换父级代理（基于Python+PySide6），实现快速切换各种应用程序（如浏览器等）的代理设置。 
 
-= 用法 =
+# 用法 #
 
     解压后运行PyProxySwitch.py（源代码版本）或者PyProxySwitch.exe（Windows可执行文件版本），然后把浏览器或其他需要设置代理的程序的代理设置为127.0.0.1:8888，右击右下角系统托盘中的图标即可快速切换代理。 
     双击系统托盘图标（或者右击系统托盘图标，点击“设置”），会弹出设置对话框，可进行添加/删除/修改代理、设置本地端口、语言等操作。
 
-== 批量添加代理 ==
+## 批量添加代理 ##
 
     使用src目录下的pps_config.py（Windows平台用bin目录下的pps_config.exe）
     首先将各个代理以“代理名称 代理地址:端口 用户名:密码 代理类型”的形式（代理名称可以是自定义的任何名字,[用户名:密码]仅用于需要认证的代理,一般情况下不需要,可省略。代理类型也可省略（默认是HTTP），支持的类型有SOCKS4和SOCKS5），每行一个，名称不要使用特殊字符/标点符号，最好使用字母、数字和下划线等，如：
@@ -33,19 +33,19 @@ PyProxySwitch  版本: 3.9.0
    （可参考自带的proxy.txt的示例）
     添加到cfg目录下的proxy.txt文件中【必须是UTF-8编码】，双击pps_config.py或pps_config.exe即可批量导入代理。 
 
-== 批量删除代理 ==
+## 批量删除代理 ##
 
     使用bin下的pps_config，用法：pps_config del 代理名称1 代理名称2 代理名称3 …… 
 
     例如 pps_config del test1 test2 
 
-= 自定义代理及菜单项 =
+# 自定义代理及菜单项 #
 
     使用pps_config(py源代码或者exe可执行文件)【推荐】
 
     pps_config 是PyProxySwitch(PPS)的配置程序，可以为PPS添加或者删除代理 
 
-== pps_config用法： ==
+## pps_config用法： ##
 
   添加代理(仅支持添加单个代理，批量添加请使用pps_config配合proxy.txt，见上面的说明)：
 
@@ -65,7 +65,7 @@ PyProxySwitch  版本: 3.9.0
           pps_config del test1 test2 test3
 
 
-==【不推荐】手动设置代理及菜单项==
+## 【不推荐】手动设置代理及菜单项 ##
     cfg目录下的配置文件PPS.conf中可以定义菜单项，3proxy/polipo目录下是各个菜单项对应的配置文件，用户可根据需要进行自定义，其中最主要的是父级代理parentProxy的设置，其他更高级的用法可参见3proxy/polipo/iprelay各自的文档。 
     
     以polipo为例，比如你的代理地址是1.2.3.4:80 ，类型为HTTP：
@@ -79,12 +79,13 @@ PyProxySwitch  版本: 3.9.0
 
     默认的本地代理程序是 polipo（支持内容缓存，功能强大），另外还有3proxy（支持DNS缓存，不支持内容缓存，功能强大）和ip_relay（仅是端口转发，本身无代理功能） 
 
-= 系统要求 =
+# 系统要求 #
 
     * 源代码版本: Python3和PySide6
 
 
-= 更新历史 =
+# 更新历史 #
+    * 3.9.0 界面界面代码重构，改进配置管理和命令行参数支持
     * 3.8.0 重构代码，改进进程处理、异常处理和日志功能 2026-03-17
     * 3.7   迁移至PySide6 2026-03-09
     * 3.6   新增代理验证模块，实现严格的代理参数验证机制；从PyQt4迁移至PyQt6；重构配置处理逻辑；移除过时的构建脚本 2026-03-08
