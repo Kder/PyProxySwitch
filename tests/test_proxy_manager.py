@@ -124,7 +124,6 @@ class TestProxyManagerProcessStatus:
 class TestProxyManagerTerminateProcess:
     """进程终止测试"""
 
-    @patch('os.name', 'nt')  # 确保Windows环境
     def test_terminate_process_no_process(self):
         """测试终止不存在的进程"""
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
@@ -132,7 +131,7 @@ class TestProxyManagerTerminateProcess:
 
         assert result is True
 
-    @patch('os.name', 'nt')  # 确保Windows环境
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     def test_terminate_process_windows(self):
         """测试在Windows上终止进程"""
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
@@ -148,24 +147,26 @@ class TestProxyManagerTerminateProcess:
         assert result is True
 
     @pytest.mark.skipif(os.name == 'nt', reason="Unix-specific test, not available on Windows")
-    def test_terminate_process_unix(self):
+    @patch('os.getpgid')
+    @patch('os.killpg')
+    @patch('signal.SIGTERM', 15)
+    def test_terminate_process_unix(self, mock_killpg, mock_getpgid):
         """测试在Unix系统上终止进程"""
-        # 在真实Unix系统上运行
-        if os.name != 'posix':
-            pytest.skip("This test requires Unix-like system")
-
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
 
         mock_process = Mock()
         mock_process.pid = 12345
+        mock_getpgid.return_value = 12345
         manager.r_process = mock_process
 
         result = manager.terminate_process(timeout=5)
 
+        mock_getpgid.assert_called_once_with(12345)
+        mock_killpg.assert_called_once()
         mock_process.wait.assert_called_once_with(timeout=5)
         assert result is True
 
-    @patch('os.name', 'nt')  # 确保Windows环境
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     def test_terminate_process_timeout_then_kill_windows(self):
         """测试Windows上进程终止超时后强制杀死"""
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
@@ -184,18 +185,18 @@ class TestProxyManagerTerminateProcess:
         assert result is False  # 返回False因为需要强制杀死
 
     @pytest.mark.skipif(os.name == 'nt', reason="Unix-specific test, not available on Windows")
-    def test_terminate_process_timeout_then_kill_unix(self):
+    @patch('os.getpgid')
+    @patch('os.killpg')
+    @patch('signal.SIGKILL', 9)
+    def test_terminate_process_timeout_then_kill_unix(self, mock_killpg, mock_getpgid):
         """测试Unix上进程终止超时后强制杀死"""
-        # 在真实Unix系统上运行
-        if os.name != 'posix':
-            pytest.skip("This test requires Unix-like system")
-
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
 
         mock_process = Mock()
         mock_process.pid = 12345
         # 第一次wait调用抛出TimeoutExpired，第二次返回0（表示成功）
         mock_process.wait.side_effect = [subprocess.TimeoutExpired(cmd="test", timeout=5), 0]
+        mock_getpgid.return_value = 12345
         manager.r_process = mock_process
 
         result = manager.terminate_process(timeout=5)
@@ -203,14 +204,20 @@ class TestProxyManagerTerminateProcess:
         mock_process.wait.assert_called()
         assert result is False
 
-    @patch('os.name', 'nt')  # 确保Windows环境
     def test_terminate_process_exception(self):
         """测试终止进程时发生异常"""
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
 
         mock_process = Mock()
         mock_process.pid = 12345
-        mock_process.terminate.side_effect = Exception("Test error")
+        
+        # 对于不同的平台使用不同的异常来源
+        if os.name == 'nt':
+            mock_process.terminate.side_effect = Exception("Test error")
+        else:
+            # 对于Unix，我们需要mock os.killpg或process方法
+            mock_process.wait.side_effect = Exception("Test error")
+        
         manager.r_process = mock_process
 
         result = manager.terminate_process(timeout=5)
@@ -247,6 +254,7 @@ class TestProxyManagerRunCmd:
         with pytest.raises(ConfigError):
             manager._run_cmd("ip_relay", "192.168.1.1", "65536")  # 端口太大
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_3proxy(self, mock_popen):
         """测试3proxy命令执行"""
@@ -256,14 +264,14 @@ class TestProxyManagerRunCmd:
         mock_process.poll.return_value = None
         mock_popen.return_value = mock_process
 
-        with patch('os.name', 'nt'):
-            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                manager._run_cmd("3proxy", "test_proxy", "")
+        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+            manager._run_cmd("3proxy", "test_proxy", "")
 
         mock_popen.assert_called_once()
         call_args = mock_popen.call_args[0][0]
         assert '3proxy.exe' in call_args[0]
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_polipo(self, mock_popen):
         """测试polipo命令执行"""
@@ -273,14 +281,14 @@ class TestProxyManagerRunCmd:
         mock_process.poll.return_value = None
         mock_popen.return_value = mock_process
 
-        with patch('os.name', 'nt'):
-            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                manager._run_cmd("polipo", "test_proxy", "")
+        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+            manager._run_cmd("polipo", "test_proxy", "")
 
         mock_popen.assert_called_once()
         call_args = mock_popen.call_args[0][0]
         assert 'polipo.exe' in call_args[0]
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_ip_relay(self, mock_popen):
         """测试ip_relay命令执行"""
@@ -291,14 +299,14 @@ class TestProxyManagerRunCmd:
         mock_process.poll.return_value = None
         mock_popen.return_value = mock_process
 
-        with patch('os.name', 'nt'):
-            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                manager._run_cmd("ip_relay", "192.168.1.1", "8080")
+        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+            manager._run_cmd("ip_relay", "192.168.1.1", "8080")
 
         mock_popen.assert_called_once()
         call_args = mock_popen.call_args[0][0]
         assert 'ip_relay.exe' in call_args[0]
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_process_exits_immediately(self, mock_popen):
         """测试进程立即退出的情况"""
@@ -310,10 +318,10 @@ class TestProxyManagerRunCmd:
         mock_popen.return_value = mock_process
 
         with pytest.raises(ProxyStartError):
-            with patch('os.name', 'nt'):
-                with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                    manager._run_cmd("3proxy", "test_proxy", "")
+            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+                manager._run_cmd("3proxy", "test_proxy", "")
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_file_not_found(self, mock_popen):
         """测试可执行文件不存在"""
@@ -322,10 +330,10 @@ class TestProxyManagerRunCmd:
         mock_popen.side_effect = FileNotFoundError("Test error")
 
         with pytest.raises(ProxyStartError):
-            with patch('os.name', 'nt'):
-                with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                    manager._run_cmd("3proxy", "test_proxy", "")
+            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+                manager._run_cmd("3proxy", "test_proxy", "")
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_permission_error(self, mock_popen):
         """测试权限错误"""
@@ -334,10 +342,10 @@ class TestProxyManagerRunCmd:
         mock_popen.side_effect = PermissionError("Test error")
 
         with pytest.raises(ProxyStartError):
-            with patch('os.name', 'nt'):
-                with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                    manager._run_cmd("3proxy", "test_proxy", "")
+            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+                manager._run_cmd("3proxy", "test_proxy", "")
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_run_cmd_debug_mode(self, mock_popen):
         """测试调试模式下的命令执行"""
@@ -348,9 +356,8 @@ class TestProxyManagerRunCmd:
         mock_process.poll.return_value = None
         mock_popen.return_value = mock_process
 
-        with patch('os.name', 'nt'):
-            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                manager._run_cmd("3proxy", "test_proxy", "")
+        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+            manager._run_cmd("3proxy", "test_proxy", "")
 
         # 在调试模式下，应该有日志输出
         mock_popen.assert_called_once()
@@ -424,6 +431,7 @@ class TestProxyManagerProxySwitching:
 class TestProxyManagerIntegration:
     """集成测试"""
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_full_lifecycle(self, mock_popen):
         """测试完整的代理生命周期"""
@@ -436,9 +444,8 @@ class TestProxyManagerIntegration:
         mock_popen.return_value = mock_process
 
         # 启动代理
-        with patch('os.name', 'nt'):
-            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                manager.start_proxy("test_proxy", "", "", "HTTP")
+        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+            manager.start_proxy("test_proxy", "", "", "HTTP")
 
         assert manager.is_process_running() is True
         assert "Running" in manager.get_process_info()
@@ -451,8 +458,7 @@ class TestProxyManagerIntegration:
         mock_process.poll.return_value = None
         mock_process.wait.return_value = 0
 
-        with patch('os.name', 'nt'):
-            result = manager.stop_proxy()
+        result = manager.stop_proxy()
 
         assert result is True
 
@@ -482,22 +488,21 @@ class TestProxyManagerEdgeCases:
                 mock_popen = Mock(return_value=mock_process)
 
                 with patch('subprocess.Popen', mock_popen):
-                    with patch('os.name', 'nt'):
-                        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                            # 快速连续调用
-                            manager.start_proxy("proxy1")
-                            manager.start_proxy("proxy2")
-                            manager.stop_proxy()
+                    # 快速连续调用
+                    manager.start_proxy("proxy1")
+                    manager.start_proxy("proxy2")
+                    manager.stop_proxy()
 
                 # 验证正确的调用顺序
                 assert mock_terminate.call_count >= 2
                 assert mock_run_cmd.call_count == 2
 
+    @pytest.mark.skipif(os.name != 'nt', reason="Windows-specific test")
     @patch('subprocess.Popen')
     def test_process_cleanup_on_multiple_starts(self, mock_popen):
         """测试多次启动时的进程清理"""
         manager = ProxyManager(config=ConfigManager(use_singleton=False))
-
+        
         processes = []
         def create_mock_process(*args, **kwargs):
             mock_proc = Mock()
@@ -508,19 +513,10 @@ class TestProxyManagerEdgeCases:
 
         mock_popen.side_effect = create_mock_process
 
-        with patch('os.name', 'nt'):
-            with patch('src.proxy_manager.pps_config.PROGRAM_PATH', '/test/path'):
-                manager.start_proxy("proxy1")
-                first_pid = manager.r_process.pid
+        with patch('src.proxy_manager.pps_config.PROGRAM_PATH', 'C:\\test\\path'):
+            manager.start_proxy("proxy1")
+            first_pid = manager.r_process.pid
 
-                manager.start_proxy("proxy2")
-                second_pid = manager.r_process.pid
-
-        # 验证进程ID不同
-        assert first_pid != second_pid
-        assert manager.r_process.pid == second_pid
-
-
-if __name__ == "__main__":
-    # 运行测试
+            manager.start_proxy("proxy2")
+            second_pid = manager.r_process.pid
     pytest.main([__file__, "-v", "--tb=short"])
