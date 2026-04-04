@@ -24,6 +24,7 @@ from res.pps_conf_ui import Ui_Dialog_Config
 
 # 导入代理类
 from .delegates import ProxyTypeDelegate, ProxyPortDelegate, ProxyNameDelegate
+from .batch_import_dialog import BatchImportDialog, export_proxies_to_file
 
 
 class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
@@ -323,69 +324,61 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
     def show_batch_dialog(self):
         '''显示批量操作对话框'''
-
-        # 创建批量导入对话框（原版逻辑）
-        import_dlg = QtWidgets.QDialog(self)
-        import_dlg.resize(600, 400)
-        import_dlg.setModal(True)
-        import_dlg.setWindowTitle(self.tr('Batch Add/Modify/Delete Proxy'))
-
-        # 创建提示信息
-        lbl_text = self.tr(
-        'Please use the following syntax for one proxy per line:\n\n'
-        'proxy_name address:port username:password proxy_type\n\n'
-        '"username" and "password" are only required when the proxy needs '
-        'authorization.\n'
-        '"proxy_type" can be HTTP, SOCKS4 or SOCKS5.\n\n'
-        )
-        # 添加示例代码（不需要翻译）
-        lbl_text += (
-        'Example:\n'
-        'my_proxy 192.168.1.100:8080\n'
-        'auth_proxy 10.0.0.1:3120 user:pass HTTP\n'
-        'socks_proxy 203.0.113.5:1080 SOCKS5\n\n'
-        )
-
-        lbl_tip = QtWidgets.QLabel(lbl_text, import_dlg)
-        lbl_tip.setWordWrap(True)
-        lbl_tip.setIndent(2)
-
-        # 创建错误信息显示区域
-        lbl_error = QtWidgets.QLabel(import_dlg)
-        lbl_error.setStyleSheet("color: red;")
-        lbl_error.setWordWrap(True)
-        lbl_error.hide()
-
         # 读取原始内容
         try:
             with open(pps_config.PROXY_LIST, 'r', encoding='utf-8') as f:
-                orgin_str = f.read()
+                initial_content = f.read()
         except Exception as e:
-            orgin_str = ""
-            error_msg = self.tr('Failed to read proxy list file:') + ' ' + str(e)
-            lbl_error.setText(error_msg)
-            lbl_error.show()
+            initial_content = ""
+            logger.warning(f"Failed to read proxy list file: {e}")
 
-        txt_editor = QtWidgets.QPlainTextEdit(orgin_str, self)
+        # 使用新的批量导入对话框
+        dialog = BatchImportDialog(self, initial_content)
+        dialog.import_completed.connect(
+            lambda proxies: self._on_batch_import_completed(proxies, dialog)
+        )
 
-        # 添加预览按钮
-        btn_preview = QtWidgets.QPushButton(self.tr('Preview'))
-        btn_preview.clicked.connect(lambda: self.preview_import(txt_editor.toPlainText(), lbl_error))
+        if dialog.exec() == QtWidgets.QDialog.Accepted:
+            self._process_batch_import(dialog.get_valid_proxies())
 
-        btnbox = QtWidgets.QDialogButtonBox(import_dlg)
-        btnbox.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Cancel |
-            QtWidgets.QDialogButtonBox.StandardButton.Ok)
-        btnbox.accepted.connect(lambda: self.confirm_import(txt_editor.toPlainText(), import_dlg))
-        btnbox.rejected.connect(import_dlg.reject)
+    def _on_batch_import_completed(self, proxies, dialog):
+        """批量导入完成回调"""
+        self._process_batch_import(proxies)
+        dialog.accept()
 
-        layout = QtWidgets.QGridLayout(import_dlg)
-        layout.addWidget(lbl_tip, 0, 0, 1, 2)
-        layout.addWidget(txt_editor, 1, 0, 1, 2)
-        layout.addWidget(lbl_error, 2, 0, 1, 2)
-        layout.addWidget(btn_preview, 3, 0)
-        layout.addWidget(btnbox, 3, 1)
-        import_dlg.setLayout(layout)
-        import_dlg.exec()
+    def _process_batch_import(self, valid_proxies):
+        """处理批量导入结果"""
+        if not valid_proxies:
+            return
+
+        # 转换代理数据格式以匹配配置管理器
+        proxy_list = [list(proxy) for proxy in valid_proxies]
+
+        # 更新配置管理器
+        self._config.set_proxies(proxy_list)
+
+        # 保存到文件
+        with open(pps_config.PROXY_LIST, 'w', encoding='utf-8') as outfile:
+            for proxy in valid_proxies:
+                if proxy[4] and proxy[5]:  # 有用户名和密码
+                    line = f'{proxy[0]} {proxy[1]}:{proxy[2]} {proxy[4]}:{proxy[5]} {proxy[3]}\n'
+                elif proxy[3] != 'HTTP':  # 特殊类型
+                    line = f'{proxy[0]} {proxy[1]}:{proxy[2]} {proxy[3]}\n'
+                else:  # 普通HTTP
+                    line = f'{proxy[0]} {proxy[1]}:{proxy[2]}\n'
+                outfile.write(line)
+
+        # 更新界面
+        self.data_model = self.create_model(self.parentWidget())
+        self.tableView.setModel(self.data_model)
+
+        # 保存并刷新
+        self._config.save()
+        self.refresh_menu()
+
+        # 生成后端配置文件
+        proxies = self._config.get_proxies()
+        self._generate_backend_configs(proxies)
 
     def add_proxy(self):
         '''添加代理'''
@@ -505,151 +498,20 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         else:
             logger.warning("Parent widget does not have refresh_menu method")
 
-    def preview_import(self, content: str, error_label: QtWidgets.QLabel):
-        """预览批量导入的代理配置"""
-        error_label.hide()
-
-        try:
-            # 验证批量内容
-            valid_proxies: List[Tuple[str, str, str, str, str, str]] = self.batch_validator.validate_batch_content(content)
-
-            # 显示预览信息
-            preview_text = self.tr('Valid proxies found:')
-            preview_text += '\n\n'
-            for i, proxy in enumerate(valid_proxies[:10], 1):  # 最多显示10个
-                preview_text += f'{i}. {proxy[0]} - {proxy[1]}:{proxy[2]} ({proxy[3]})\n'
-
-            if len(valid_proxies) > 10:
-                preview_text += '\n... and ' + str(len(valid_proxies) - 10) + ' ' + self.tr('more')
-
-            QtWidgets.QMessageBox.information(
-                self,
-                self.tr('Import Preview'),
-                preview_text,
-                QtWidgets.QMessageBox.StandardButton.Ok
-            )
-
-        except Exception as e:
-            error_label.setText(str(e))
-            error_label.show()
-
-    def confirm_import(self, content: str, dialog: QtWidgets.QDialog):
-        """确认导入代理配置"""
-        try:
-            # 验证并获取有效的代理
-            valid_proxies: List[Tuple[str, str, str, str, str, str]] = self.batch_validator.validate_batch_content(content)
-
-            if not valid_proxies:
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    self.tr('Import Failed'),
-                    self.tr('No valid proxies found.'),
-                    QtWidgets.QMessageBox.StandardButton.Ok
-                )
-                return
-
-            # 转换代理数据格式以匹配配置管理器
-            proxy_list = []
-            for proxy in valid_proxies:
-                proxy_list.append(list(proxy))
-
-            # 更新配置管理器
-            self._config.set_proxies(proxy_list)
-
-            # 保存到文件
-            with open(pps_config.PROXY_LIST, 'w', encoding='utf-8') as outfile:
-                for proxy in valid_proxies:
-                    # 格式: name address:port type username password
-                    if proxy[4] and proxy[5]:  # 有用户名和密码
-                        line = f'{proxy[0]} {proxy[1]}:{proxy[2]} {proxy[4]}:{proxy[5]} {proxy[3]}\n'
-                    elif proxy[3] != 'HTTP':  # 特殊类型
-                        line = f'{proxy[0]} {proxy[1]}:{proxy[2]} {proxy[3]}\n'
-                    else:  # 普通HTTP
-                        line = f'{proxy[0]} {proxy[1]}:{proxy[2]}\n'
-                    outfile.write(line)
-
-            # 更新界面 - 创建新模型（会从更新后的配置管理器加载数据）
-            self.data_model = self.create_model(self.parentWidget())
-            self.tableView.setModel(self.data_model)
-
-            # 保存配置到文件
-            self._config.save()
-            self.refresh_menu()
-
-            # 生成后端配置文件
-            proxies = self._config.get_proxies()
-            self._generate_backend_configs(proxies)
-
-            dialog.accept()
-
-
-        except Exception as e:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr('Import Failed'),
-                str(e),
-                QtWidgets.QMessageBox.StandardButton.Ok
-            )
-
-    def import_proxies(self):
-        '''批量导入代理（保留原有功能作为备选）'''
-        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, self.tr("Import Proxies"), "", self.tr("Text Files (*.txt);;All Files (*)"))
-
-        if file_name:
-            try:
-                with open(file_name, 'r', encoding='utf-8') as f:
-                    content = f.read()
-
-                # 验证批量导入内容
-                proxies = self.batch_validator.validate_batch_content(content)
-                if proxies is None:
-                    self.show_error(self.tr("Invalid proxy file format"))
-                    return
-
-                # 添加到模型
-                for proxy in proxies:
-                    self.add_item(self.data_model, proxy)
-
-                self.save_proxies()
-                # 生成后端配置文件
-                proxies = self._config.get_proxies()
-                self._generate_backend_configs(proxies)
-                QtWidgets.QMessageBox.information(self, self.tr("Success"),
-                                                  self.tr(f"Successfully imported {len(proxies)} proxies"))
-
-            except Exception as e:
-                self.show_error(self.tr(f"Failed to import proxies: {str(e)}"))
-
     def export_proxies(self):
         '''导出代理'''
-        file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, self.tr("Export Proxies"), "proxies.txt",
-            self.tr("Text Files (*.txt);;All Files (*)"))
+        # 收集代理数据
+        proxies = []
+        for row in range(self.data_model.rowCount()):
+            name = self.data_model.data(self.data_model.index(row, self.proxy_name))
+            address = self.data_model.data(self.data_model.index(row, self.proxy_address))
+            port = self.data_model.data(self.data_model.index(row, self.proxy_port))
+            ptype = self.data_model.data(self.data_model.index(row, self.proxy_type))
+            user = self.data_model.data(self.data_model.index(row, self.proxy_user))
+            pwd = self.data_model.data(self.data_model.index(row, self.proxy_pass))
+            proxies.append([name, address, port, ptype, user, pwd])
 
-        if file_name:
-            try:
-                with open(file_name, 'w', encoding='utf-8') as f:
-                    for row in range(self.data_model.rowCount()):
-                        name = self.data_model.data(self.data_model.index(row, self.proxy_name))
-                        address = self.data_model.data(self.data_model.index(row, self.proxy_address))
-                        port = self.data_model.data(self.data_model.index(row, self.proxy_port))
-                        ptype = self.data_model.data(self.data_model.index(row, self.proxy_type))
-                        user = self.data_model.data(self.data_model.index(row, self.proxy_user))
-                        pwd = self.data_model.data(self.data_model.index(row, self.proxy_pass))
-
-                        line = f"{name} {address}:{port}"
-                        if user or pwd:
-                            line += f" {user}:{pwd}"
-                        if ptype != "HTTP":
-                            line += f" {ptype}"
-                        f.write(line + "\n")
-
-                QtWidgets.QMessageBox.information(self, self.tr("Success"),
-                                                  self.tr("Proxies exported successfully"))
-
-            except Exception as e:
-                self.show_error(self.tr(f"Failed to export proxies: {str(e)}"))
+        export_proxies_to_file(self, proxies)
 
     def save_proxies(self):
         '''保存代理到配置文件'''

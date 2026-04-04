@@ -124,9 +124,40 @@ CONFIG = pps_loadcfg(CONF)
 
 
 def update_config():
-    """更新全局CONFIG变量，用于在运行时重新加载配置"""
+    """更新全局CONFIG变量，用于在运行时重新加载配置
+
+    注意：推荐使用 ConfigManager 单例来管理配置。
+    此函数保留是为了向后兼容。
+    """
     global CONFIG
     CONFIG = pps_loadcfg(CONF)
+    # 同时更新翻译
+    global _
+    _ = gettext.translation(
+        "pps_config", str(Path(PROGRAM_PATH) / "i18n"), [CONFIG["LANG"]]
+    ).gettext
+
+
+def get_config() -> Dict[str, Any]:
+    """获取当前配置（推荐使用 ConfigManager）
+
+    Returns:
+        当前配置字典
+    """
+    return CONFIG
+
+
+def get_local_port() -> int:
+    """获取本地代理端口
+
+    优先使用 ConfigManager 单例，回退到全局 CONFIG。
+
+    Returns:
+        本地端口号
+    """
+    if _config_mgr:
+        return _config_mgr.get('LOCAL_PORT', 8888)
+    return CONFIG.get('LOCAL_PORT', 8888)
 
 
 def cleanup_backend_configs():
@@ -478,7 +509,7 @@ def pps_save_proxylist(
 
 def pps_exc_handle() -> None:
     """PPS异常处理函数"""
-    if CONFIG["DEBUG"] == 1:
+    if get_config().get("DEBUG") == 1:
         traceback.print_exc()
 
 
@@ -626,29 +657,31 @@ def add_proxy(
             "SOCKS5": ["socks5", "socks5+"],
         }
 
+        local_port = get_local_port()
+
         conf_file_tpl = {
             True: {
                 True: [
                     (
                         f"parentProxy = {host_port_str}\r\n"
                         f"parentAuthCredentials = {user_pass[0]}:{user_pass[1]}\r\n"
-                        f"proxyPort = {CONFIG['LOCAL_PORT']}\r\n"
+                        f"proxyPort = {local_port}\r\n"
                     ),
                     (
                         f"internal 127.0.0.1\r\n"
                         f"auth iponly\r\n"
                         f"allow * 127.0.0.1\r\n"
                         f"parent 1000 http {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]}\r\n"
-                        f"socks -n -a -p{CONFIG['LOCAL_PORT']}\r\n"
+                        f"socks -n -a -p{local_port}\r\n"
                     ),
                 ],
                 False: [
-                    f"parentProxy = {host_port_str}\r\nproxyPort = {CONFIG['LOCAL_PORT']}\r\n",
+                    f"parentProxy = {host_port_str}\r\nproxyPort = {local_port}\r\n",
                     f"internal 127.0.0.1\r\n"
                     f"auth iponly\r\n"
                     f"allow * 127.0.0.1\r\n"
                     f"parent 1000 http {host_port[0]} {host_port[1]}\r\n"
-                    f"socks -n -a -p{CONFIG['LOCAL_PORT']}\r\n",
+                    f"socks -n -a -p{local_port}\r\n",
                 ],
             },
             False: {
@@ -657,25 +690,25 @@ def add_proxy(
                         f"socksProxyType = {type_map[proxy_type][0]}\r\n"
                         f"parentAuthCredentials = {user_pass[0]}:{user_pass[1]}\r\n"
                         f"socksParentProxy = {host_port_str}\r\n"
-                        f"proxyPort = {CONFIG['LOCAL_PORT']}\r\n"
+                        f"proxyPort = {local_port}\r\n"
                     ),
                     (
                         f"internal 127.0.0.1\r\n"
                         f"auth iponly\r\n"
                         f"allow * 127.0.0.1\r\n"
                         f"parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]}\r\n"
-                        f"socks -n -a -p{CONFIG['LOCAL_PORT']}\r\n"
+                        f"socks -n -a -p{local_port}\r\n"
                     ),
                 ],
                 False: [
                     f"socksProxyType = {type_map[proxy_type][0]}\r\n"
                     f"socksParentProxy = {host_port_str}\r\n"
-                    f"proxyPort = {CONFIG['LOCAL_PORT']}\r\n",
+                    f"proxyPort = {local_port}\r\n",
                     f"internal 127.0.0.1\r\n"
                     f"auth iponly\r\n"
                     f"allow * 127.0.0.1\r\n"
                     f"parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]}\r\n"
-                    f"socks -n -a -p{CONFIG['LOCAL_PORT']}\r\n",
+                    f"socks -n -a -p{local_port}\r\n",
                 ],
             },
         }

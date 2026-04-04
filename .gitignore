@@ -2,8 +2,11 @@
 .pytest_cache/
 .ruff_cache/
 .vscode/
+.mypy_cache/
 utils/
+__pycache__/
 */__pycache__/
+htmlcov/
 dist
 PyProxySwitch.build/
 AGENTS.md
@@ -18,3 +21,4 @@ coverage.xml
 *.egg-info/
 *.egg
 logs/*
+nonexistent_test_dir/
