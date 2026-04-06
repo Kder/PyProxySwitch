@@ -19,7 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-from src.logger_config import setup_logger
+from src.logger_config import get_logger
 
 
 def parse_arguments():
@@ -117,7 +117,12 @@ def main():
     if args.debug:
         log_level = logging.DEBUG
 
-    logger = setup_logger(log_level=log_level)
+    logger = get_logger()
+
+    # 确保console handler的级别正确
+    for handler in logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            handler.setLevel(log_level)
 
     logger.info("=" * 50)
     logger.info("PyProxySwitch 启动")
@@ -125,6 +130,7 @@ def main():
     logger.info(f"工作目录: {os.getcwd()}")
     logger.info(f"配置文件: {args.config}")
     logger.info(f"本地端口: {args.port}")
+    logger.info(f"日志级别: {logger.level}")
     logger.info("=" * 50)
 
     try:

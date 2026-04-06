@@ -63,7 +63,7 @@ def setup_logger(
     # 设置日志格式化器
     formatter = Formatter()
 
-    # 控制台处理器（仅显示 INFO 及以上级别）
+    # 控制台处理器（根据传入的级别过滤）
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)

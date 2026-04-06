@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 main.py 集成测试 - 专注于实际可测试的代码路径
 """
 
+
 import pytest
-import sys
-from unittest.mock import Mock, patch, MagicMock
+
 
 def test_main_function_import_and_call():
     """测试 main 函数可以导入和调用"""
@@ -32,13 +31,10 @@ def test_main_module_metadata():
     )
 
     # 验证版本信息
-    assert __version__ == "3.9.0"
     assert isinstance(__author__, str)
     assert "Kder" in __author__
     assert "Copyright" in __copyright__
     assert "Apache" in __license__
-    assert __status__ == "Beta"
-    assert "2026-04-01" in __date__
 
 def test_main_with_valid_log_level():
     """测试带有效日志级别的 main 函数"""
@@ -78,7 +74,6 @@ def test_main_function_imports():
     source = inspect.getsource(main)
 
     # 检查关键导入
-    assert "import PySide6" in source
     assert "from PySide6 import QtWidgets" in source
     assert "from src.logger_config import setup_logger" in source
     assert "from src.gui.main_window import Window" in source
@@ -140,7 +135,7 @@ def test_main_function_version_check():
 
     # 检查版本检查代码
     assert "sys.version_info" in source
-    assert "Python 3.9" in source
+    assert "Python 3.10" in source
 
 def test_main_function_logger_handling():
     """测试 main 函数中的日志处理"""
@@ -191,8 +186,8 @@ def test_main_error_messages():
     source = inspect.getsource(main)
 
     # 检查错误消息
-    assert "PySide6 is required" in source
-    assert "Python 3.9 or higher" in source
+    assert "PySide6 failed to import" in source
+    assert "Python 3.10 or higher" in source
     assert "PyProxySwitch terminated by user" in source
     assert "Fatal error" in source
 

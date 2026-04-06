@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any  # noqa: E402, UP035
+
 """
 PyProxySwitch 配置管理模块
 
@@ -14,18 +18,14 @@ PyProxySwitch 配置管理模块
     cmd = config.get('CMD')
     config.set('LAST_ITEM', 'proxy1')
     config.save()
-    
+
     # 测试环境（使用自定义配置目录）
     config = ConfigManager(config_path='/tmp/test_config.json')
-    
+
     # 禁用单例（每次创建新实例）
     config1 = ConfigManager(use_singleton=False)
     config2 = ConfigManager(use_singleton=False)  # 不同的实例
 """
-
-import json
-from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
 
 __all__ = ["ConfigManager"]
 
@@ -49,8 +49,8 @@ def _import_pps_funcs():
     except ImportError as e1:
         try:
             # 如果相对导入失败，尝试绝对导入
-            import sys
             import os
+            import sys
             # 确保项目根目录在路径中
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             if project_root not in sys.path:
@@ -58,7 +58,7 @@ def _import_pps_funcs():
 
             from src import pps_config
         except ImportError as e2:
-            raise ImportError(f"无法导入 pps_config 模块。相对导入错误: {e1}, 绝对导入错误: {e2}")
+            raise ImportError(f"无法导入 pps_config 模块。相对导入错误: {e1}, 绝对导入错误: {e2}") from e2
 
     return (
         pps_config.pps_load_proxylist,
@@ -91,10 +91,10 @@ class ConfigManager:
         names = config.get_proxy_names()
     """
 
-    _instance: Optional["ConfigManager"] = None
+    _instance: ConfigManager | None = None
     _initialized: bool = False
 
-    def __new__(cls, config_path: Optional[str] = None, proxy_list_path: Optional[str] = None, backend_config_base: Optional[str] = None, use_singleton: bool = True):
+    def __new__(cls, config_path: str | None = None, proxy_list_path: str | None = None, backend_config_base: str | None = None, use_singleton: bool = True):
         """创建或返回单例实例"""
         # 如果启用单例模式且已有实例，则返回现有实例
         if use_singleton and cls._instance is not None:
@@ -111,9 +111,9 @@ class ConfigManager:
 
     def __init__(
         self,
-        config_path: Optional[str] = None,
-        proxy_list_path: Optional[str] = None,
-        backend_config_base: Optional[str] = None,
+        config_path: str | None = None,
+        proxy_list_path: str | None = None,
+        backend_config_base: str | None = None,
         use_singleton: bool = True,
     ):
         """
@@ -168,9 +168,9 @@ class ConfigManager:
             self.backend_config_base = Path(backend_config_base)
 
         # 配置数据存储
-        self._config: Dict[str, Any] = {}
-        self._proxies: List[Tuple[str, str, str, str, str, str]] = []
-        self._proxy_names: List[str] = []
+        self._config: dict[str, Any] = {}
+        self._proxies: list[tuple[str, str, str, str, str, str]] = []
+        self._proxy_names: list[str] = []
 
         # 加载配置和代理列表
         self.load()
@@ -183,7 +183,7 @@ class ConfigManager:
         try:
             # 加载配置文件
             if self.config_path.exists():
-                with open(self.config_path, "r", encoding="utf-8") as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     self._config = json.load(f)
                 self.logger.debug(f"配置文件已加载: {self.config_path}")
             else:
@@ -197,7 +197,7 @@ class ConfigManager:
 
             # 加载代理列表
             self._load_proxies()
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             self.logger.error(f"加载配置失败: {e}")
             self._config = self._get_default_config()
             self._proxies = []
@@ -259,7 +259,7 @@ class ConfigManager:
             except Exception as e:
                 self.logger.warning(f"更新日志路径失败: {e}")
 
-    def get_proxies(self) -> List[Tuple[str, str, str, str, str, str]]:
+    def get_proxies(self) -> list[tuple[str, str, str, str, str, str]]:
         """
         获取代理列表
 
@@ -268,7 +268,7 @@ class ConfigManager:
         """
         return self._proxies
 
-    def get_proxy_names(self) -> List[str]:
+    def get_proxy_names(self) -> list[str]:
         """
         获取代理名称列表
 
@@ -291,10 +291,10 @@ class ConfigManager:
                 json.dump(self._config, f, indent=2, sort_keys=True, ensure_ascii=False)
 
             self.logger.info(f"配置已保存: {self.config_path}")
-        except IOError as e:
+        except OSError as e:
             self.logger.error(f"保存配置失败: {e}")
 
-    def set_proxies(self, proxies: List[List[str]]) -> None:
+    def set_proxies(self, proxies: list[list[str]]) -> None:
         """
         设置代理列表
 
@@ -328,7 +328,7 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"保存代理列表失败: {e}")
 
-    def update(self, update_dict: Dict[str, Any]) -> None:
+    def update(self, update_dict: dict[str, Any]) -> None:
         """
         批量更新配置
 
@@ -344,7 +344,7 @@ class ConfigManager:
         self.logger.info("配置已重置为默认值")
 
     @staticmethod
-    def _get_default_config() -> Dict[str, Any]:
+    def _get_default_config() -> dict[str, Any]:
         """获取默认配置"""
         return {
             "CMD": "3proxy",
@@ -402,7 +402,7 @@ class ConfigManager:
 
     # ============ 单例相关方法 ============
     @classmethod
-    def get_instance(cls) -> Optional["ConfigManager"]:
+    def get_instance(cls) -> ConfigManager | None:
         """获取单例实例（如果已创建）"""
         return cls._instance
 

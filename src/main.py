@@ -51,18 +51,27 @@ def main(log_level=None):
         sys.exit(1)
     try:
         # 导入必要的模块
+        import logging
+
         from src.gui.main_window import Window
         from src.logger_config import setup_logger
 
-        # 设置日志（使用传入的log_level，如果没有传入则使用默认值）
-        setup_logger(log_level=log_level)
-        from src.logger_config import logger
+        root_logger = logging.getLogger('PyProxySwitch')
+        # 检查是否已经有logger配置，如果没有才重新配置
+        if not root_logger.handlers:
+            logger = setup_logger(log_level=log_level)
+        else:
+            # 如果已经有handler，直接使用现有logger并更新其级别
+            logger = root_logger
+            # 确保控制台处理器的级别正确
+            for handler in logger.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(log_level)
 
         # 检查Python版本
         if sys.version_info < (3, 10):
-            print("Error: PyProxySwitch requires Python 3.10 or higher")
+            logger.error("Error: PyProxySwitch requires Python 3.10 or higher")
             sys.exit(1)
-
 
         # 设置应用程序
         app = QtWidgets.QApplication(sys.argv)

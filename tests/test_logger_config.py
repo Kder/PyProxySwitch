@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 PyProxySwitch 日志配置模块测试
@@ -162,22 +161,6 @@ class TestSetupLogger:
                 handler, logging.FileHandler
             ):
                 assert handler.level == logging.WARNING
-
-
-class TestLoggerModule:
-    """模块级 logger 测试"""
-
-    def test_default_logger_exists(self):
-        """测试默认 logger 存在"""
-        assert logger is not None
-
-    def test_default_logger_name(self):
-        """测试默认 logger 名称"""
-        assert "PyProxySwitch" in logger.name or logger.name == "PyProxySwitch"
-
-    def test_default_logger_has_handlers(self):
-        """测试默认 logger 有处理器"""
-        assert len(logger.handlers) >= 1
 
 
 class TestLogLevels:

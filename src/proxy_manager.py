@@ -18,7 +18,9 @@ from pathlib import Path
 import src.pps_config as pps_config
 from src.config import ConfigManager
 from src.errors import ConfigError, ProxyStartError
-from src.logger_config import logger
+from src.logger_config import get_logger
+
+logger = get_logger()
 
 
 class ProxyManager:
