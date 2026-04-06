@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 添加代理对话框模块 - 用于添加单个代理的对话框
@@ -9,10 +8,9 @@
 
 from PySide6 import QtGui, QtWidgets
 
-from src.proxy_validation import ProxyValidator, ValidationError
-
 # 导入UI文件
 from res.add_proxy_ui import Ui_Dialog_AddProxy
+from src.proxy_validation import ProxyValidator, ValidationError
 
 
 class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
@@ -65,7 +63,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
         '''显示验证错误信息'''
         QtWidgets.QMessageBox.warning(
             self,
-            self.tr('验证错误'),
+            self.tr('Validation Error'),
             message,
             QtWidgets.QMessageBox.StandardButton.Ok
         )

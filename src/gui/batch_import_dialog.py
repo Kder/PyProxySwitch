@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 批量导入对话框模块
@@ -7,12 +6,10 @@
 提供批量导入/导出代理的功能，从 config_dialog.py 中抽取。
 """
 
-from typing import List, Optional, Tuple
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
 
-from src.logger_config import logger
 from src.proxy_validation import BatchImportValidator, ValidationError
 
 
@@ -20,9 +17,9 @@ class BatchImportDialog(QtWidgets.QDialog):
     """批量导入代理对话框"""
 
     # 信号：导入完成时发出
-    import_completed = Signal(list)  # List[Tuple[str, str, str, str, str, str]]
+    import_completed = Signal(list)  # list[tuple[str, str, str, str, str, str]]
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None,
+    def __init__(self, parent: QtWidgets.QWidget | None = None,
                  initial_content: str = ""):
         """初始化对话框
 
@@ -32,7 +29,7 @@ class BatchImportDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
         self._validator = BatchImportValidator()
-        self._valid_proxies: List[Tuple[str, str, str, str, str, str]] = []
+        self._valid_proxies: list[tuple[str, str, str, str, str, str]] = []
 
         self._setup_ui(initial_content)
 
@@ -49,8 +46,6 @@ class BatchImportDialog(QtWidgets.QDialog):
             '"username" and "password" are only required when the proxy needs '
             'authorization.\n'
             '"proxy_type" can be HTTP, SOCKS4 or SOCKS5.\n\n'
-        )
-        lbl_text += (
             'Example:\n'
             'my_proxy 192.168.1.100:8080\n'
             'auth_proxy 10.0.0.1:3120 user:pass HTTP\n'
@@ -159,7 +154,7 @@ class BatchImportDialog(QtWidgets.QDialog):
                 QtWidgets.QMessageBox.StandardButton.Ok
             )
 
-    def get_valid_proxies(self) -> List[Tuple[str, str, str, str, str, str]]:
+    def get_valid_proxies(self) -> list[tuple[str, str, str, str, str, str]]:
         """获取验证通过的代理列表"""
         return self._valid_proxies
 
@@ -171,84 +166,61 @@ class BatchImportDialog(QtWidgets.QDialog):
         """设置文本编辑器内容"""
         self._txt_editor.setPlainText(content)
 
+    @staticmethod
+    def export_proxies_to_file(
+        self,
+        proxies: list[list[str]]
+    ) -> bool:
+        """导出代理到文件
 
-def show_batch_import_dialog(
-    parent: Optional[QtWidgets.QWidget] = None,
-    initial_content: str = ""
-) -> Optional[List[Tuple[str, str, str, str, str, str]]]:
-    """显示批量导入对话框的便捷函数
+        Args:
+            proxies: 代理列表，每项为 [name, address, port, type, user, password]
 
-    Args:
-        parent: 父窗口
-        initial_content: 初始内容
+        Returns:
+            是否成功导出
+        """
+        file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            self.tr("Export Proxies"), # if self else "Export Proxies",
+            "proxies.txt",
+            self.tr("Text Files (*.txt);;All Files (*)")
+        )
 
-    Returns:
-        验证通过的代理列表，如果取消则返回 None
-    """
-    dialog = BatchImportDialog(parent, initial_content)
-    result = dialog.exec()
+        if not file_name:
+            return False
 
-    if result == QtWidgets.QDialog.Accepted:
-        return dialog.get_valid_proxies()
-    return None
+        try:
+            with open(file_name, "w", encoding="utf-8") as f:
+                for proxy in proxies:
+                    if len(proxy) < 4:
+                        continue
+                    name = proxy[0]
+                    address = proxy[1]
+                    port = proxy[2]
+                    ptype = proxy[3] if len(proxy) > 3 else "HTTP"
+                    user = proxy[4] if len(proxy) > 4 else ""
+                    pwd = proxy[5] if len(proxy) > 5 else ""
 
+                    line = f"{name} {address}:{port}"
+                    if user or pwd:
+                        line += f" {user}:{pwd}"
+                    if ptype != "HTTP":
+                        line += f" {ptype}"
+                    f.write(line + "\n")
 
-def export_proxies_to_file(
-    parent: Optional[QtWidgets.QWidget],
-    proxies: List[List[str]]
-) -> bool:
-    """导出代理到文件
+            if self:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    self.tr("Success"),
+                    self.tr("Proxies exported successfully")
+                )
+            return True
 
-    Args:
-        parent: 父窗口
-        proxies: 代理列表，每项为 [name, address, port, type, user, password]
-
-    Returns:
-        是否成功导出
-    """
-    file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
-        parent,
-        parent.tr("Export Proxies") if parent else "Export Proxies",
-        "proxies.txt",
-        "Text Files (*.txt);;All Files (*)"
-    )
-
-    if not file_name:
-        return False
-
-    try:
-        with open(file_name, "w", encoding="utf-8") as f:
-            for proxy in proxies:
-                if len(proxy) < 4:
-                    continue
-                name = proxy[0]
-                address = proxy[1]
-                port = proxy[2]
-                ptype = proxy[3] if len(proxy) > 3 else "HTTP"
-                user = proxy[4] if len(proxy) > 4 else ""
-                pwd = proxy[5] if len(proxy) > 5 else ""
-
-                line = f"{name} {address}:{port}"
-                if user or pwd:
-                    line += f" {user}:{pwd}"
-                if ptype != "HTTP":
-                    line += f" {ptype}"
-                f.write(line + "\n")
-
-        if parent:
-            QtWidgets.QMessageBox.information(
-                parent,
-                parent.tr("Success"),
-                parent.tr("Proxies exported successfully")
-            )
-        return True
-
-    except Exception as e:
-        logger.error(f"Failed to export proxies: {e}")
-        if parent:
-            QtWidgets.QMessageBox.critical(
-                parent,
-                parent.tr("Error"),
-                parent.tr(f"Failed to export proxies: {str(e)}")
-            )
-        return False
+        except Exception as e:
+            if self:
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    self.tr("Error"),
+                    f'{self.tr("Failed to export proxies")}: {str(e)}'
+                )
+            return False

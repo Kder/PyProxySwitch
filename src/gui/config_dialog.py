@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 配置对话框模块 - 包含代理配置和应用程序设置界面
@@ -7,24 +6,23 @@
 此模块包含Config_Dialog类，负责代理列表管理和应用程序配置。
 """
 
-from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QStandardItemModel, QStandardItem
-from src.logger_config import logger
-from src.config import ConfigManager
-from src.proxy_validation import ProxyValidator, BatchImportValidator
-import src.pps_config as pps_config
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 
-from typing import List, Tuple
+import src.pps_config as pps_config
 
 # 导入UI文件
 from res.pps_conf_ui import Ui_Dialog_Config
+from src.config import ConfigManager
+from src.logger_config import logger
+from src.proxy_validation import BatchImportValidator, ProxyValidator
+
+from .batch_import_dialog import BatchImportDialog
 
 # 导入代理类
-from .delegates import ProxyTypeDelegate, ProxyPortDelegate, ProxyNameDelegate
-from .batch_import_dialog import BatchImportDialog, export_proxies_to_file
+from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
 
 
 class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
@@ -326,11 +324,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         '''显示批量操作对话框'''
         # 读取原始内容
         try:
-            with open(pps_config.PROXY_LIST, 'r', encoding='utf-8') as f:
+            with open(pps_config.PROXY_LIST, encoding='utf-8') as f:
                 initial_content = f.read()
         except Exception as e:
             initial_content = ""
-            logger.warning(f"Failed to read proxy list file: {e}")
+            errmsg = self.tr("Failed to read proxy list file")
+            logger.warning(f'{errmsg}: {e}')
 
         # 使用新的批量导入对话框
         dialog = BatchImportDialog(self, initial_content)
@@ -511,7 +510,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             pwd = self.data_model.data(self.data_model.index(row, self.proxy_pass))
             proxies.append([name, address, port, ptype, user, pwd])
 
-        export_proxies_to_file(self, proxies)
+        BatchImportDialog.export_proxies_to_file(self, proxies)
 
     def save_proxies(self):
         '''保存代理到配置文件'''
@@ -529,7 +528,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         self._config.set_proxies(proxies)
         self._config.save_proxies()
-   
+
 
     def _generate_noproxy_configs(self, local_port):
         """生成NoProxy配置文件"""
@@ -545,7 +544,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         """清理后端配置文件"""
         pps_config.cleanup_configs()
 
-    
+
     def done(self, r):
         '''对话框完成时调用'''
         super().done(r)

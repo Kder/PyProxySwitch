@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # Copyright 2009-2026 Kder
 #
@@ -464,7 +463,7 @@ def pps_load_proxylist(list_file: str) -> List[Tuple[str, str, str, str, str, st
                 try:
                     proxy = BatchImportValidator.parse_proxy_line(line)
                     if proxy:
-                        _get_logger().info(f"pps config loaded proxy: {proxy}")
+                        # _get_logger().info(f"pps config loaded proxy: {proxy}")
                         proxy_list.append(proxy)
                 except ValidationError:
                     # 跳过格式错误的行

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 主窗口模块 - 包含系统托盘界面和主窗口逻辑
@@ -11,19 +10,19 @@ import sys
 from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QLibraryInfo, Slot
 
-from src.logger_config import logger
-from src.config import ConfigManager
-from src.proxy_manager import ProxyManager
 import src.pps_config as pps_config
+from src.config import ConfigManager
+from src.logger_config import logger
+from src.proxy_manager import ProxyManager
 
 
 class Window(QtWidgets.QDialog):
     '''主程序UI'''
     def __init__(self) -> None:
         '''初始化系统托盘图标和菜单'''
-        super(Window, self).__init__()
+        super().__init__()
 
         # 初始化配置管理器（单例模式）
         self._config = ConfigManager()
@@ -37,16 +36,27 @@ class Window(QtWidgets.QDialog):
 
         # 初始化翻译器
         self.translator = QtCore.QTranslator(self)
+        self.translator_qt = QtCore.QTranslator(self)
         self._load_translator()
+
 
     def _load_translator(self) -> None:
         """加载并安装翻译器"""
         lang = self._config.get('LANG', 'zh_CN')
+        stdtranslator_path = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
         translator_path = str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (lang + '.qm'))
         logger.debug(f"Main Window - loading translator from: {translator_path}")
         # 加载新翻译器
-        self.translator.load(translator_path)
-
+        if not self.translator_qt.load(QtCore.QLocale(lang), "qtbase", "_", stdtranslator_path):
+            logger.warning(f"QT base translator failed to load from: {stdtranslator_path}. "
+                           f"Standard buttons may not be translated.")
+        else:
+            logger.debug("QT translator loaded.")
+        if not self.translator.load(translator_path):
+            logger.warning(f"Translator failed to load from: {translator_path}. "
+                f"UI may not be translated.")
+        else:
+            logger.debug("Translator loaded.")
         # 确保只有一个翻译器被安装
         app = QtCore.QCoreApplication.instance()
         if app:
@@ -55,6 +65,7 @@ class Window(QtWidgets.QDialog):
                 app.removeTranslator(translator)
 
             # 安装新的翻译器
+            app.installTranslator(self.translator_qt)
             app.installTranslator(self.translator)
 
         if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
