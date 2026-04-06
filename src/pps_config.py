@@ -63,16 +63,16 @@ __url__ = "http://www.kder.info"
 __license__ = "Apache License, Version 2.0"
 __status__ = "Beta"
 
+import gettext
+import json
+import logging
 import os
 import sys
 import traceback
-import json
-import gettext
-import logging
 from pathlib import Path
-from typing import List, Set, Tuple, Dict, Any, Union, Optional
+from typing import Any
 
-from src.proxy_validation import ProxyValidator, BatchImportValidator, ValidationError
+from src.proxy_validation import BatchImportValidator, ProxyValidator, ValidationError
 
 # 全局变量存储配置管理器实例
 _config_mgr = None
@@ -90,10 +90,7 @@ try:
     PATH0 = str(Path(__file__).parent)
 except NameError:
     PATH0 = str(Path(sys.path[0]).parent)
-if Path(PATH0).is_file():
-    PROGRAM_PATH = str(Path(PATH0).parent.parent)
-else:
-    PROGRAM_PATH = str(Path(PATH0).parent)
+PROGRAM_PATH = str(Path(PATH0).parent.parent) if Path(PATH0).is_file() else str(Path(PATH0).parent)
 CONF = str(Path(PROGRAM_PATH) / "cfg" / "PPS.conf")
 PROXY_LIST = str(Path(PROGRAM_PATH) / "cfg" / "proxy.txt")
 
@@ -103,15 +100,15 @@ def setup_paths():
     pass
 
 
-def pps_loadcfg(config_file: str) -> Dict[str, Any]:
+def pps_loadcfg(config_file: str) -> dict[str, Any]:
     """加载程序配置文件"""
     try:
-        with open(config_file, "r", encoding="utf-8") as json_file:
+        with open(config_file, encoding="utf-8") as json_file:
             config = json.load(json_file)
             if "FISRT_RUN" in config and "FIRST_RUN" not in config:
                 config["FIRST_RUN"] = config.pop("FISRT_RUN")
             return config
-    except (ValueError, IOError, FileNotFoundError):
+    except (OSError, ValueError, FileNotFoundError):
         # 在测试环境中，返回默认配置
         if "test" in str(config_file).lower() or "pytest" in sys.argv[0].lower():
             return {"LANG": "en", "LOCAL_PORT": 8123, "DEBUG": False, "FIRST_RUN": True}
@@ -137,7 +134,7 @@ def update_config():
     ).gettext
 
 
-def get_config() -> Dict[str, Any]:
+def get_config() -> dict[str, Any]:
     """获取当前配置（推荐使用 ConfigManager）
 
     Returns:
@@ -162,8 +159,6 @@ def get_local_port() -> int:
 def cleanup_backend_configs():
     """清理现有的后端配置文件（独立函数，不依赖QWidget）"""
     try:
-        from pathlib import Path
-
         # 清理 3proxy 配置文件
         proxy3_dir = get_backend_config_dir("3proxy")
         if proxy3_dir.exists():
@@ -191,8 +186,8 @@ def cleanup_backend_configs():
 def generate_noproxy_configs(local_port):
     """生成NoProxy配置文件（独立函数，不依赖QWidget）"""
     try:
-        from pathlib import Path
         import re
+        from pathlib import Path
 
         # 生成3proxy NoProxy配置
         proxy3_dir = get_backend_config_dir("3proxy")
@@ -203,7 +198,7 @@ def generate_noproxy_configs(local_port):
         noproxy_3proxy = proxy3_dir / "NoProxy.conf"
 
         if example_3proxy.exists():
-            with open(example_3proxy, 'r', encoding='utf-8') as f:
+            with open(example_3proxy, encoding='utf-8') as f:
                 content = f.read()
 
             # 替换端口配置
@@ -222,7 +217,7 @@ def generate_noproxy_configs(local_port):
         noproxy_polipo = polipo_dir / "NoProxy.conf"
 
         if example_polipo.exists():
-            with open(example_polipo, 'r', encoding='utf-8') as f:
+            with open(example_polipo, encoding='utf-8') as f:
                 content = f.read()
 
             # 替换端口配置
@@ -254,7 +249,6 @@ def regenerate_all_configs(proxies, local_port):
                 # 确保代理数据格式正确
                 proxy_name = proxy[0]
                 proxy_data = list(proxy)
-                
 
                 # 添加默认值以确保格式正确
                 while len(proxy_data) < 6:
@@ -452,13 +446,13 @@ def pps_output(msg: str, dest: str = "stdout") -> None:
         sys.stdout.buffer.write(msg.encode("utf-8") + b"\n")
 
 
-def pps_load_proxylist(list_file: str) -> List[Tuple[str, str, str, str, str, str]]:
+def pps_load_proxylist(list_file: str) -> list[tuple[str, str, str, str, str, str]]:
     """从文件加载代理列表，返回一个6元组(名称, 地址, 端口, 类型, 用户, 密码)
     组成的代理列表
     """
-    proxy_list:List[Tuple[str, str, str, str, str, str]] = []
+    proxy_list:list[tuple[str, str, str, str, str, str]] = []
     try:
-        with open(list_file, "r", encoding="utf-8") as l_file:
+        with open(list_file, encoding="utf-8") as l_file:
             for line in l_file.readlines():
                 try:
                     proxy = BatchImportValidator.parse_proxy_line(line)
@@ -486,7 +480,7 @@ PROXY_NAMES = [p_item[0] for p_item in PROXIES]
 
 
 def pps_save_proxylist(
-    proxies: List[Tuple[str, ...]] | List[str], list_file: str
+    proxies: list[tuple[str, ...]] | list[str], list_file: str
 ) -> None:
     """保存代理列表到文件，列表可为元组的列表或字符串的列表"""
     try:
@@ -512,19 +506,19 @@ def pps_exc_handle() -> None:
         traceback.print_exc()
 
 
-def pps_savecfg(config_dict: Dict[str, Any]) -> None:
+def pps_savecfg(config_dict: dict[str, Any]) -> None:
     """保存程序配置字典到配置文件
     Use json to dump the config dict to file"""
     try:
         with open(CONF, "w", encoding="utf-8") as c_file:
             json.dump(config_dict, c_file, indent=2, sort_keys=True)
-    except (IOError, TypeError):
+    except (OSError, TypeError):
         pps_exc_handle()
     # ~ return out_str
 
 
 def _build_proxy_line_from_params(
-    proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = "HTTP"
+    proxy: list[str] | tuple[str, ...], proxy_type: str = "HTTP"
 ) -> str:
     """
     将代理参数构建为proxy_line格式，以便复用parse_proxy_line
@@ -590,8 +584,8 @@ def _build_proxy_line_from_params(
 
 
 def add_proxy(
-    proxy: Union[List[str], Tuple[str, ...]], proxy_type: str = "HTTP"
-) -> Optional[Tuple[str, str, str, str, str, str]]:
+    proxy: list[str] | tuple[str, ...], proxy_type: str = "HTTP"
+) -> tuple[str, str, str, str, str, str] | None:
     """添加代理，proxy为一包含(名称, 地址, 端口, 类型, 用户, 密码)
     的列表或元组
     """
@@ -728,7 +722,7 @@ def add_proxy(
             with open(proxy3_path, "w", encoding="utf-8") as cfg_file:
                 cfg_file.write(conf_3proxy)
 
-        except IOError:
+        except OSError:
             pps_output(PPS_MSG["ERR_SAVE_CFG"])
             pps_exc_handle()
             if __name__ == "__main__":
@@ -749,7 +743,7 @@ def add_proxy(
         pps_output(PPS_MSG["ERR_CMD_FORMAT"] + PPS_MSG["USAGE_ADD"])
 
 
-def del_proxy(proxy: List[str] | Tuple[str, ...] | Set[str]) -> None:
+def del_proxy(proxy: list[str] | tuple[str, ...] | set[str]) -> None:
     """删除代理项，proxy为一由代理名称组成的序列（元组、列表或集合）"""
     deleted = True
 
@@ -793,7 +787,7 @@ if __name__ == "__main__":
 
     # 批量添加代理
     elif ACTION is None:
-        with open(PROXY_LIST, "r", encoding="utf-8") as file1:
+        with open(PROXY_LIST, encoding="utf-8") as file1:
             for proxy_line in file1.readlines():
                 proxy_item = proxy_line.split()
                 if proxy_item[-1] in ["HTTP", "SOCKS4", "SOCKS5"]:

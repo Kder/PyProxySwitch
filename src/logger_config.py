@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 PyProxySwitch 日志系统配置
@@ -9,12 +8,11 @@ PyProxySwitch 日志系统配置
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Optional
 
 
 class Formatter(logging.Formatter):
     """自定义日志格式化器，根据日志级别使用不同的格式"""
-    
+
     FORMATS = {
         logging.DEBUG: "%(asctime)s - %(name)s - [DEBUG] - %(message)s [%(filename)s:%(lineno)d]",
         logging.INFO: "%(asctime)s - %(name)s - [INFO] - %(message)s",
@@ -22,7 +20,7 @@ class Formatter(logging.Formatter):
         logging.ERROR: "%(asctime)s - %(name)s - [ERROR] - %(message)s [%(filename)s:%(lineno)d]",
         logging.CRITICAL: "%(asctime)s - %(name)s - [CRITICAL] - %(message)s [%(filename)s:%(lineno)d]",
     }
-    
+
     def format(self, record):
         """根据日志级别选择适当的格式"""
         log_format = self.FORMATS.get(record.levelno)
@@ -32,26 +30,26 @@ class Formatter(logging.Formatter):
 
 def setup_logger(
     name: str = 'PyProxySwitch',
-    log_dir: Optional[Path] = None,
+    log_dir: Path | None = None,
     log_level: int = logging.INFO,
     max_bytes: int = 5 * 1024 * 1024,  # 5MB
     backup_count: int = 3
 ) -> logging.Logger:
     """
     配置日志记录器
-    
+
     Args:
         name: 记录器名称
         log_dir: 日志目录，如果为None则使用默认目录
         log_level: 日志级别（默认 INFO）
         max_bytes: 日志文件最大大小（默认 5MB）
         backup_count: 备份文件数量（默认 3）
-        
+
     Returns:
         logging.Logger: 配置的记录器
     """
     logger = logging.getLogger(name)
-    
+
     # 避免重复添加处理器，但要更新console_handler的级别
     if logger.handlers:
         # 更新现有console_handler的级别
@@ -59,18 +57,18 @@ def setup_logger(
             if isinstance(handler, logging.StreamHandler):
                 handler.setLevel(log_level)
         return logger
-    
+
     logger.setLevel(logging.DEBUG)
-    
+
     # 设置日志格式化器
     formatter = Formatter()
-    
+
     # 控制台处理器（仅显示 INFO 及以上级别）
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    
+
     # 文件处理器（记录所有级别）
     if log_dir is None:
         # 尝试从配置管理器获取自定义日志路径
@@ -95,7 +93,7 @@ def setup_logger(
     except Exception as e:
         # 如果无法创建指定目录，回退到默认路径
         import warnings
-        warnings.warn(f"无法创建日志目录 {log_dir}: {e}，使用默认路径")
+        warnings.warn(f"无法创建日志目录 {log_dir}: {e}，使用默认路径", stacklevel=2)
         log_dir = Path(__file__).parent.parent / 'logs'
         try:
             log_dir.mkdir(exist_ok=True, parents=True)
@@ -114,11 +112,11 @@ def setup_logger(
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    
+
     return logger
 
 
-def update_log_path(new_log_dir: Optional[Path] = None) -> None:
+def update_log_path(new_log_dir: Path | None = None) -> None:
     """
     更新日志文件路径
 
@@ -154,7 +152,7 @@ def update_log_path(new_log_dir: Optional[Path] = None) -> None:
             raise Exception("Directory creation failed")
     except Exception as e:
         import warnings
-        warnings.warn(f"无法创建日志目录 {new_log_dir}: {e}，使用默认路径")
+        warnings.warn(f"无法创建日志目录 {new_log_dir}: {e}，使用默认路径", stacklevel=2)
         new_log_dir = Path(__file__).parent.parent / 'logs'
         try:
             new_log_dir.mkdir(exist_ok=True, parents=True)

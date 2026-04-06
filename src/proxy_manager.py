@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 代理管理器模块
@@ -9,18 +8,17 @@
 """
 
 import os
-import shlex
-import subprocess
-import signal
-import time
 import re
+import shlex
+import signal
+import subprocess
+import time
 from pathlib import Path
-from typing import Optional, Tuple, List
 
-from src.logger_config import logger
-from src.errors import ProxyStartError, ProxyStopError, ConfigError
-from src.config import ConfigManager
 import src.pps_config as pps_config
+from src.config import ConfigManager
+from src.errors import ConfigError, ProxyStartError
+from src.logger_config import logger
 
 
 class ProxyManager:
@@ -30,7 +28,7 @@ class ProxyManager:
     此类包含所有代理管理的业务逻辑，可以在没有GUI环境的情况下独立使用。
     """
 
-    def __init__(self, config: Optional[ConfigManager] = None):
+    def __init__(self, config: ConfigManager | None = None):
         """
         初始化代理管理器
 
@@ -74,7 +72,7 @@ class ProxyManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error starting proxy: {e}")
-            raise ProxyStartError("Failed to start proxy service", str(e))
+            raise ProxyStartError("Failed to start proxy service", str(e)) from e
 
     def is_process_running(self) -> bool:
         """检查代理进程是否正在运行"""
@@ -154,7 +152,7 @@ class ProxyManager:
             except (ValueError, TypeError):
                 user_msg = f"Invalid port number: {port}"
                 log_msg = f"Invalid port number: {port}. Must be a valid integer"
-                raise ConfigError(user_msg, log_msg)
+                raise ConfigError(user_msg, log_msg) from None
 
         # 构建命令二进制路径
         if os.name == 'nt':
@@ -245,15 +243,15 @@ class ProxyManager:
         except FileNotFoundError:
             user_msg = f"Cannot find proxy executable: {cmd}"
             log_msg = f"Cannot find proxy executable at {cmd_bin}"
-            raise ProxyStartError(user_msg, log_msg)
+            raise ProxyStartError(user_msg, log_msg) from None
         except PermissionError:
             user_msg = "Permission denied to execute proxy"
             log_msg = f"Permission denied to execute {cmd_bin}"
-            raise ProxyStartError(user_msg, log_msg)
+            raise ProxyStartError(user_msg, log_msg) from None
         except ProxyStartError:
             # Re-raise our custom exception
             raise
         except Exception as e:
             logger.error(f"Unexpected error starting proxy: {e}")
-            raise ProxyStartError("Failed to start proxy service", str(e))
+            raise ProxyStartError("Failed to start proxy service", str(e)) from e
 

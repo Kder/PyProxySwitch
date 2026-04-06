@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 PyProxySwitch 启动脚本
 
@@ -13,12 +12,13 @@ PyProxySwitch 启动脚本
 版本: 3.9.0
 """
 
-import sys
-import os
 import argparse
-import logging
 import json
+import logging
+import os
+import sys
 from pathlib import Path
+
 from src.logger_config import setup_logger
 
 
@@ -89,13 +89,13 @@ def main():
 
     # 确定日志级别：命令行参数优先，其次配置文件，默认 INFO
     log_level = logging.INFO  # 默认值
-    
+
     # 尝试从配置文件加载 DEBUG 和 LOCAL_PORT 设置
     config_file = Path(args.config)
     config_port = None
     if config_file.exists():
         try:
-            with open(config_file, 'r', encoding='utf-8') as f:
+            with open(config_file, encoding='utf-8') as f:
                 config_data = json.load(f)
                 # 如果配置文件中 DEBUG 为 1，且未使用 --debug 参数，则使用 DEBUG 级别
                 if not args.debug and config_data.get('DEBUG', 0) == 1:
@@ -110,13 +110,13 @@ def main():
                 elif not args.port_specified:
                     # 如果既没有指定端口，配置文件中也没有，使用默认值8888
                     args.port = 8888
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass  # 配置文件读取失败，继续使用默认级别
-    
+
     # 命令行 --debug 参数最高优先级
     if args.debug:
         log_level = logging.DEBUG
-    
+
     logger = setup_logger(log_level=log_level)
 
     logger.info("=" * 50)

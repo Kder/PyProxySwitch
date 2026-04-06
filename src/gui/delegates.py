@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 UI代理类模块 - 包含tableView的各种代理类
@@ -23,15 +22,15 @@ class ProxyTypeDelegate(QtWidgets.QStyledItemDelegate):
 
         return editor
 
-    def setEditorData(self, comboBox, index):
+    def setEditorData(self, combobox, index):
         '''设置当前选择框的值'''
         value = index.model().data(index, QtCore.Qt.ItemDataRole.EditRole)
-        comboBox.setCurrentIndex(comboBox.findText(value))
+        combobox.setCurrentIndex(combobox.findText(value))
         # comboBox.setItemText(0, value)
 
-    def setModelData(self, comboBox, model, index):
+    def setModelData(self, combobox, model, index):
         '''设置对应的model的data'''
-        value = comboBox.currentText()
+        value = combobox.currentText()
         model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
 
     def updateEditorGeometry(self, editor, option, index):

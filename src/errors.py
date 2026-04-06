@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 异常处理模块
@@ -10,11 +9,11 @@
 
 class ProxyError(Exception):
     """代理操作的基类异常"""
-    
+
     def __init__(self, user_message: str, log_message: str = None):
         """
         初始化异常
-        
+
         Args:
             user_message: 用户看到的消息（通常用于UI提示）
             log_message: 日志消息（通常包含更多技术细节），默认与user_message相同

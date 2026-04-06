@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # Copyright 2009-2026 Kder Lin
 #
@@ -40,28 +39,28 @@ __projecturl__ = 'http://pyproxyswitch.kder.info'
 
 import sys
 
+
 def main(log_level=None):
     """应用程序主入口点"""
     logger = None
     # 检查必要的依赖
     try:
-        import PySide6
+        from PySide6 import QtWidgets
     except ImportError as e:
-        print(f"Error: PySide6 is required but not installed: {e}")
+        print(f"Error: PySide6 failed to import (maybe not installed?): {e}")
         sys.exit(1)
     try:
         # 导入必要的模块
-        from PySide6 import QtWidgets
-        from src.logger_config import setup_logger
         from src.gui.main_window import Window
+        from src.logger_config import setup_logger
 
         # 设置日志（使用传入的log_level，如果没有传入则使用默认值）
         setup_logger(log_level=log_level)
         from src.logger_config import logger
 
         # 检查Python版本
-        if sys.version_info < (3, 9):
-            print("Error: PyProxySwitch requires Python 3.9 or higher")
+        if sys.version_info < (3, 10):
+            print("Error: PyProxySwitch requires Python 3.10 or higher")
             sys.exit(1)
 
 

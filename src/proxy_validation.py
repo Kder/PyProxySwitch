@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 PyProxySwitch 代理参数验证增强模块
@@ -7,11 +6,12 @@ PyProxySwitch 代理参数验证增强模块
 """
 
 import re
-import socket
 import shlex
-from typing import Tuple, Optional, List
-from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
-from PySide6.QtCore import QRegularExpression, Signal, QObject
+import socket
+
+from PySide6.QtCore import QObject, QRegularExpression, Signal
+from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
+
 from src.logger_config import logger
 
 
@@ -141,20 +141,20 @@ class ProxyValidator(QObject):
                 # 尝试解析IPv6地址
                 socket.inet_pton(socket.AF_INET6, ipv6_inner)
                 address = ipv6_inner  # 去掉方括号
-            except (socket.error, UnicodeError):
-                raise ValidationError("无效的IPv6地址格式")
+            except (OSError, UnicodeError):
+                raise ValidationError("无效的IPv6地址格式") from None
         elif ":" in address:
             # 可能是IPv6地址
             try:
                 socket.inet_pton(socket.AF_INET6, address)
                 # IPv6地址验证通过
                 pass
-            except (socket.error, UnicodeError):
+            except (OSError, UnicodeError):
                 # 不是有效的IPv6，继续检查其他格式
                 if not self.ipv4_pattern.match(
                     address
                 ) and not self.domain_pattern.match(address):
-                    raise ValidationError("无效的IP地址或域名格式")
+                    raise ValidationError("无效的IP地址或域名格式") from None
         # 检查是否为纯数字+点号格式（IP类地址）
         elif address.replace(".", "").isdigit() and "." in address:
             # 这是IP类地址，必须符合IPv4格式
@@ -290,7 +290,7 @@ class ProxyValidator(QObject):
         proxy_type: str = "HTTP",
         username: str = "",
         password: str = "",
-    ) -> Tuple[str, str, str, str, str, str]:
+    ) -> tuple[str, str, str, str, str, str]:
         """完整验证代理的所有参数
 
         Args:
@@ -353,7 +353,7 @@ class BatchImportValidator:
         self.validator: ProxyValidator = ProxyValidator()
 
     @staticmethod
-    def parse_proxy_line(line: str) -> Tuple[str, str, str, str, str, str]|None:
+    def parse_proxy_line(line: str) -> tuple[str, str, str, str, str, str]|None:
         """解析代理列表行，返回标准化的代理元组(名称, 地址, 端口, 类型, 用户, 密码)"""
 
         # 跳过空行和注释行
@@ -376,7 +376,7 @@ class BatchImportValidator:
             raise IndexError(f"{line}: 地址格式错误，必须包含端口（格式：地址:端口）")
         user_pass = ["", ""]
         proxy_type = "HTTP"
-        
+
         # 检查最后一个元素是否是代理类型
         if line_items[-1] in ["HTTP", "SOCKS4", "SOCKS5"]:
             proxy_type = line_items[-1]
@@ -407,11 +407,11 @@ class BatchImportValidator:
             else:
                 # 支持单个用户名（没有冒号）
                 user_pass = [line_items[2], ""]
-        
+
         # 参数大于3，则第4个是代理类型
         if len(line_items) > 3 and line_items[3] in ["HTTP", "SOCKS4", "SOCKS5"]:
             proxy_type = line_items[3]
-        
+
         return (
             line_items[0],
             address,
@@ -421,7 +421,7 @@ class BatchImportValidator:
             user_pass[1],
         )
 
-    def validate_batch_line(self, line: str, line_number: int) -> Optional[Tuple[str, str, str, str, str, str]]:
+    def validate_batch_line(self, line: str, line_number: int) -> tuple[str, str, str, str, str, str] | None:
         """验证批量导入的每一行
 
         Args:
@@ -435,7 +435,7 @@ class BatchImportValidator:
             proxy_tuple = self.parse_proxy_line(line)
         except IndexError as e:
             # 将IndexError转换为ValidationError以保持一致性
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         if not proxy_tuple:
             return None
@@ -447,9 +447,9 @@ class BatchImportValidator:
                 name, address, port, proxy_type, username, password
             )
         except ValidationError as e:
-            raise ValidationError(f"第{line_number}行: {str(e)}")
+            raise ValidationError(f"第{line_number}行: {str(e)}") from e
 
-    def validate_batch_content(self, content: str) -> List[Tuple[str, str, str, str, str, str]]:
+    def validate_batch_content(self, content: str) -> list[tuple[str, str, str, str, str, str]]:
         """验证批量导入内容
 
         Args:

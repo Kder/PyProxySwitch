@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 PyProxySwitch 包初始化文件
 
@@ -16,13 +15,19 @@ __description__ = "PyProxySwitch - 跨平台代理切换器"
 
 # 包级别的导入，便于外部使用
 from .logger_config import setup_logger
-from .proxy_validation import ProxyValidator, BatchImportValidator
 
 # 从pps_config导入主要函数
 from .pps_config import (
-    pps_loadcfg, pps_savecfg, pps_output, pps_exc_handle,
-    pps_load_proxylist, pps_save_proxylist, add_proxy, del_proxy
+    add_proxy,
+    del_proxy,
+    pps_exc_handle,
+    pps_load_proxylist,
+    pps_loadcfg,
+    pps_output,
+    pps_save_proxylist,
+    pps_savecfg,
 )
+from .proxy_validation import BatchImportValidator, ProxyValidator
 
 # 导出主要组件
 __all__ = [
