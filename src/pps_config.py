@@ -506,11 +506,24 @@ def pps_exc_handle() -> None:
         traceback.print_exc()
 
 
-def pps_savecfg(config_dict: dict[str, Any]) -> None:
+def pps_savecfg(config_dict: dict[str, Any], config_path: str | None = None) -> None:
     """保存程序配置字典到配置文件
-    Use json to dump the config dict to file"""
+    Use json to dump the config dict to file
+
+    Args:
+        config_dict: 要保存的配置字典
+        config_path: 配置文件路径，如果为None则使用当前配置的路径
+    """
     try:
-        with open(CONF, "w", encoding="utf-8") as c_file:
+        # 优先使用传入的路径，其次使用ConfigManager的路径，最后使用全局CONF
+        if config_path is not None:
+            save_path = config_path
+        elif _config_mgr:
+            save_path = str(_config_mgr.get_config_path())
+        else:
+            save_path = CONF
+
+        with open(save_path, "w", encoding="utf-8") as c_file:
             json.dump(config_dict, c_file, indent=2, sort_keys=True)
     except (OSError, TypeError):
         pps_exc_handle()

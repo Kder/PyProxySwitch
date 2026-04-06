@@ -94,7 +94,10 @@ class ConfigManager:
     _instance: ConfigManager | None = None
     _initialized: bool = False
 
-    def __new__(cls, config_path: str | None = None, proxy_list_path: str | None = None, backend_config_base: str | None = None, use_singleton: bool = True):
+    def __new__(cls, config_path: str | None = None,
+                proxy_list_path: str | None = None,
+                backend_config_base: str | None = None,
+                use_singleton: bool = True):
         """创建或返回单例实例"""
         # 如果启用单例模式且已有实例，则返回现有实例
         if use_singleton and cls._instance is not None:
@@ -127,6 +130,7 @@ class ConfigManager:
         """
         # 单例模式下，防止重复初始化
         if use_singleton and self._initialized:
+            # self.logger.debug("config_mgr already initialized")
             return
 
         # 获取日志记录器，失败时使用默认logger
@@ -139,33 +143,24 @@ class ConfigManager:
 
         # 获取pps_config中的函数和PROGRAM_PATH
         try:
-            self.pps_load_proxylist, self.pps_save_proxylist, program_path = (
+            self.pps_load_proxylist, self.pps_save_proxylist, self.program_path = (
                 _import_pps_funcs()
             )
         except ImportError as e:
             self.logger.error(f"导入pps_config失败: {e}")
             # 提供默认值以便继续工作
-            program_path = str(Path(__file__).parent.parent)
+            self.program_path = str(Path(__file__).parent.parent)
             self.pps_load_proxylist = None
             self.pps_save_proxylist = None
 
         # 设置配置文件路径
-        if config_path is None:
-            self.config_path = Path(program_path) / "cfg" / "PPS.conf"
-        else:
-            self.config_path = Path(config_path)
+        self.set_config_path(config_path)
 
         # 设置代理列表文件路径
-        if proxy_list_path is None:
-            self.proxy_list_path = Path(program_path) / "cfg" / "proxy.txt"
-        else:
-            self.proxy_list_path = Path(proxy_list_path)
+        self.set_proxy_list_path(proxy_list_path)
 
         # 设置后端配置基础路径
-        if backend_config_base is None:
-            self.backend_config_base = Path(program_path) / "cfg"
-        else:
-            self.backend_config_base = Path(backend_config_base)
+        self.set_backend_config_base(backend_config_base)
 
         # 配置数据存储
         self._config: dict[str, Any] = {}
@@ -177,6 +172,24 @@ class ConfigManager:
 
         if use_singleton:
             self._initialized = True
+
+    def set_config_path(self, config_path):
+        if config_path is None:
+            self.config_path = Path(self.program_path) / "cfg" / "PPS.conf"
+        else:
+            self.config_path = Path(config_path).resolve()
+
+    def set_proxy_list_path(self, proxy_list_path):
+        if proxy_list_path is None:
+            self.proxy_list_path = Path(self.program_path) / "cfg" / "proxy.txt"
+        else:
+            self.proxy_list_path = Path(proxy_list_path).resolve()
+
+    def set_backend_config_base(self, backend_config_base):
+        if backend_config_base is None:
+            self.backend_config_base = Path(self.program_path) / "cfg"
+        else:
+            self.backend_config_base = Path(backend_config_base).resolve()
 
     def load(self) -> None:
         """加载配置和代理列表"""

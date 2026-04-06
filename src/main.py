@@ -78,10 +78,6 @@ def main(log_level=None):
         app.setApplicationName("PyProxySwitch")
         app.setApplicationVersion(__version__)
 
-        # 设置应用程序路径
-        import src.pps_config as pps_config
-        pps_config.setup_paths()
-
         # 创建并显示主窗口
         window = Window()
 

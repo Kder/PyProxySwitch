@@ -38,7 +38,9 @@ class Window(QtWidgets.QDialog):
         self.translator = QtCore.QTranslator(self)
         self.translator_qt = QtCore.QTranslator(self)
         self._load_translator()
-
+        # logger.debug(self._config.get_backend_config_dir("3proxy"))
+        logger.debug(f"Config file path: {self._config.get_config_path()}")
+        logger.debug(f"Proxy list file path: {self._config.get_proxy_list_path()}")
 
     def _load_translator(self) -> None:
         """加载并安装翻译器"""
@@ -205,8 +207,8 @@ class Window(QtWidgets.QDialog):
     def about(self) -> None:
         '''显示关于对话框'''
         QtWidgets.QMessageBox.about(self, self.tr("About PyProxySwitch"),
-        self.tr("<h2>PyProxySwitch 3.8.0</h2>"
-                "<p>Copyright 2009-2026 Kder</p>"
+                "<h2>PyProxySwitch 3.9.0</h2>" + \
+        self.tr("<p>Copyright 2009-2026 Kder</p>"
                 "<p>A cross-platform proxy switcher based on 3proxy, polipo and IP Relay.</p>"
                 "<p>Licensed under Apache License 2.0</p>"
                 "<p>Visit <a href='http://pyproxyswitch.kder.info'>http://pyproxyswitch.kder.info</a> for more information.</p>"))

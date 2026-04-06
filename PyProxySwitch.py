@@ -65,7 +65,7 @@ def parse_arguments():
 def check_environment():
     """检查运行环境"""
     # 检查Python版本
-    if sys.version_info < (3, 10):
+    if sys.version_info < (3, 10):  # noqa: UP036
         print("错误: 需要Python 3.10或更高版本")
         print(f"当前Python版本: {sys.version}")
         return False
@@ -144,7 +144,6 @@ def main():
         import src.main
 
         # 导入必要的模块
-        import src.pps_config as pps_config
         from src.config import ConfigManager
 
         # 根据--config参数计算相关路径
@@ -155,14 +154,16 @@ def main():
         proxy_list_path = base_config_dir / "proxy.txt"
 
         # 初始化配置管理器
-        config_mgr = ConfigManager(
-            config_path=str(config_path),
-            proxy_list_path=str(proxy_list_path),
-            backend_config_base=str(base_config_dir)
-        )
+        config_mgr = ConfigManager()
+        config_mgr.set_config_path(str(config_path))
+        config_mgr.set_proxy_list_path(str(proxy_list_path))
+        config_mgr.set_backend_config_base(str(base_config_dir))
 
         # 设置pps_config使用相同的配置管理器
+        import src.pps_config as pps_config
         pps_config.set_config_manager(config_mgr)
+        logger.debug(f"Config file path: {config_mgr.get_config_path()}")
+        logger.debug(f"Proxy list file path: {config_mgr.get_proxy_list_path()}")
 
         # 如果需要，重新生成配置文件
         if port_changed:

@@ -91,17 +91,6 @@ def test_main_function_application_setup():
     assert "setApplicationName" in source
     assert "setApplicationVersion" in source
 
-def test_main_function_paths_setup():
-    """测试 main 函数中的路径设置"""
-    from src.main import main
-
-    # 验证函数有路径设置代码
-    import inspect
-    source = inspect.getsource(main)
-
-    # 检查路径设置代码
-    assert "pps_config.setup_paths()" in source
-
 def test_main_function_window_creation():
     """测试 main 函数中的窗口创建"""
     from src.main import main
