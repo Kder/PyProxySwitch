@@ -31,10 +31,10 @@ PyProxySwitch UI资源包
     # 导入资源
     import pyproxyswitch.resources.pps_qrc
 
-版本: 4.0.0
 """
 
-__version__ = "4.0.0"
+from .._version import __version__
+
 __description__ = "PyProxySwitch UI资源包"
 
 # 自动导入编译后的UI模块，便于外部使用
@@ -61,10 +61,12 @@ def compile_ui_files():
     该函数调用pyuic6来将Qt Designer的.ui文件编译为Python代码。
     通常在UI设计更新后使用此函数。
 
-    需要: pyuic6 (PySide6的一部分)
+    需要: pyside6-uic (PySide6的一部分)
     """
     import subprocess
-    import os
+    from pathlib import Path
+
+    resource_dir = Path(__file__).resolve().parent
 
     ui_files = [
         ('pps_conf.ui', 'pps_conf_ui.py'),
@@ -72,14 +74,16 @@ def compile_ui_files():
     ]
 
     for ui_file, py_file in ui_files:
-        if os.path.exists(ui_file):
+        ui_path = resource_dir / ui_file
+        py_path = resource_dir / py_file
+        if ui_path.exists():
             try:
-                subprocess.run(['pyuic6', '-o', py_file, ui_file], check=True)
+                subprocess.run(['pyside6-uic', '-o', str(py_path), str(ui_path)], check=True)
                 print(f"成功编译 {ui_file} -> {py_file}")
             except subprocess.CalledProcessError as e:
                 print(f"编译 {ui_file} 失败: {e}")
             except FileNotFoundError:
-                print("未找到pyuic6，请确保PySide6已正确安装")
+                print("未找到pyside6-uic，请确保PySide6已正确安装")
 
 def list_ui_resources():
     """列出所有可用的UI资源"""

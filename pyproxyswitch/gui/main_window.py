@@ -7,14 +7,14 @@
 """
 
 import sys
-from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QLibraryInfo, Slot
 
-import pyproxyswitch.pps_config as pps_config
+from pyproxyswitch._version import __version__
 from pyproxyswitch.config import ConfigManager
 from pyproxyswitch.logger_config import get_logger
+from pyproxyswitch.paths import I18N_DIR
 from pyproxyswitch.proxy_manager import ProxyManager
 
 
@@ -45,7 +45,7 @@ class Window(QtWidgets.QDialog):
         """加载并安装翻译器"""
         lang = self._config.get('LANG', 'zh_CN')
         stdtranslator_path = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
-        translator_path = str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (lang + '.qm'))
+        translator_path = str(I18N_DIR / f'{lang}.qm')
         get_logger().debug(f"Main Window - loading translator from: {translator_path}")
         # 加载新翻译器
         if not self.translator_qt.load(QtCore.QLocale(lang), "qtbase", "_", stdtranslator_path):
@@ -195,7 +195,7 @@ class Window(QtWidgets.QDialog):
     def about(self) -> None:
         '''显示关于对话框'''
         QtWidgets.QMessageBox.about(self, self.tr("About PyProxySwitch"),
-                "<h2>PyProxySwitch 4.0.0</h2>" + \
+                f"<h2>PyProxySwitch {__version__}</h2>" + \
         self.tr("<p>Copyright 2009-2026 Kder</p>"
                 "<p>A cross-platform proxy switcher with a native Python HTTP/SOCKS server.</p>"
                 "<p>Licensed under Apache License 2.0</p>"

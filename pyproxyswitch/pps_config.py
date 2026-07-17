@@ -55,7 +55,8 @@ __author__ = "Kder"
 __copyright__ = "Copyright 2009-2026 Kder"
 __credits__ = ["Kder"]
 
-__version__ = "4.0.0"
+from pyproxyswitch._version import __version__
+
 __date__ = "2026-04-01"
 __maintainer__ = "Kder"
 __email__ = "<kderlin (#) gmail dot com>"
@@ -71,6 +72,14 @@ import traceback
 from pathlib import Path
 from typing import Any
 
+from pyproxyswitch.paths import (
+    CONFIG_FILE,
+    DEFAULT_CONFIG_FILE,
+    I18N_DIR,
+    PACKAGE_DIR,
+    PROXY_LIST_FILE,
+    USER_CONFIG_DIR,
+)
 from pyproxyswitch.proxy_validation import BatchImportValidator, ProxyValidator, ValidationError
 
 # 全局变量存储配置管理器实例
@@ -85,13 +94,10 @@ def _get_logger():
     except ImportError:
         return logging.getLogger(__name__)
 
-try:
-    PATH0 = str(Path(__file__).parent)
-except NameError:
-    PATH0 = str(Path(sys.path[0]).parent)
-PROGRAM_PATH = str(Path(PATH0).parent.parent) if Path(PATH0).is_file() else str(Path(PATH0).parent)
-CONF = str(Path(PROGRAM_PATH) / "cfg" / "PPS.conf")
-PROXY_LIST = str(Path(PROGRAM_PATH) / "cfg" / "proxy.txt")
+PATH0 = str(PACKAGE_DIR)
+PROGRAM_PATH = str(PACKAGE_DIR)
+CONF = str(CONFIG_FILE)
+PROXY_LIST = str(PROXY_LIST_FILE)
 
 def setup_paths():
     """设置应用程序路径 - 为了兼容性而提供的函数"""
@@ -108,6 +114,12 @@ def pps_loadcfg(config_file: str) -> dict[str, Any]:
                 config["FIRST_RUN"] = config.pop("FISRT_RUN")
             return config
     except (OSError, ValueError, FileNotFoundError):
+        if Path(config_file) == CONFIG_FILE:
+            try:
+                with DEFAULT_CONFIG_FILE.open(encoding="utf-8") as json_file:
+                    return json.load(json_file)
+            except (OSError, ValueError):
+                pass
         # 在测试环境中，返回默认配置
         if "test" in str(config_file).lower() or "pytest" in sys.argv[0].lower():
             return {"LANG": "en", "LOCAL_PORT": 8123, "DEBUG": False, "FIRST_RUN": True}
@@ -116,6 +128,16 @@ def pps_loadcfg(config_file: str) -> dict[str, Any]:
 
 
 CONFIG = pps_loadcfg(CONF)
+
+
+def _load_translation():
+    """Load packaged gettext catalogs, falling back to source strings."""
+    return gettext.translation(
+        "pps_config",
+        str(I18N_DIR),
+        languages=[CONFIG.get("LANG", "en")],
+        fallback=True,
+    ).gettext
 
 
 def update_config():
@@ -128,9 +150,7 @@ def update_config():
     CONFIG = pps_loadcfg(CONF)
     # 同时更新翻译
     global _
-    _ = gettext.translation(
-        "pps_config", str(Path(PROGRAM_PATH) / "i18n"), [CONFIG["LANG"]]
-    ).gettext
+    _ = _load_translation()
 
 
 def get_config() -> dict[str, Any]:
@@ -311,7 +331,7 @@ def _update_paths():
     if _config_mgr:
         CONF = str(_config_mgr.get_config_path())
         PROXY_LIST = str(_config_mgr.get_proxy_list_path())
-        # 注意：不修改PROGRAM_PATH，保持静态文件(i18n, bin)路径不变
+        # Packaged resources are independent from mutable user configuration.
 
 
 def get_backend_config_dir(backend_type: str) -> Path:
@@ -319,13 +339,10 @@ def get_backend_config_dir(backend_type: str) -> Path:
     if _config_mgr:
         return _config_mgr.get_backend_config_dir(backend_type)
     else:
-        # 向后兼容：使用原来的硬编码路径
-        return Path(PROGRAM_PATH) / "cfg" / backend_type
+        return USER_CONFIG_DIR / backend_type
 
 
-_ = gettext.translation(
-    "pps_config", str(Path(PROGRAM_PATH) / "i18n"), [CONFIG["LANG"]]
-).gettext
+_ = _load_translation()
 
 PPS_MSG = {
     "SUCCESS_ADD": _('"%s" added.'),
@@ -472,6 +489,10 @@ def pps_load_proxylist(list_file: str) -> list[tuple[str, str, str, str, str, st
     except IndexError:
         pps_output(PPS_MSG["ERR_LOAD_LIST"] % PROXY_LIST, "stderr")
         sys.exit(11)
+    except OSError:
+        # A clean wheel install has no user proxy file until ConfigManager
+        # seeds it from the packaged default.
+        return []
 
 
 PROXIES = pps_load_proxylist(PROXY_LIST)

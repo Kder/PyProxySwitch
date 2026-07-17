@@ -1,15 +1,16 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyProxySwitch"
-version = "4.0.0"
+dynamic = ["version"]
 description = "A cross-platform proxy switcher with a native Python HTTP/SOCKS server"
 authors = [
     {name = "Kder Lin", email = "kderlin@gmail.com"}
 ]
-license = {text = "Apache License, Version 2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["proxy", "network", "tool"]
@@ -18,7 +19,6 @@ classifiers = [
     "Environment :: Win32 (MS Windows)",
     "Environment :: X11 Applications :: Qt",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -32,6 +32,7 @@ classifiers = [
 
 dependencies = [
     "PySide6>=6.5.0",
+    "platformdirs>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -103,6 +104,17 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pyproxyswitch*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyproxyswitch._version.__version__"}
+
+[tool.setuptools.package-data]
+"pyproxyswitch.data" = [
+    "defaults/*",
+    "i18n/*.qm",
+    "i18n/*/LC_MESSAGES/*.mo",
+]
+"pyproxyswitch.resources" = ["*.ui", "*.bat"]
 
 [tool.black]
 line-length = 100

@@ -1,0 +1,2 @@
+# Add one proxy per line using this format:
+# name address:port [username:password] [HTTP|SOCKS4|SOCKS5]

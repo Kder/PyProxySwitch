@@ -7,6 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any  # noqa: E402, UP035
 
+from .paths import CONFIG_FILE, PROXY_LIST_FILE, USER_CONFIG_DIR, initialize_user_config
+
 """
 PyProxySwitch 配置管理模块
 
@@ -98,9 +100,9 @@ class ConfigManager:
         初始化配置管理器
 
         Args:
-            config_path: 配置文件路径，默认为 {PROGRAM_PATH}/cfg/PPS.conf
-            proxy_list_path: 代理列表文件路径，默认为 {PROGRAM_PATH}/cfg/proxy.txt
-            backend_config_base: 后端配置基础路径，默认为 {PROGRAM_PATH}/cfg
+            config_path: 配置文件路径，默认使用当前用户的配置目录
+            proxy_list_path: 代理列表文件路径，默认使用当前用户的配置目录
+            backend_config_base: 后端配置基础路径，默认使用当前用户的配置目录
             use_singleton: 是否使用单例模式（默认True）
         """
         # 单例模式下，防止重复初始化
@@ -133,6 +135,14 @@ class ConfigManager:
         # 设置后端配置基础路径
         self.set_backend_config_base(backend_config_base)
 
+        # A wheel installation may be read-only. Seed only the per-user default
+        # locations and keep explicit paths under the caller's control.
+        if config_path is None and proxy_list_path is None:
+            try:
+                initialize_user_config(self.config_path, self.proxy_list_path)
+            except OSError as e:
+                self.logger.warning(f"无法初始化用户配置目录: {e}")
+
         # 配置数据存储
         self._config: dict[str, Any] = {}
         self._proxies: list[tuple[str, str, str, str, str, str]] = []
@@ -146,19 +156,19 @@ class ConfigManager:
 
     def set_config_path(self, config_path):
         if config_path is None:
-            self.config_path = Path(self.program_path) / "cfg" / "PPS.conf"
+            self.config_path = CONFIG_FILE
         else:
             self.config_path = Path(config_path).resolve()
 
     def set_proxy_list_path(self, proxy_list_path):
         if proxy_list_path is None:
-            self.proxy_list_path = Path(self.program_path) / "cfg" / "proxy.txt"
+            self.proxy_list_path = PROXY_LIST_FILE
         else:
             self.proxy_list_path = Path(proxy_list_path).resolve()
 
     def set_backend_config_base(self, backend_config_base):
         if backend_config_base is None:
-            self.backend_config_base = Path(self.program_path) / "cfg"
+            self.backend_config_base = USER_CONFIG_DIR
         else:
             self.backend_config_base = Path(backend_config_base).resolve()
 

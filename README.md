@@ -1,6 +1,6 @@
 ﻿[![Tests](https://github.com/Kder/PyProxySwitch/actions/workflows/test.yml/badge.svg)](https://github.com/Kder/PyProxySwitch/actions/workflows/test.yml)
 
-PyProxySwitch  版本: 4.0.0
+PyProxySwitch
 
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件  
 网站: http://www.kder.info  
@@ -14,7 +14,7 @@ PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，
 
 内置服务器在同一个本地端口自动识别 HTTP、SOCKS4/SOCKS4a 和 SOCKS5 客户端协议；上游支持 HTTP、SOCKS4 和 SOCKS5（含 HTTP Basic、SOCKS5 用户名/密码认证）。选择 `NoProxy` 时直接连接目标。
 
-切换上游只原子替换内存中的路由快照，不重启监听套接字或事件循环。已建立连接继续使用切换前的上游，新连接立即使用新上游，这与 sing-box 一类代理核心的热切换行为相近。
+切换上游只原子替换内存中的路由快照，不重启监听套接字或事件循环。已建立连接继续使用切换前的上游，新连接立即使用新上游。
 
 # 用法
 
@@ -24,7 +24,7 @@ PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，
 
 ## 批量添加代理
 
-可在设置界面批量编辑，或者直接编辑 UTF-8 编码的 `cfg/proxy.txt`。每行格式为“代理名称 代理地址:端口 用户名:密码 代理类型”；认证信息和类型可省略，默认类型为 HTTP。例如：
+可在设置界面批量编辑，也可以直接编辑 UTF-8 编码的 `proxy.txt`。通过 pip 安装时，`PPS.conf` 和 `proxy.txt` 位于当前用户的配置目录（Windows 为 `%APPDATA%\Kder\PyProxySwitch`）；源码入口 `PyProxySwitch.py` 仍可通过 `--config` 指定位置。每行格式为“代理名称 代理地址:端口 用户名:密码 代理类型”；认证信息和类型可省略，默认类型为 HTTP。例如：
 ```
       test1 test1.com:8080  
       test2 test2.com:8080 user:pass  

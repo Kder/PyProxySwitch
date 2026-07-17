@@ -1,4 +1,4 @@
-PyProxySwitch  Version: 4.0.0
+PyProxySwitch
 
 PyProxySwitch is a cross-platform upstream proxy switcher written in Python
 and PySide6. Its local proxy server is implemented entirely with the Python
@@ -21,8 +21,12 @@ Run `python PyProxySwitch.py`, point an application's HTTP or SOCKS proxy to
 127.0.0.1:8888, then choose an upstream from the system tray. The default bind
 address is loopback-only for safety.
 
-Requirements: Python 3.10+ and PySide6. The proxy core has no non-standard
-dependency.
+Wheel installations store `PPS.conf` and `proxy.txt` in the current user's
+configuration directory, and logs in the current user's log directory. On
+Windows these are under the user's AppData folders, not site-packages.
+
+Requirements: Python 3.10+, PySide6 and platformdirs. The proxy protocol core
+itself uses only the Python standard library.
 
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info

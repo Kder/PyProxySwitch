@@ -9,7 +9,6 @@ PyProxySwitch 启动脚本
     python PyProxySwitch.py --debug
     python PyProxySwitch.py --config /path/to/config
 
-版本: 4.0.0
 """
 
 import argparse

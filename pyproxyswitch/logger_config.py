@@ -9,6 +9,44 @@ import logging
 import logging.handlers
 from pathlib import Path
 
+from .paths import USER_LOG_DIR
+
+
+def _configured_log_dir() -> Path:
+    """Return the configured log directory or the per-user default."""
+    try:
+        from .config import ConfigManager
+
+        custom_log_path = ConfigManager().get('LOG_PATH', '').strip()
+        return Path(custom_log_path) if custom_log_path else USER_LOG_DIR
+    except Exception:
+        return USER_LOG_DIR
+
+
+def _prepare_log_dir(log_dir: Path) -> Path | None:
+    """Create a writable log directory without ever using site-packages."""
+    candidates = [log_dir]
+    if log_dir != USER_LOG_DIR:
+        candidates.append(USER_LOG_DIR)
+
+    last_error: Exception | None = None
+    for candidate in candidates:
+        try:
+            candidate.mkdir(exist_ok=True, parents=True)
+            if not candidate.is_dir():
+                raise OSError("directory creation failed")
+            return candidate
+        except Exception as e:
+            last_error = e
+
+    import warnings
+
+    warnings.warn(
+        f"无法创建日志目录 {log_dir}: {last_error}，已禁用文件日志",
+        stacklevel=3,
+    )
+    return None
+
 
 class Formatter(logging.Formatter):
     """自定义日志格式化器，根据日志级别使用不同的格式"""
@@ -70,48 +108,19 @@ def setup_logger(
     logger.addHandler(console_handler)
 
     # 文件处理器（记录所有级别）
-    if log_dir is None:
-        # 尝试从配置管理器获取自定义日志路径
-        try:
-            from .config import ConfigManager
-            config = ConfigManager()
-            custom_log_path = config.get('LOG_PATH', '').strip()
-            if custom_log_path:
-                log_dir = Path(custom_log_path)
-            else:
-                log_dir = Path(__file__).parent.parent / 'logs'
-        except Exception:
-            # 如果配置管理器不可用，使用默认路径
-            log_dir = Path(__file__).parent.parent / 'logs'
-
-    # 确保日志目录存在
-    try:
-        log_dir.mkdir(exist_ok=True, parents=True)
-        # 验证目录确实被创建了
-        if not log_dir.exists():
-            raise Exception("Directory creation failed")
-    except Exception as e:
-        # 如果无法创建指定目录，回退到默认路径
-        import warnings
-        warnings.warn(f"无法创建日志目录 {log_dir}: {e}，使用默认路径", stacklevel=2)
-        log_dir = Path(__file__).parent.parent / 'logs'
-        try:
-            log_dir.mkdir(exist_ok=True, parents=True)
-        except Exception:
-            # 如果默认路径也无法创建，继续执行（文件处理器可能会处理这个情况）
-            pass
-
-    log_file = log_dir / 'PyProxySwitch.log'
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file,
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding='utf-8',
-        delay=True  # 延迟文件打开
-    )
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    prepared_log_dir = _prepare_log_dir(log_dir or _configured_log_dir())
+    if prepared_log_dir is not None:
+        log_file = prepared_log_dir / 'PyProxySwitch.log'
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding='utf-8',
+            delay=True,
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     return logger
 
@@ -131,38 +140,14 @@ def update_log_path(new_log_dir: Path | None = None) -> None:
             logger.removeHandler(handler)
             handler.close()
 
-    # 确定新的日志目录
-    if new_log_dir is None:
-        try:
-            from .config import ConfigManager
-            config = ConfigManager()
-            custom_log_path = config.get('LOG_PATH', '').strip()
-            if custom_log_path:
-                new_log_dir = Path(custom_log_path)
-            else:
-                new_log_dir = Path(__file__).parent.parent / 'logs'
-        except Exception:
-            new_log_dir = Path(__file__).parent.parent / 'logs'
-
-    # 确保目录存在
-    try:
-        new_log_dir.mkdir(exist_ok=True, parents=True)
-        # 验证目录确实被创建了
-        if not new_log_dir.exists():
-            raise Exception("Directory creation failed")
-    except Exception as e:
-        import warnings
-        warnings.warn(f"无法创建日志目录 {new_log_dir}: {e}，使用默认路径", stacklevel=2)
-        new_log_dir = Path(__file__).parent.parent / 'logs'
-        try:
-            new_log_dir.mkdir(exist_ok=True, parents=True)
-        except Exception:
-            # 如果默认路径也无法创建，继续执行（文件处理器可能会处理这个情况）
-            pass
+    # 确定并创建新的日志目录
+    prepared_log_dir = _prepare_log_dir(new_log_dir or _configured_log_dir())
+    if prepared_log_dir is None:
+        return
 
     # 创建新的文件处理器
     formatter = Formatter()
-    log_file = new_log_dir / 'PyProxySwitch.log'
+    log_file = prepared_log_dir / 'PyProxySwitch.log'
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
         maxBytes=5 * 1024 * 1024,  # 5MB

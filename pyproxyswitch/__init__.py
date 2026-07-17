@@ -10,10 +10,9 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any
 
-from .logger_config import setup_logger
 from .native_proxy import NativeProxyServer, Upstream
+from ._version import __version__
 
-__version__ = "4.0.0"
 __author__ = "Kder"
 __description__ = "PyProxySwitch - native Python proxy switcher"
 
@@ -31,6 +30,8 @@ _VALIDATION_EXPORTS = {"BatchImportValidator", "ProxyValidator"}
 
 
 def __getattr__(name: str) -> Any:
+    if name == "setup_logger":
+        return getattr(import_module(".logger_config", __name__), name)
     if name in _PPS_EXPORTS:
         return getattr(import_module(".pps_config", __name__), name)
     if name in _VALIDATION_EXPORTS:
