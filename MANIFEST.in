@@ -2,7 +2,6 @@ include LICENSE
 include README.md
 include README_EN.txt
 include requirements.txt
-recursive-include pyproxyswitch/data *.qm *.mo PPS.conf proxy.txt
-recursive-include pyproxyswitch/resources *.ui *.bat
-recursive-include tests *.py *.md *.json *.txt
-recursive-include i18n *.py *.bat *.pro *.po *.pot *.ts
+recursive-include pyproxyswitch/data *.qm PPS.conf proxy.txt
+recursive-include pyproxyswitch/resources *.ui
+recursive-include i18n *.py *.bat *.ts

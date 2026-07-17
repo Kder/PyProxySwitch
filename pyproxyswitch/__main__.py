@@ -1,76 +1,37 @@
-#!/usr/bin/env python
+"""Command-line entry point for PyProxySwitch."""
 
-# Copyright 2009-2026 Kder Lin
-#
-# Licensed under the Apache License, 2.0 (the "License"); you may not
-# use this file except in compliance with the License. You may obtain a copy of
-# the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations under
-# the License.
+from __future__ import annotations
 
-"""
-PyProxySwitch CLI Entry Point
-
-This module provides command-line interface for PyProxySwitch.
-"""
-
-import sys
 import argparse
+
 from . import __version__
 
 
-def create_parser():
-    """Create command line argument parser"""
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="PyProxySwitch - Cross-platform proxy switcher",
-        prog="pyproxyswitch"
+        description="PyProxySwitch - cross-platform proxy switcher",
+        prog="pyproxyswitch",
     )
-
     parser.add_argument(
-        '--version',
-        action='version',
-        version=f'PyProxySwitch {__version__}'
+        "--version",
+        action="version",
+        version=f"PyProxySwitch {__version__}",
     )
-
     parser.add_argument(
-        '--gui',
-        action='store_true',
-        help='Launch GUI application (default behavior)'
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="set the logging level (default: INFO)",
     )
-
-    parser.add_argument(
-        '--log-level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-        default='INFO',
-        help='Set logging level (default: INFO)'
-    )
-
     return parser
 
 
-def main():
-    """CLI entry point"""
-    parser = create_parser()
-    args = parser.parse_args()
+def main() -> None:
+    args = create_parser().parse_args()
+    from .main import main as gui_main
 
-    # For now, always launch GUI
-    # In the future, we could add CLI-only functionality
-    try:
-        from .main import main as gui_main
-        gui_main(log_level=args.log_level)
-    except ImportError as e:
-        print(f"Error: Failed to import GUI module: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    gui_main(log_level=args.log_level)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

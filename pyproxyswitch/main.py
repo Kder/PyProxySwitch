@@ -14,28 +14,27 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-'''
+"""
 PyProxySwitch is a cross-platform proxy switcher with a native Python HTTP,
 SOCKS4 and SOCKS5 server. It changes upstream routes without restarting the
 local listener or interrupting existing connections.
 
 Welcom to send me your feedback if you feel it useful.
-'''
+"""
 
-
-__author__ = 'Kder'
-__copyright__ = 'Copyright 2009-2026 Kder'
-__credits__ = ['Kder']
+__author__ = "Kder"
+__copyright__ = "Copyright 2009-2026 Kder"
+__credits__ = ["Kder"]
 
 from ._version import __version__
 
-__date__ = '2026-07-17'
+__date__ = "2026-07-18"
 __maintainer__ = "Kder"
-__email__ = '[kderlin (#) gmail dot com]'
-__url__ = 'http://www.kder.info'
-__license__ = 'Apache License, Version 2.0'
-__status__ = 'Beta'
-__projecturl__ = 'http://pyproxyswitch.kder.info'
+__email__ = "[kderlin (#) gmail dot com]"
+__url__ = "http://www.kder.info"
+__license__ = "Apache License, Version 2.0"
+__status__ = "Beta"
+__projecturl__ = "http://pyproxyswitch.kder.info"
 
 
 import sys
@@ -61,7 +60,7 @@ def main(log_level=None):
         if log_level is None:
             log_level = logging.INFO
 
-        root_logger = logging.getLogger('PyProxySwitch')
+        root_logger = logging.getLogger("PyProxySwitch")
         # 检查是否已经有logger配置，如果没有才重新配置
         if not root_logger.handlers:
             logger = setup_logger(log_level=log_level)
@@ -72,11 +71,6 @@ def main(log_level=None):
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(log_level)
-
-        # 检查Python版本
-        if sys.version_info < (3, 10):
-            logger.error("Error: PyProxySwitch requires Python 3.10 or higher")
-            sys.exit(1)
 
         # 设置应用程序
         app = QtWidgets.QApplication(sys.argv)
@@ -94,10 +88,10 @@ def main(log_level=None):
         sys.exit(0)
     except Exception as e:
         print(f"Fatal error: {e}")
-        if 'logger' in locals():
+        if "logger" in locals():
             logger.exception("Fatal error occurred")
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

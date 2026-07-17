@@ -30,5 +30,5 @@ itself uses only the Python standard library.
 
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info
-Last Update: 2026-07-17
+Last Update: 2026-07-18
 License: Apache License, Version 2.0

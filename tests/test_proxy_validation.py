@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 PyProxySwitch 代理验证模块测试
@@ -8,14 +7,8 @@ PyProxySwitch 代理验证模块测试
 """
 
 import pytest
-import sys
-from pathlib import Path
 
-# 确保导入路径正确 (项目根目录)
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from pyproxyswitch.proxy_validation import ProxyValidator, BatchImportValidator, ValidationError
+from pyproxyswitch.proxy_validation import ValidationError
 
 
 class TestProxyValidatorName:
@@ -100,10 +93,7 @@ class TestProxyValidatorAddress:
 
     def test_valid_ipv4_all_octets_max(self, proxy_validator):
         """测试 IPv4 所有段都是最大值"""
-        assert (
-            proxy_validator.validate_proxy_address("255.255.255.255")
-            == "255.255.255.255"
-        )
+        assert proxy_validator.validate_proxy_address("255.255.255.255") == "255.255.255.255"
 
     def test_valid_ipv4_leading_zeros(self, proxy_validator):
         """测试 IPv4 开头零被保留"""
@@ -117,16 +107,12 @@ class TestProxyValidatorAddress:
 
     def test_valid_domain_subdomain(self, proxy_validator):
         """测试子域名"""
-        assert (
-            proxy_validator.validate_proxy_address("sub.example.com")
-            == "sub.example.com"
-        )
+        assert proxy_validator.validate_proxy_address("sub.example.com") == "sub.example.com"
 
     def test_valid_domain_with_numbers(self, proxy_validator):
         """测试包含数字的域名"""
         assert (
-            proxy_validator.validate_proxy_address("proxy123.example.com")
-            == "proxy123.example.com"
+            proxy_validator.validate_proxy_address("proxy123.example.com") == "proxy123.example.com"
         )
 
     def test_valid_ipv6_bracket(self, proxy_validator):
@@ -249,10 +235,7 @@ class TestProxyValidatorUsername:
         """测试包含特殊字符的用户名"""
         valid_chars = ["_", "-", "@", "."]
         for char in valid_chars:
-            assert (
-                proxy_validator.validate_username(f"user{char}name")
-                == f"user{char}name"
-            )
+            assert proxy_validator.validate_username(f"user{char}name") == f"user{char}name"
 
     def test_valid_username_empty(self, proxy_validator):
         """测试空用户名（允许）"""
@@ -341,51 +324,37 @@ class TestProxyValidatorFullProxy:
 
     def test_full_proxy_valid_ipv6(self, proxy_validator):
         """测试 IPv6 代理"""
-        result = proxy_validator.validate_full_proxy(
-            "ipv6_proxy", "[::1]", "8080", "HTTP", "", ""
-        )
+        result = proxy_validator.validate_full_proxy("ipv6_proxy", "[::1]", "8080", "HTTP", "", "")
         assert result[1] == "::1"
         assert result[2] == 8080
 
     def test_full_proxy_invalid_name(self, proxy_validator):
         """测试无效名称"""
         with pytest.raises(ValidationError):
-            proxy_validator.validate_full_proxy(
-                "", "192.168.1.1", "8080", "HTTP", "", ""
-            )
+            proxy_validator.validate_full_proxy("", "192.168.1.1", "8080", "HTTP", "", "")
 
     def test_full_proxy_invalid_address(self, proxy_validator):
         """测试无效地址"""
         with pytest.raises(ValidationError):
-            proxy_validator.validate_full_proxy(
-                "test", "invalid..address", "8080", "HTTP", "", ""
-            )
+            proxy_validator.validate_full_proxy("test", "invalid..address", "8080", "HTTP", "", "")
 
     def test_full_proxy_invalid_port(self, proxy_validator):
         """测试无效端口"""
         with pytest.raises(ValidationError):
-            proxy_validator.validate_full_proxy(
-                "test", "192.168.1.1", "99999", "HTTP", "", ""
-            )
+            proxy_validator.validate_full_proxy("test", "192.168.1.1", "99999", "HTTP", "", "")
 
     def test_full_proxy_invalid_type(self, proxy_validator):
         """测试无效代理类型"""
         with pytest.raises(ValidationError):
-            proxy_validator.validate_full_proxy(
-                "test", "192.168.1.1", "8080", "FTP", "", ""
-            )
+            proxy_validator.validate_full_proxy("test", "192.168.1.1", "8080", "FTP", "", "")
 
     def test_full_proxy_emits_signal_on_error(self, proxy_validator):
         """测试验证失败时发出信号"""
         received_signals = []
-        proxy_validator.validation_error.connect(
-            lambda msg: received_signals.append(msg)
-        )
+        proxy_validator.validation_error.connect(lambda msg: received_signals.append(msg))
 
         with pytest.raises(ValidationError):
-            proxy_validator.validate_full_proxy(
-                "", "192.168.1.1", "8080", "HTTP", "", ""
-            )
+            proxy_validator.validate_full_proxy("", "192.168.1.1", "8080", "HTTP", "", "")
 
         assert len(received_signals) == 1
 
@@ -400,9 +369,7 @@ class TestBatchImportValidator:
 
     def test_validate_batch_line_with_auth(self, batch_validator):
         """测试带认证的行"""
-        result = batch_validator.validate_batch_line(
-            "auth_proxy 10.0.0.1:3128 user:pass", 1
-        )
+        result = batch_validator.validate_batch_line("auth_proxy 10.0.0.1:3128 user:pass", 1)
         assert result[0] == "auth_proxy"
         assert result[1] == "10.0.0.1"
         assert result[3] == "HTTP"
@@ -411,9 +378,7 @@ class TestBatchImportValidator:
 
     def test_validate_batch_line_with_type(self, batch_validator):
         """测试带代理类型的行"""
-        result = batch_validator.validate_batch_line(
-            "socks_proxy 203.0.113.5:1080 SOCKS5", 1
-        )
+        result = batch_validator.validate_batch_line("socks_proxy 203.0.113.5:1080 SOCKS5", 1)
         assert result[3] == "SOCKS5"
 
     def test_validate_batch_line_ipv6(self, batch_validator):
@@ -581,7 +546,7 @@ class TestProxyValidationEdgeCases:
 
         # 应该能够处理而不是崩溃
         try:
-            result = batch_validator.validate_batch_line(content, 1)
+            batch_validator.validate_batch_line(content, 1)
             # 可能成功也可能失败，但不应抛出shlex相关的异常
         except ValidationError:
             # ValidationError是预期的
@@ -604,32 +569,24 @@ class TestProxyValidationEdgeCases:
 
         # 测试无效的IPv6格式
         with pytest.raises(ValidationError):
-            batch_validator.validate_batch_line(
-                "bad_ipv6 [invalid::ipv6::format]:8080", 1
-            )
+            batch_validator.validate_batch_line("bad_ipv6 [invalid::ipv6::format]:8080", 1)
 
     def test_batch_parameter_parsing_logic(self, batch_validator):
         """测试批量导入参数解析逻辑（覆盖lines 395-403）"""
         # 测试只有代理类型，没有认证
-        result = batch_validator.validate_batch_line(
-            "socks_proxy 192.168.1.1:1080 SOCKS5", 1
-        )
+        result = batch_validator.validate_batch_line("socks_proxy 192.168.1.1:1080 SOCKS5", 1)
         assert result[3] == "SOCKS5"
         assert result[4] == ""  # 用户名为空
         assert result[5] == ""  # 密码为空
 
         # 测试有认证但没有显式类型（应该默认为HTTP）
-        result = batch_validator.validate_batch_line(
-            "full_proxy 192.168.1.1:1080 user:pass", 1
-        )
+        result = batch_validator.validate_batch_line("full_proxy 192.168.1.1:1080 user:pass", 1)
         assert result[3] == "HTTP"  # 默认类型
         assert result[4] == "user"
         assert result[5] == "pass"
 
         # 测试有认证但没有类型（默认为HTTP）
-        result = batch_validator.validate_batch_line(
-            "auth_proxy 192.168.1.1:8080 user:pass", 1
-        )
+        result = batch_validator.validate_batch_line("auth_proxy 192.168.1.1:8080 user:pass", 1)
         assert result[3] == "HTTP"  # 默认类型
         assert result[4] == "user"
         assert result[5] == "pass"

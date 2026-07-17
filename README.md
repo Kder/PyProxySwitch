@@ -5,7 +5,7 @@ PyProxySwitch
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件  
 网站: http://www.kder.info  
 项目主页: http://pyproxyswitch.kder.info/  
-最近更新: 2026-07-17
+最近更新: 2026-07-18
 许可: Apache License, Version 2.0  
 
 # 简介
@@ -24,7 +24,7 @@ PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，
 
 ## 批量添加代理
 
-可在设置界面批量编辑，也可以直接编辑 UTF-8 编码的 `proxy.txt`。通过 pip 安装时，`PPS.conf` 和 `proxy.txt` 位于当前用户的配置目录（Windows 为 `%APPDATA%\Kder\PyProxySwitch`）；源码入口 `PyProxySwitch.py` 仍可通过 `--config` 指定位置。每行格式为“代理名称 代理地址:端口 用户名:密码 代理类型”；认证信息和类型可省略，默认类型为 HTTP。例如：
+可在设置界面批量编辑，也可以直接编辑 UTF-8 编码的 `proxy.txt`。无论通过源码还是 pip 运行，`PPS.conf` 和 `proxy.txt` 都位于当前用户的配置目录（Windows 为 `%APPDATA%\Kder\PyProxySwitch`），首次运行时由包内默认值创建。每行格式为“代理名称 代理地址:端口 用户名:密码 代理类型”；认证信息和类型可省略，默认类型为 HTTP。例如：
 ```
       test1 test1.com:8080  
       test2 test2.com:8080 user:pass  
@@ -50,6 +50,7 @@ PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，
 
 # 更新历史
 
+* 4.0.1 清理旧版二进制文件、后端配置生成器及其过时测试，统一使用用户配置目录 2026-07-18
 * 4.0.0 使用 Python 原生 HTTP/SOCKS 代理核心，实现无进程重启的上游热切换，移除运行时第三方二进制依赖 2026-07-17
 * 3.9.0 界面代码重构，改进配置管理和命令行参数支持
 * 3.8.0 重构代码，改进进程处理、异常处理和日志功能 2026-03-17  

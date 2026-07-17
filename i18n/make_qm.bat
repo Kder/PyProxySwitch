@@ -1,5 +1,4 @@
 @echo off
-rem pylupdate6 -ts zh_CN.ts -ts en.ts ..\res\add_proxy_ui.py ..\res\pps_conf_ui.py
-pyside6-lrelease zh_CN.ts
-pyside6-lrelease en.ts
+pyside6-lrelease zh_CN.ts -qm ..\pyproxyswitch\data\i18n\zh_CN.qm
+pyside6-lrelease en.ts -qm ..\pyproxyswitch\data\i18n\en.qm
 pause

@@ -51,16 +51,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = '''
-    --verbose 
-    --ignore=tests/test_main.py 
-    --ignore=tests/test_main_gui_logic.py 
-    --ignore=tests/test_add_proxy_dialog.py 
-    --ignore=tests/test_config_dialog_buttons.py 
-    --ignore=tests/test_config_dialog_buttons_fixed.py 
-    --ignore=tests/test_main_module.py 
-    --ignore=tests/test_main_module_simple.py 
-    --ignore=tests/test_pps_config_coverage.py'''
+addopts = "-q"
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
@@ -112,9 +103,8 @@ version = {attr = "pyproxyswitch._version.__version__"}
 "pyproxyswitch.data" = [
     "defaults/*",
     "i18n/*.qm",
-    "i18n/*/LC_MESSAGES/*.mo",
 ]
-"pyproxyswitch.resources" = ["*.ui", "*.bat"]
+"pyproxyswitch.resources" = ["*.ui"]
 
 [tool.black]
 line-length = 100
@@ -141,6 +131,10 @@ exclude = '''
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+extend-exclude = [
+    "pyproxyswitch/resources/*_ui.py",
+    "pyproxyswitch/resources/pps_qrc.py",
+]
 
 [tool.ruff.lint]
 select = [
@@ -157,6 +151,7 @@ select = [
 ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
+    "N801",  # legacy Qt dialog class names
     "N802",  # function name should be lowercase (Qt convention)
 ]
 

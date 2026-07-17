@@ -25,14 +25,11 @@ class ProxyError(Exception):
 
 class ProxyStartError(ProxyError):
     """启动代理失败"""
-    pass
 
-
-class ProxyStopError(ProxyError):
-    """停止代理失败"""
     pass
 
 
 class ConfigError(ProxyError):
     """配置错误"""
+
     pass

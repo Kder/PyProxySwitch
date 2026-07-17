@@ -33,9 +33,6 @@ class ProxyManager:
         self._config = config
         self._server: NativeProxyServer | None = None
         self._lock = threading.RLock()
-        # Retained as a compatibility attribute for callers of older releases.
-        # The native backend never creates a subprocess.
-        self.r_process = None
 
     @property
     def server(self) -> NativeProxyServer | None:
@@ -48,23 +45,13 @@ class ProxyManager:
             return Upstream.direct()
         return self._server.upstream
 
-    def start_proxy(
-        self,
-        proxy_name: str,
-        proxy_address: str = "",
-        proxy_port: str = "",
-        proxy_type: str = "HTTP",
-    ) -> None:
+    def start_proxy(self, proxy_name: str) -> None:
         """Start the native listener or hot-switch newly accepted connections.
 
-        ``proxy_address``/``proxy_port`` remain accepted for API compatibility;
-        normal callers only need the proxy name because details are read from
-        the current proxy list.
+        Proxy details are read from the current proxy list.
         """
         try:
-            upstream = self._resolve_upstream(
-                proxy_name, proxy_address, proxy_port, proxy_type
-            )
+            upstream = self._resolve_upstream(proxy_name)
             host, port = self._listener_address()
             with self._lock:
                 if self._server is not None and self._server.is_running:
@@ -96,9 +83,7 @@ class ProxyManager:
         with self._lock:
             upstream = self.current_upstream
             old_server = self._server
-            old_address = (
-                (old_server.host, old_server.port) if old_server is not None else None
-            )
+            old_address = (old_server.host, old_server.port) if old_server is not None else None
             if old_server is not None and not old_server.stop(timeout=timeout):
                 raise ProxyStartError(
                     "Failed to restart proxy service", "Native listener did not stop in time"
@@ -121,9 +106,7 @@ class ProxyManager:
                             host=old_address[0],
                             port=old_address[1],
                             upstream=upstream,
-                            connect_timeout=float(
-                                self._config.get("CONNECT_TIMEOUT", 15)
-                            ),
+                            connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
                         )
                         fallback.start(timeout=timeout)
                         self._server = fallback
@@ -131,27 +114,8 @@ class ProxyManager:
                         logger.exception("Failed to restore the previous listener")
                 raise ProxyStartError("Failed to restart proxy service", str(exc)) from exc
 
-    def is_process_running(self) -> bool:
-        """Compatibility name: report whether the native listener is running."""
-        return self._server is not None and self._server.is_running
-
-    def get_process_info(self) -> str:
-        """Return listener and route information without referring to a PID."""
-        server = self._server
-        if server is None:
-            return "Not running"
-        if not server.is_running:
-            return "Stopped"
-        return (
-            f"Running (native {server.host}:{server.bound_port}, "
-            f"upstream: {server.upstream.description})"
-        )
-
     def stop_proxy(self, timeout: int = 5) -> bool:
-        return self.terminate_process(timeout)
-
-    def terminate_process(self, timeout: int = 5) -> bool:
-        """Compatibility name: stop the in-process server thread."""
+        """Stop the in-process proxy server."""
         with self._lock:
             if self._server is None:
                 return True
@@ -176,13 +140,7 @@ class ProxyManager:
             )
         return host, port
 
-    def _resolve_upstream(
-        self,
-        proxy_name: str,
-        proxy_address: str,
-        proxy_port: str,
-        proxy_type: str,
-    ) -> Upstream:
+    def _resolve_upstream(self, proxy_name: str) -> Upstream:
         if not isinstance(proxy_name, str) or not proxy_name:
             raise ConfigError("Invalid proxy name", "Proxy name must be a non-empty string")
         if proxy_name == "NoProxy":
@@ -191,16 +149,12 @@ class ProxyManager:
         selected = next(
             (proxy for proxy in self._config.get_proxies() if proxy[0] == proxy_name), None
         )
-        if selected is not None:
-            name, host, port, kind, username, password = selected
-        elif proxy_address and proxy_port:
-            name, host, port, kind = proxy_name, proxy_address, proxy_port, proxy_type
-            username = password = ""
-        else:
+        if selected is None:
             raise ConfigError(
                 f"Proxy not found: {proxy_name}",
                 f"No proxy named {proxy_name!r} exists in the configured proxy list",
             )
+        name, host, port, kind, username, password = selected
 
         try:
             port_number = int(port)

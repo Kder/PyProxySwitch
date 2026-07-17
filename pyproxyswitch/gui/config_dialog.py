@@ -6,18 +6,16 @@
 此模块包含Config_Dialog类，负责代理列表管理和应用程序配置。
 """
 
-
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 
-import pyproxyswitch.pps_config as pps_config
-
-# 导入UI文件
-from pyproxyswitch.resources.pps_conf_ui import Ui_Dialog_Config
 from pyproxyswitch.config import ConfigManager
 from pyproxyswitch.logger_config import logger
 from pyproxyswitch.proxy_validation import BatchImportValidator, ProxyValidator
+
+# 导入UI文件
+from pyproxyswitch.resources.pps_conf_ui import Ui_Dialog_Config
 
 from .batch_import_dialog import BatchImportDialog
 
@@ -26,37 +24,36 @@ from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
 
 
 class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
-    '''PPS配置对话框'''
+    """PPS配置对话框"""
+
     def __init__(self, parent=None):
-        '''初始化tableView及各个按钮'''
+        """初始化tableView及各个按钮"""
         super().__init__(parent)
         self.setupUi(self)
         self.setFixedSize(468, 327)
-        self.setWindowIcon(QtGui.QIcon(':/img/pps.png'))
+        self.setWindowIcon(QtGui.QIcon(":/img/pps.png"))
         # 注意：不再设置dialog_exsit标志，允许托盘菜单切换代理
 
         # 获取配置管理器
         self._config = ConfigManager()
 
-        (self.proxy_name, self.proxy_address, self.proxy_port, self.proxy_type,
-            self.proxy_user, self.proxy_pass) = range(6)
-        self.langs = ['zh_CN', 'en']
+        (
+            self.proxy_name,
+            self.proxy_address,
+            self.proxy_port,
+            self.proxy_type,
+            self.proxy_user,
+            self.proxy_pass,
+        ) = range(6)
+        self.langs = ["zh_CN", "en"]
         self.f_or_t = [False, True]
-        self.cmds = ['internal']
 
-        # The application now has one in-process backend.  Keep the field in
-        # the existing UI layout so older translations remain compatible.
-        self._configure_backend_selector()
-
-        self.comboBox_lang.setCurrentIndex(
-            self.langs.index(self._config.get('LANG')))
-        self.checkBox_debug.setChecked(self.f_or_t[self._config.get('DEBUG')])
-        self.checkBox_show_welcome.setChecked(
-            self.f_or_t[self._config.get('SHOW_WELCOME')])
-        self.comboBox_cmd.setCurrentIndex(0)
+        self.comboBox_lang.setCurrentIndex(self.langs.index(self._config.get("LANG")))
+        self.checkBox_debug.setChecked(self.f_or_t[self._config.get("DEBUG")])
+        self.checkBox_show_welcome.setChecked(self.f_or_t[self._config.get("SHOW_WELCOME")])
 
         self.le_localport.setValidator(QtGui.QIntValidator(0, 65535, self))
-        self.le_localport.setText(str(self._config.get('LOCAL_PORT')))
+        self.le_localport.setText(str(self._config.get("LOCAL_PORT")))
 
         # 使用增强的验证器
         self.validator = ProxyValidator(self)
@@ -68,7 +65,9 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.tableView.setAlternatingRowColors(True)
         self.tableView.setSortingEnabled(True)
         # 启用双击编辑
-        self.tableView.setEditTriggers(QtWidgets.QTableView.DoubleClicked | QtWidgets.QTableView.EditKeyPressed)
+        self.tableView.setEditTriggers(
+            QtWidgets.QTableView.DoubleClicked | QtWidgets.QTableView.EditKeyPressed
+        )
         self.tableView.setModel(self.create_model(parent))
         self.data_model = self.tableView.model()
         self.tableView.setCurrentIndex(self.data_model.index(0, 0))
@@ -99,13 +98,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 设置连接
         self.comboBox_lang.currentIndexChanged.connect(self.change_language)
-        self.comboBox_cmd.currentIndexChanged.connect(self.change_cmd)
         self.checkBox_debug.stateChanged.connect(self.change_debug)
         self.checkBox_show_welcome.stateChanged.connect(self.change_show_welcome)
         self.le_localport.editingFinished.connect(self.change_localport)
 
     def show_context_menu(self, pnt):
-        '''显示右键菜单'''
+        """显示右键菜单"""
         # 每次都创建新的菜单，确保使用最新的翻译
         context_menu = QtWidgets.QMenu()
 
@@ -125,83 +123,69 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         context_menu.exec(self.tableView.mapToGlobal(pnt))
 
-    def _configure_backend_selector(self):
-        """Keep the generated legacy combo box pinned to the native backend."""
-        self.comboBox_cmd.clear()
-        self.comboBox_cmd.addItem('internal')
-        self.comboBox_cmd.setEnabled(False)
-        self.label_2.setText(self.tr("Built-in HTTP/SOCKS proxy (no external process)"))
-
     def show_error(self, message: str):
-        '''显示错误消息'''
+        """显示错误消息"""
         QtWidgets.QMessageBox.critical(self, self.tr("Error"), message)
 
     def change_language(self, idx):
-        '''实时改变界面语言'''
+        """实时改变界面语言"""
         lang = self.langs[idx]
 
         # 保存新语言设置并通知主窗口
-        self._config.set('LANG', lang)
+        self._config.set("LANG", lang)
         self._config.save()
 
         parent = self.parentWidget()
-        if hasattr(parent, 'on_language_changed'):
+        if hasattr(parent, "on_language_changed"):
             parent.on_language_changed(lang)
 
     def changeEvent(self, event):
-        '''处理语言变更事件'''
+        """处理语言变更事件"""
         if event.type() == QtCore.QEvent.LanguageChange:
             # 重新翻译UI元素
             self.retranslateUi(self)
-            self._configure_backend_selector()
 
             # 更新数据模型的列标题
             model = self.data_model
-            model.setHeaderData(self.proxy_name, Qt.Horizontal,
-                self.tr('Name', 'Config_Dialog'))
-            model.setHeaderData(self.proxy_address, Qt.Horizontal,
-                self.tr('Address', 'Config_Dialog'))
-            model.setHeaderData(self.proxy_port, Qt.Horizontal,
-                self.tr('Port', 'Config_Dialog'))
-            model.setHeaderData(self.proxy_type, Qt.Horizontal,
-                self.tr('Type', 'Config_Dialog'))
-            model.setHeaderData(self.proxy_user, Qt.Horizontal,
-                self.tr('Username', 'Config_Dialog'))
-            model.setHeaderData(self.proxy_pass, Qt.Horizontal,
-                self.tr('Password', 'Config_Dialog'))
+            model.setHeaderData(self.proxy_name, Qt.Horizontal, self.tr("Name", "Config_Dialog"))
+            model.setHeaderData(
+                self.proxy_address, Qt.Horizontal, self.tr("Address", "Config_Dialog")
+            )
+            model.setHeaderData(self.proxy_port, Qt.Horizontal, self.tr("Port", "Config_Dialog"))
+            model.setHeaderData(self.proxy_type, Qt.Horizontal, self.tr("Type", "Config_Dialog"))
+            model.setHeaderData(
+                self.proxy_user, Qt.Horizontal, self.tr("Username", "Config_Dialog")
+            )
+            model.setHeaderData(
+                self.proxy_pass, Qt.Horizontal, self.tr("Password", "Config_Dialog")
+            )
 
             # 清除右键菜单缓存，强制下次显示时重新创建（使用新语言）
-            if hasattr(self, '_context_menu'):
-                delattr(self, '_context_menu')
+            if hasattr(self, "_context_menu"):
+                delattr(self, "_context_menu")
 
         # 调用父类的changeEvent处理其他事件
         super().changeEvent(event)
 
-    def change_cmd(self, idx):
-        '''改变代理命令'''
-        cmd = self.cmds[idx]
-        self._config.set('CMD', cmd)
-        self._config.save()
-
     def change_debug(self, state):
-        '''改变调试模式'''
+        """改变调试模式"""
         debug = 1 if state == 2 else 0  # Qt.Checked = 2 in signal
-        self._config.set('DEBUG', debug)
+        self._config.set("DEBUG", debug)
         self._config.save()
 
     def change_show_welcome(self, state):
-        '''改变显示欢迎信息设置'''
+        """改变显示欢迎信息设置"""
         show = 1 if state == 2 else 0  # Qt.Checked = 2 in signal
-        self._config.set('SHOW_WELCOME', show)
+        self._config.set("SHOW_WELCOME", show)
         self._config.save()
 
     def change_localport(self):
-        '''改变本地端口'''
+        """改变本地端口"""
         try:
             port = int(self.le_localport.text())
             if 1 <= port <= 65535:
-                old_port = self._config.get('LOCAL_PORT')
-                self._config.set('LOCAL_PORT', port)
+                old_port = self._config.get("LOCAL_PORT")
+                self._config.set("LOCAL_PORT", port)
 
                 # 改变监听端口必须重新绑定套接字；普通上游切换不重启。
                 if old_port != port:
@@ -210,11 +194,11 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                         self._config.save()
 
                         parent = self.parentWidget()
-                        if hasattr(parent, 'proxy_manager'):
+                        if hasattr(parent, "proxy_manager"):
                             parent.proxy_manager.restart_listener()
                         logger.info(f"Native proxy listener moved to port {port}")
                     except Exception as e:
-                        self._config.set('LOCAL_PORT', old_port)
+                        self._config.set("LOCAL_PORT", old_port)
                         self._config.save()
                         self.le_localport.setText(str(old_port))
                         logger.error(f"Failed to move native proxy listener: {e}")
@@ -225,7 +209,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.show_error(self.tr("Port must be a valid number"))
 
     def add_item(self, model, proxy):
-        '''添加代理到模型'''
+        """添加代理到模型"""
         name, address, port, ptype, user, pwd = proxy
 
         # 验证代理信息
@@ -240,19 +224,19 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self._create_editable_item(port),
             self._create_editable_item(ptype),
             self._create_editable_item(user),
-            self._create_editable_item(pwd)
+            self._create_editable_item(pwd),
         ]
         model.appendRow(row)
         return True
 
     def _create_editable_item(self, text):
-        '''创建可编辑的表格项'''
+        """创建可编辑的表格项"""
         item = QStandardItem(text)
         item.setEditable(True)
         return item
 
     def create_model(self, parent):
-        '''创建数据模型'''
+        """创建数据模型"""
         model = QStandardItemModel(0, 6, parent)
         model.setHeaderData(self.proxy_name, Qt.Horizontal, self.tr("Name"))
         model.setHeaderData(self.proxy_address, Qt.Horizontal, self.tr("Address"))
@@ -278,7 +262,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         return model
 
     def on_data_changed(self, top_left, bottom_right, roles):
-        '''处理表格数据更改'''
+        """处理表格数据更改"""
         # 只处理编辑角色的更改
         if Qt.EditRole not in roles:
             return
@@ -297,12 +281,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.save_proxies()
         self.refresh_menu()
 
-        # 生成后端配置文件
-        proxies = self._config.get_proxies()
-        self._generate_backend_configs(proxies)
-
     def _validate_cell_data(self, row, col, value):
-        '''验证单元格数据'''
+        """验证单元格数据"""
         try:
             if col == self.proxy_name:
                 self.validator.validate_proxy_name(value)
@@ -322,7 +302,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             return False
 
     def _revert_cell_change(self, row, col):
-        '''恢复单元格更改'''
+        """恢复单元格更改"""
         # 重新从配置加载数据
         proxies = self._config.get_proxies()
         if row < len(proxies):
@@ -331,15 +311,14 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.data_model.setData(self.data_model.index(row, col), original_value)
 
     def show_batch_dialog(self):
-        '''显示批量操作对话框'''
+        """显示批量操作对话框"""
         # 读取原始内容
         try:
-            with open(pps_config.PROXY_LIST, encoding='utf-8') as f:
-                initial_content = f.read()
+            initial_content = self._config.get_proxy_list_path().read_text(encoding="utf-8")
         except Exception as e:
             initial_content = ""
             errmsg = self.tr("Failed to read proxy list file")
-            logger.warning(f'{errmsg}: {e}')
+            logger.warning(f"{errmsg}: {e}")
 
         # 使用新的批量导入对话框
         dialog = BatchImportDialog(self, initial_content)
@@ -365,32 +344,18 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 更新配置管理器
         self._config.set_proxies(proxy_list)
-
-        # 保存到文件
-        with open(pps_config.PROXY_LIST, 'w', encoding='utf-8') as outfile:
-            for proxy in valid_proxies:
-                if proxy[4] and proxy[5]:  # 有用户名和密码
-                    line = f'{proxy[0]} {proxy[1]}:{proxy[2]} {proxy[4]}:{proxy[5]} {proxy[3]}\n'
-                elif proxy[3] != 'HTTP':  # 特殊类型
-                    line = f'{proxy[0]} {proxy[1]}:{proxy[2]} {proxy[3]}\n'
-                else:  # 普通HTTP
-                    line = f'{proxy[0]} {proxy[1]}:{proxy[2]}\n'
-                outfile.write(line)
+        self._config.save_proxies()
 
         # 更新界面
         self.data_model = self.create_model(self.parentWidget())
         self.tableView.setModel(self.data_model)
+        self.data_model.dataChanged.connect(self.on_data_changed)
 
         # 保存并刷新
-        self._config.save()
         self.refresh_menu()
 
-        # 生成后端配置文件
-        proxies = self._config.get_proxies()
-        self._generate_backend_configs(proxies)
-
     def add_proxy(self):
-        '''添加代理'''
+        """添加代理"""
         from .add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog(self)
@@ -401,19 +366,16 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 dialog.le_port.text(),
                 dialog.comboBox_type.currentText(),
                 dialog.le_username.text(),
-                dialog.le_password.text()
+                dialog.le_password.text(),
             ]
 
             if self.add_item(self.data_model, proxy_data):
                 # 保存到配置文件
                 self.save_proxies()
                 self.refresh_menu()
-                # 生成后端配置文件
-                proxies = self._config.get_proxies()
-                self._generate_backend_configs(proxies)
 
     def modify_proxy(self):
-        '''修改代理'''
+        """修改代理"""
         current = self.tableView.currentIndex()
         if not current.isValid():
             self.show_error(self.tr("Please select a proxy to modify"))
@@ -451,7 +413,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 dialog.le_port.text(),
                 dialog.comboBox_type.currentText(),
                 dialog.le_username.text(),
-                dialog.le_password.text()
+                dialog.le_password.text(),
             ]
 
             # 验证并更新代理
@@ -465,49 +427,46 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 # 保存到配置文件
                 self.save_proxies()
                 self.refresh_menu()
-                # 生成后端配置文件
-                proxies = self._config.get_proxies()
-                self._generate_backend_configs(proxies)
 
             except Exception as e:
                 self.show_error(str(e))
 
     def del_proxy(self):
-        '''删除代理'''
+        """删除代理"""
         current = self.tableView.currentIndex()
         if current.isValid():
-            reply = QtWidgets.QMessageBox.question(self, self.tr("Confirm Delete"),
-                                                  self.tr("Are you sure you want to delete this proxy?"),
-                                                  QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                self.tr("Confirm Delete"),
+                self.tr("Are you sure you want to delete this proxy?"),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            )
 
             if reply == QtWidgets.QMessageBox.Yes:
                 self.data_model.removeRow(current.row())
                 # 刷新菜单
                 self.save_proxies()
                 self.refresh_menu()
-                # Regenerate backend configs after deletion
-                proxies = self._config.get_proxies()
-                self._generate_backend_configs(proxies)
 
     def refresh_menu(self):
-        '''刷新托盘菜单'''
+        """刷新托盘菜单"""
         # 立即通知主窗口刷新系统托盘菜单
         parent = self.parentWidget()
-        if hasattr(parent, 'refresh_menu'):
+        if hasattr(parent, "refresh_menu"):
             # 重新加载代理列表并刷新菜单
             parent.proxy_list = self._config.get_proxies()
             parent.proxy_names = [i[0] for i in parent.proxy_list]
-            parent.proxy_names.append('NoProxy')
+            parent.proxy_names.append("NoProxy")
             parent.refresh_menu()
             logger.info("Refreshed system tray menu with updated proxy list")
             # 如果当前代理不在列表中，切换到NoProxy
             if parent.item_text not in parent.proxy_names:
-                parent.switchProxy('NoProxy')
+                parent.switchProxy("NoProxy")
         else:
             logger.warning("Parent widget does not have refresh_menu method")
 
     def export_proxies(self):
-        '''导出代理'''
+        """导出代理"""
         # 收集代理数据
         proxies = []
         for row in range(self.data_model.rowCount()):
@@ -522,7 +481,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         BatchImportDialog.export_proxies_to_file(self, proxies)
 
     def save_proxies(self):
-        '''保存代理到配置文件'''
+        """保存代理到配置文件"""
         proxies = []
         for row in range(self.data_model.rowCount()):
             name = self.data_model.data(self.data_model.index(row, self.proxy_name))
@@ -532,25 +491,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             user = self.data_model.data(self.data_model.index(row, self.proxy_user))
             pwd = self.data_model.data(self.data_model.index(row, self.proxy_pass))
 
-            proxy = [name, address, port, ptype, user, pwd] # IMPORTANT!
+            proxy = [name, address, port, ptype, user, pwd]  # IMPORTANT!
             proxies.append(proxy)
 
         self._config.set_proxies(proxies)
         self._config.save_proxies()
 
-
-    def _generate_noproxy_configs(self, local_port):
-        """Compatibility no-op: the native backend needs no generated file."""
-
-
-    def _generate_backend_configs(self, proxies, local_port=None):
-        """Compatibility no-op: routes are read directly from proxy.txt."""
-
-
-    def _cleanup_backend_configs(self):
-        """Compatibility no-op: the native backend owns no config directory."""
-
-
     def done(self, r):
-        '''对话框完成时调用'''
+        """对话框完成时调用"""
         super().done(r)

@@ -18,8 +18,9 @@ import logging
 import socket
 import struct
 import threading
+from collections.abc import Awaitable
 from dataclasses import dataclass
-from typing import Awaitable, TypeVar
+from typing import TypeVar
 from urllib.parse import SplitResult, urlsplit, urlunsplit
 
 logger = logging.getLogger("PyProxySwitch")
@@ -669,7 +670,7 @@ class NativeProxyServer:
     def _basic_auth(upstream: Upstream) -> str:
         if not upstream.username and not upstream.password:
             return ""
-        credentials = f"{upstream.username}:{upstream.password}".encode("utf-8")
+        credentials = f"{upstream.username}:{upstream.password}".encode()
         return base64.b64encode(credentials).decode("ascii")
 
     @staticmethod
@@ -679,7 +680,7 @@ class NativeProxyServer:
         except ValueError:
             encoded = host.encode("idna")
             if len(encoded) > 255:
-                raise ProxyProtocolError("SOCKS5 destination name is too long")
+                raise ProxyProtocolError("SOCKS5 destination name is too long") from None
             return b"\x03" + bytes((len(encoded),)) + encoded
         if isinstance(address, ipaddress.IPv4Address):
             return b"\x01" + address.packed
