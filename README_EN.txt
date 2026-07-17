@@ -28,6 +28,11 @@ Windows these are under the user's AppData folders, not site-packages.
 Requirements: Python 3.10+, PySide6 and platformdirs. The proxy protocol core
 itself uses only the Python standard library.
 
+After changing a Qt Designer file under pyproxyswitch/resources, run
+`python tools/generate_ui.py`. Use `python tools/generate_ui.py --check` to
+verify that the tracked Python modules are current. The script works on
+Windows, Linux and macOS.
+
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info
 Last Update: 2026-07-18

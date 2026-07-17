@@ -42,6 +42,10 @@ PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，
 
 当前核心面向 TCP 代理：支持 HTTP 转发/CONNECT 与 SOCKS CONNECT，不实现 SOCKS BIND、SOCKS5 UDP ASSOCIATE 或内容缓存。
 
+# 开发
+
+修改 `pyproxyswitch/resources` 中的 Qt Designer `.ui` 文件后，运行 `python tools/generate_ui.py` 重新生成对应的 `*_ui.py` 文件。提交前可运行 `python tools/generate_ui.py --check` 检查生成文件是否为最新版本。脚本会自动使用当前 Python 环境中的 `pyside6-uic`，支持 Windows、Linux 和 macOS。
+
 # 系统要求
 
 * 源代码版本：Python 3.10+ 和 PySide6
