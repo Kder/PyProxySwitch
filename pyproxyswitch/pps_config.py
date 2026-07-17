@@ -55,7 +55,7 @@ __author__ = "Kder"
 __copyright__ = "Copyright 2009-2026 Kder"
 __credits__ = ["Kder"]
 
-__version__ = "3.9.0"
+__version__ = "4.0.0"
 __date__ = "2026-04-01"
 __maintainer__ = "Kder"
 __email__ = "<kderlin (#) gmail dot com>"
@@ -66,13 +66,12 @@ __status__ = "Beta"
 import gettext
 import json
 import logging
-import os
 import sys
 import traceback
 from pathlib import Path
 from typing import Any
 
-from src.proxy_validation import BatchImportValidator, ProxyValidator, ValidationError
+from pyproxyswitch.proxy_validation import BatchImportValidator, ProxyValidator, ValidationError
 
 # 全局变量存储配置管理器实例
 _config_mgr = None
@@ -81,7 +80,7 @@ _config_mgr = None
 def _get_logger():
     """获取已配置的logger"""
     try:
-        from src.logger_config import get_logger
+        from pyproxyswitch.logger_config import get_logger
         return get_logger()
     except ImportError:
         return logging.getLogger(__name__)
@@ -636,8 +635,6 @@ def add_proxy(
         host_port = [proxy_address, proxy_port]
         user_pass = [proxy_user, proxy_pass]
 
-        host_port_str = f"{proxy_address}:{proxy_port}"
-
     except (ValueError, IndexError, ValidationError) as e:
         proxy_check = False
         pps_output(f"验证错误: {e}")
@@ -653,93 +650,6 @@ def add_proxy(
             user_pass[0],
             user_pass[1],
         )
-
-        # 添加对应的配置文件（无论作为主程序还是模块都应该执行）
-        isauth = user_pass[0] != ""
-        ishttp = proxy_type == "HTTP"
-        type_map = {
-            "HTTP": ["", ""],
-            "SOCKS4": ["socks4a", "socks4+"],
-            "SOCKS5": ["socks5", "socks5+"],
-        }
-
-        local_port = get_local_port()
-
-        conf_file_tpl = {
-            True: {
-                True: [
-                    (
-                        f"parentProxy = {host_port_str}\r\n"
-                        f"parentAuthCredentials = {user_pass[0]}:{user_pass[1]}\r\n"
-                        f"proxyPort = {local_port}\r\n"
-                    ),
-                    (
-                        f"internal 127.0.0.1\r\n"
-                        f"auth iponly\r\n"
-                        f"allow * 127.0.0.1\r\n"
-                        f"parent 1000 http {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]}\r\n"
-                        f"socks -n -a -p{local_port}\r\n"
-                    ),
-                ],
-                False: [
-                    f"parentProxy = {host_port_str}\r\nproxyPort = {local_port}\r\n",
-                    f"internal 127.0.0.1\r\n"
-                    f"auth iponly\r\n"
-                    f"allow * 127.0.0.1\r\n"
-                    f"parent 1000 http {host_port[0]} {host_port[1]}\r\n"
-                    f"socks -n -a -p{local_port}\r\n",
-                ],
-            },
-            False: {
-                True: [
-                    (
-                        f"socksProxyType = {type_map[proxy_type][0]}\r\n"
-                        f"parentAuthCredentials = {user_pass[0]}:{user_pass[1]}\r\n"
-                        f"socksParentProxy = {host_port_str}\r\n"
-                        f"proxyPort = {local_port}\r\n"
-                    ),
-                    (
-                        f"internal 127.0.0.1\r\n"
-                        f"auth iponly\r\n"
-                        f"allow * 127.0.0.1\r\n"
-                        f"parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]} {user_pass[0]} {user_pass[1]}\r\n"
-                        f"socks -n -a -p{local_port}\r\n"
-                    ),
-                ],
-                False: [
-                    f"socksProxyType = {type_map[proxy_type][0]}\r\n"
-                    f"socksParentProxy = {host_port_str}\r\n"
-                    f"proxyPort = {local_port}\r\n",
-                    f"internal 127.0.0.1\r\n"
-                    f"auth iponly\r\n"
-                    f"allow * 127.0.0.1\r\n"
-                    f"parent 1000 {type_map[proxy_type][1]} {host_port[0]} {host_port[1]}\r\n"
-                    f"socks -n -a -p{local_port}\r\n",
-                ],
-            },
-        }
-
-        conf_polipo = conf_file_tpl[ishttp][isauth][0]
-
-        try:
-            polipo_dir = get_backend_config_dir("polipo")
-            polipo_dir.mkdir(parents=True, exist_ok=True)
-            polipo_path = polipo_dir / (proxy_name + ".conf")
-            with open(polipo_path, "w", encoding="utf-8") as cfg_file:
-                cfg_file.write(conf_polipo)
-
-            conf_3proxy = conf_file_tpl[ishttp][isauth][1]
-            proxy3_dir = get_backend_config_dir("3proxy")
-            proxy3_dir.mkdir(parents=True, exist_ok=True)
-            proxy3_path = proxy3_dir / (proxy_name + ".conf")
-            with open(proxy3_path, "w", encoding="utf-8") as cfg_file:
-                cfg_file.write(conf_3proxy)
-
-        except OSError:
-            pps_output(PPS_MSG["ERR_SAVE_CFG"])
-            pps_exc_handle()
-            if __name__ == "__main__":
-                sys.exit(2)
 
         # 当作为主程序运行时，修改全局PROXIES
         if __name__ == "__main__":
@@ -758,8 +668,6 @@ def add_proxy(
 
 def del_proxy(proxy: list[str] | tuple[str, ...] | set[str]) -> None:
     """删除代理项，proxy为一由代理名称组成的序列（元组、列表或集合）"""
-    deleted = True
-
     for proxy_name in proxy:
         if not isinstance(proxy_name, str):
             proxy_name = str(proxy_name)
@@ -770,18 +678,7 @@ def del_proxy(proxy: list[str] | tuple[str, ...] | set[str]) -> None:
                     PROXIES.remove(i)
             pps_output(PPS_MSG["INFO_DEL"] % proxy_name)
 
-        # 移除对应的配置文件
-        try:
-            polipo_path = get_backend_config_dir("polipo") / (proxy_name + ".conf")
-            os.remove(polipo_path)
-
-            proxy3_path = get_backend_config_dir("3proxy") / (proxy_name + ".conf")
-            os.remove(proxy3_path)
-        except OSError:
-            pps_output(PPS_MSG["ERR_DEL_FILE"] % proxy_name, "stderr")
-            deleted = False
-            pps_exc_handle()
-    if __name__ == "__main__" and deleted:
+    if __name__ == "__main__":
         pps_output(PPS_MSG["SUCCESS_DEL"])
 
 

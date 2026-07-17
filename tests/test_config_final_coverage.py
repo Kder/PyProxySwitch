@@ -18,7 +18,7 @@ class TestConfigFinalCoverage:
 
     def test_singleton_prevents_reinitialization(self):
         """测试单例模式防止重复初始化 - 覆盖 line 105"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Reset singleton first
         ConfigManager.reset_singleton()
@@ -34,7 +34,7 @@ class TestConfigFinalCoverage:
 
     def test_pps_config_import_error_fallback(self, monkeypatch):
         """测试pps_config导入错误时的fallback逻辑 - 覆盖 lines 112-117"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Mock _import_pps_funcs to raise ImportError
         with patch("src.config._import_pps_funcs") as mock_import:
@@ -49,7 +49,7 @@ class TestConfigFinalCoverage:
 
     def test_proxy_list_none_function_path(self, monkeypatch):
         """测试代理列表函数为None的完整路径 - 覆盖 line 129"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Mock function to return None for pps_load_proxylist
         with patch("src.config._import_pps_funcs") as mock_import:
@@ -66,7 +66,7 @@ class TestConfigFinalCoverage:
 
     def test_save_config_directory_creation_failure(self, temp_dir):
         """测试保存配置文件时目录创建失败 - 覆盖 lines 240-242"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "deeply" / "nested" / "path" / "config.json"
 
@@ -79,7 +79,7 @@ class TestConfigFinalCoverage:
 
     def test_save_proxies_directory_creation_failure(self, temp_dir):
         """测试保存代理列表时目录创建失败 - 覆盖 lines 250-251"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         proxy_list_path = Path(temp_dir) / "deeply" / "nested" / "path" / "proxies.txt"
@@ -96,7 +96,7 @@ class TestConfigFinalCoverage:
 
     def test_logger_fallback_path(self):
         """测试日志记录器fallback路径 - 覆盖 lines 39-41"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Mock logger import to fail
         with patch("src.config._get_logger") as mock_get_logger:
@@ -113,7 +113,7 @@ class TestConfigFinalCoverage:
 
     def test_multi_instance_independence(self, temp_dir):
         """测试多实例模式的完全独立性"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # 重置单例
         ConfigManager.reset_singleton()
@@ -138,7 +138,7 @@ class TestConfigFinalCoverage:
 
     def test_singleton_reset_and_recreate(self, temp_dir):
         """测试单例重置和重新创建"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Create first instance
         original_instance = ConfigManager._instance
@@ -159,7 +159,7 @@ class TestConfigFinalCoverage:
 
     def test_dict_interface_edge_cases(self, temp_dir):
         """测试字典接口的边缘情况"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -187,7 +187,7 @@ class TestConfigFinalCoverage:
 
     def test_update_method_batch_operations(self, temp_dir):
         """测试update方法的批量操作"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -202,7 +202,7 @@ class TestConfigFinalCoverage:
 
     def test_reset_to_default_complete(self, temp_dir):
         """测试reset_to_default方法的完整功能"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -223,7 +223,7 @@ class TestConfigFinalCoverage:
 
     def test_repr_method_comprehensive(self, temp_dir):
         """测试__repr__方法的完整信息"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -241,7 +241,7 @@ class TestConfigFinalCoverage:
 
     def test_get_instance_class_methods_comprehensive(self):
         """测试类方法的完整功能"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Reset first
         ConfigManager.reset_singleton()

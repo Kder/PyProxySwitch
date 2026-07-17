@@ -113,7 +113,7 @@ invalid_port_proxy test.example.com:99999
 @pytest.fixture
 def proxy_validator():
     """创建代理验证器实例"""
-    from src.proxy_validation import ProxyValidator
+    from pyproxyswitch.proxy_validation import ProxyValidator
 
     return ProxyValidator()
 
@@ -121,7 +121,7 @@ def proxy_validator():
 @pytest.fixture
 def batch_validator():
     """创建批量导入验证器实例"""
-    from src.proxy_validation import BatchImportValidator
+    from pyproxyswitch.proxy_validation import BatchImportValidator
 
     return BatchImportValidator()
 
@@ -131,7 +131,7 @@ def reset_singleton():
     """每个测试后重置 ConfigManager 单例"""
     yield
     try:
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         ConfigManager.reset_singleton()
     except ImportError:
@@ -141,7 +141,7 @@ def reset_singleton():
 @pytest.fixture
 def config_manager_with_temp(temp_config_dir: Dict[str, Path]):
     """创建使用临时目录的 ConfigManager 实例"""
-    from src.config import ConfigManager
+    from pyproxyswitch.config import ConfigManager
 
     # 重置单例
     ConfigManager.reset_singleton()

@@ -9,7 +9,7 @@ PyProxySwitch 启动脚本
     python PyProxySwitch.py --debug
     python PyProxySwitch.py --config /path/to/config
 
-版本: 3.9.0
+版本: 4.0.0
 """
 
 import argparse
@@ -19,7 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-from src.logger_config import get_logger
+from pyproxyswitch.logger_config import get_logger
 
 
 def parse_arguments():
@@ -71,7 +71,7 @@ def check_environment():
         return False
 
     # 检查必要的目录结构
-    required_dirs = ["cfg", "bin", "logs"]
+    required_dirs = ["cfg"]
     for dir_name in required_dirs:
         if not Path(dir_name).exists():
             print(f"警告: 缺少必要目录 {dir_name}")
@@ -117,6 +117,17 @@ def main():
     if args.debug:
         log_level = logging.DEBUG
 
+    config_path = Path(args.config)
+    base_config_dir = config_path.parent
+    proxy_list_path = base_config_dir / "proxy.txt"
+    from pyproxyswitch.config import ConfigManager
+
+    config_mgr = ConfigManager(
+        config_path=str(config_path),
+        proxy_list_path=str(proxy_list_path),
+        backend_config_base=str(base_config_dir),
+    )
+
     logger = get_logger()
 
     # 确保console handler的级别正确
@@ -134,79 +145,15 @@ def main():
     logger.info("=" * 50)
 
     try:
-        # 检查是否需要重新生成配置文件
-        port_changed = False
-        if args.port_specified and config_port is not None and args.port != config_port:
-            logger.info(f"检测到端口变更: 配置文件端口 {config_port} -> 命令行端口 {args.port}")
-            port_changed = True
-
-        # 导入并启动主应用程序
-        import src.main
-
-        # 导入必要的模块
-        from src.config import ConfigManager
-
-        # 根据--config参数计算相关路径
-        config_path = Path(args.config)
-        base_config_dir = config_path.parent
-
-        # 计算相关配置文件路径
-        proxy_list_path = base_config_dir / "proxy.txt"
-
-        # 初始化配置管理器
-        config_mgr = ConfigManager()
-        config_mgr.set_config_path(str(config_path))
-        config_mgr.set_proxy_list_path(str(proxy_list_path))
-        config_mgr.set_backend_config_base(str(base_config_dir))
-
-        # 设置pps_config使用相同的配置管理器
-        import src.pps_config as pps_config
-        pps_config.set_config_manager(config_mgr)
         logger.debug(f"Config file path: {config_mgr.get_config_path()}")
         logger.debug(f"Proxy list file path: {config_mgr.get_proxy_list_path()}")
 
-        # 如果需要，重新生成配置文件
-        if port_changed:
-            logger.info("正在重新生成代理配置文件...")
-            try:
-                # 更新配置文件中的端口
-                config_mgr.set('LOCAL_PORT', args.port)
-                config_mgr.save()
+        if args.port_specified and args.port != config_port:
+            logger.info(f"使用命令行指定的本地端口: {args.port}")
+            config_mgr.set('LOCAL_PORT', args.port)
 
-                # 更新pps_config中的全局CONFIG
-                pps_config.update_config()
-
-                # 重新生成所有配置文件
-                proxies = config_mgr.get_proxies()
-                if proxies:
-                    # 使用独立的函数重新生成配置文件，避免QWidget依赖
-                    pps_config.regenerate_all_configs(proxies, args.port)
-                    logger.info("代理配置文件重新生成完成")
-                else:
-                    logger.info("没有代理配置需要重新生成")
-
-            except Exception as e:
-                logger.error(f"重新生成配置文件失败: {e}")
-                # 继续执行，不阻止程序启动
-
-        # 检查是否有缺失的配置文件
-        try:
-            proxies = config_mgr.get_proxies()
-            if proxies:
-                missing_proxies = pps_config.check_missing_configs(proxies)
-                if missing_proxies:
-                    logger.info(f"检测到 {len(missing_proxies)} 个代理缺失配置文件，正在重新生成...")
-                    pps_config.regenerate_all_configs(proxies, args.port)
-                    logger.info("缺失的配置文件已重新生成")
-                else:
-                    logger.debug("所有代理配置文件完整")
-            else:
-                logger.debug("没有代理配置需要检查")
-        except Exception as e:
-            logger.warning(f"配置文件检查失败: {e}，跳过检查继续启动")
-
-        # 启动应用
-        src.main.main(log_level=log_level)
+        from pyproxyswitch.main import main as gui_main
+        gui_main(log_level=log_level)
 
     except ImportError as e:
         logger.error(f"导入错误: {e}")

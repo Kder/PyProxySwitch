@@ -11,7 +11,7 @@ import pytest
 def test_main_function_import_and_call():
     """测试 main 函数可以导入和调用"""
     # 导入模块
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数存在且可调用
     assert callable(main)
@@ -24,7 +24,7 @@ def test_main_function_import_and_call():
 
 def test_main_module_metadata():
     """测试模块元数据"""
-    from src.main import (
+    from pyproxyswitch.main import (
         __version__, __author__, __copyright__, __credits__,
         __license__, __status__, __projecturl__, __date__,
         __email__, __maintainer__, __url__
@@ -38,7 +38,7 @@ def test_main_module_metadata():
 
 def test_main_with_valid_log_level():
     """测试带有效日志级别的 main 函数"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 测试函数接受不同的日志级别参数
     test_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -53,7 +53,7 @@ def test_main_with_valid_log_level():
 
 def test_main_function_exception_handling():
     """测试 main 函数的异常处理能力"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有异常处理逻辑
     import inspect
@@ -67,7 +67,7 @@ def test_main_function_exception_handling():
 
 def test_main_function_imports():
     """测试 main 函数中的导入语句"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有必要的导入
     import inspect
@@ -75,12 +75,12 @@ def test_main_function_imports():
 
     # 检查关键导入
     assert "from PySide6 import QtWidgets" in source
-    assert "from src.logger_config import setup_logger" in source
-    assert "from src.gui.main_window import Window" in source
+    assert "from pyproxyswitch.logger_config import setup_logger" in source
+    assert "from pyproxyswitch.gui.main_window import Window" in source
 
 def test_main_function_application_setup():
     """测试 main 函数中的应用设置逻辑"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有应用程序设置代码
     import inspect
@@ -93,7 +93,7 @@ def test_main_function_application_setup():
 
 def test_main_function_window_creation():
     """测试 main 函数中的窗口创建"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有窗口创建代码
     import inspect
@@ -104,7 +104,7 @@ def test_main_function_window_creation():
 
 def test_main_function_event_loop():
     """测试 main 函数中的事件循环"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有事件循环代码
     import inspect
@@ -116,7 +116,7 @@ def test_main_function_event_loop():
 
 def test_main_function_version_check():
     """测试 main 函数中的版本检查"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有版本检查代码
     import inspect
@@ -128,7 +128,7 @@ def test_main_function_version_check():
 
 def test_main_function_logger_handling():
     """测试 main 函数中的日志处理"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有日志处理代码
     import inspect
@@ -141,7 +141,7 @@ def test_main_function_logger_handling():
 
 def test_main_module_docstring():
     """测试模块文档字符串"""
-    import src.main as main_module
+    import pyproxyswitch.main as main_module
 
     # 验证模块有文档字符串
     assert main_module.__doc__ is not None
@@ -151,7 +151,7 @@ def test_main_module_docstring():
 
 def test_main_function_docstring():
     """测试 main 函数文档字符串"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有文档字符串
     assert main.__doc__ is not None
@@ -159,7 +159,7 @@ def test_main_function_docstring():
 
 def test_main_module_execution_guard():
     """测试模块执行保护"""
-    import src.main as main_module
+    import pyproxyswitch.main as main_module
 
     # 验证模块有执行保护
     source = open(main_module.__file__, 'r', encoding='utf-8').read()
@@ -168,7 +168,7 @@ def test_main_module_execution_guard():
 
 def test_main_error_messages():
     """测试错误消息"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有错误消息
     import inspect
@@ -182,7 +182,7 @@ def test_main_error_messages():
 
 def test_main_exit_codes():
     """测试退出代码"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有正确的退出代码
     import inspect
@@ -194,7 +194,7 @@ def test_main_exit_codes():
 
 def test_main_function_structure():
     """测试 main 函数结构"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 获取函数源码分析结构
     import inspect

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any  # noqa: E402, UP035
 
@@ -30,35 +31,9 @@ PyProxySwitch 配置管理模块
 __all__ = ["ConfigManager"]
 
 
-# 延迟导入以避免循环依赖
-def _get_logger():
-    """获取日志记录器（延迟导入）"""
-    try:
-        from .logger_config import get_logger
-        return get_logger()
-    except ImportError:
-        import logging
-        return logging.getLogger("ConfigManager")
-
-
 def _import_pps_funcs():
     """导入pps_config中的函数（延迟导入）"""
-    try:
-        # 首先尝试相对导入（在包内部时）
-        from . import pps_config
-    except ImportError as e1:
-        try:
-            # 如果相对导入失败，尝试绝对导入
-            import os
-            import sys
-            # 确保项目根目录在路径中
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            if project_root not in sys.path:
-                sys.path.insert(0, project_root)
-
-            from src import pps_config
-        except ImportError as e2:
-            raise ImportError(f"无法导入 pps_config 模块。相对导入错误: {e1}, 绝对导入错误: {e2}") from e2
+    from . import pps_config
 
     return (
         pps_config.pps_load_proxylist,
@@ -133,13 +108,9 @@ class ConfigManager:
             # self.logger.debug("config_mgr already initialized")
             return
 
-        # 获取日志记录器，失败时使用默认logger
-        try:
-            self.logger = _get_logger()
-        except Exception:
-            import logging
-
-            self.logger = logging.getLogger("ConfigManager")
+        # Do not initialize the application logger from inside ConfigManager:
+        # logger setup itself reads ConfigManager to locate LOG_PATH.
+        self.logger = logging.getLogger("PyProxySwitch")
 
         # 获取pps_config中的函数和PROGRAM_PATH
         try:
@@ -207,6 +178,15 @@ class ConfigManager:
             if "FISRT_RUN" in self._config and "FIRST_RUN" not in self._config:
                 self._config["FIRST_RUN"] = self._config.pop("FISRT_RUN")
                 self.logger.debug("已修复配置拼写错误: FISRT_RUN -> FIRST_RUN")
+
+            # 3proxy/polipo/ip_relay were external process backends.  The
+            # native server is the only runtime backend now; migrate old
+            # configuration values in memory and persist them on the next save.
+            if self._config.get("CMD") in {"3proxy", "polipo", "ip_relay"}:
+                self._config["CMD"] = "internal"
+                self.logger.info("已迁移到 Python 内置代理后端")
+            self._config.setdefault("LOCAL_ADDRESS", "127.0.0.1")
+            self._config.setdefault("CONNECT_TIMEOUT", 15)
 
             # 加载代理列表
             self._load_proxies()
@@ -360,13 +340,15 @@ class ConfigManager:
     def _get_default_config() -> dict[str, Any]:
         """获取默认配置"""
         return {
-            "CMD": "3proxy",
+            "CMD": "internal",
+            "CONNECT_TIMEOUT": 15,
             "DEBUG": 0,
             "DEFAULT_ITEM": "NoProxy",
             "FIRST_RUN": 0,
             "LANG": "zh_CN",
             "LAST_ITEM": "NoProxy",
             "LOCAL_PORT": 8888,
+            "LOCAL_ADDRESS": "127.0.0.1",
             "SHOW_WELCOME": 0,
             "LOG_PATH": "",  # 空字符串表示使用默认路径
         }

@@ -47,7 +47,7 @@ class TestLoggerConfigComprehensive:
         logger.addHandler(existing_handler)
 
         # 调用 setup_logger
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
         setup_logger(name=logger_name, log_level=logging.DEBUG)
 
         # 验证现有处理器的级别被更新
@@ -57,7 +57,7 @@ class TestLoggerConfigComprehensive:
 
     def test_setup_logger_config_manager_exception(self):
         """测试 setup_logger 中配置管理器异常的处理 (lines 77-87)"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         with patch.dict('sys.modules', {'src.config': None}):
             # 这应该触发异常处理路径
@@ -67,7 +67,7 @@ class TestLoggerConfigComprehensive:
 
     def test_setup_logger_with_custom_config_path(self):
         """测试 setup_logger 使用自定义配置路径 (lines 77-87)"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         temp_config = {"LOG_PATH": "/custom/path"}
         mock_config_manager = MagicMock()
@@ -80,7 +80,7 @@ class TestLoggerConfigComprehensive:
 
     def test_setup_logger_cannot_create_log_dir(self):
         """测试无法创建日志目录时的回退机制 (lines 90-97)"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         with patch('pathlib.Path.mkdir', side_effect=Exception("Permission denied")):
             with warnings.catch_warnings(record=True) as w:
@@ -94,7 +94,7 @@ class TestLoggerConfigComprehensive:
 
     def test_setup_logger_with_none_log_dir_and_config_exception(self):
         """测试 log_dir 为 None 且配置管理器抛出异常的情况 (lines 75-87)"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         # 模拟配置管理器抛出异常
         with patch('src.config.ConfigManager', side_effect=Exception("Config error")):
@@ -106,7 +106,7 @@ class TestLoggerConfigComprehensive:
 
     def test_update_log_path_function(self):
         """测试 update_log_path 函数 (lines 113-161)"""
-        from src.logger_config import update_log_path
+        from pyproxyswitch.logger_config import update_log_path
 
         logger_name = "PyProxySwitch"
         logger = logging.getLogger(logger_name)
@@ -140,7 +140,7 @@ class TestLoggerConfigComprehensive:
 
     def test_update_log_path_with_config_manager(self):
         """测试 update_log_path 使用配置管理器 (lines 129-139)"""
-        from src.logger_config import update_log_path
+        from pyproxyswitch.logger_config import update_log_path
 
         mock_config_manager = MagicMock()
         mock_config_manager.get.return_value = "/custom/log/path"
@@ -151,7 +151,7 @@ class TestLoggerConfigComprehensive:
 
     def test_update_log_path_config_manager_exception(self):
         """测试 update_log_path 中配置管理器异常 (lines 129-139)"""
-        from src.logger_config import update_log_path
+        from pyproxyswitch.logger_config import update_log_path
 
         with patch('src.config.ConfigManager', side_effect=Exception("Config error")):
             # 这应该触发异常处理路径
@@ -159,7 +159,7 @@ class TestLoggerConfigComprehensive:
 
     def test_update_log_path_cannot_create_dir(self):
         """测试 update_log_path 无法创建目录时的回退 (lines 141-148)"""
-        from src.logger_config import update_log_path
+        from pyproxyswitch.logger_config import update_log_path
 
         with patch('pathlib.Path.mkdir', side_effect=Exception("Permission denied")):
             with warnings.catch_warnings(record=True) as w:
@@ -173,7 +173,7 @@ class TestLoggerConfigComprehensive:
 
     def test_setup_logger_file_handler_properties(self):
         """测试文件处理器的属性设置"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         with tempfile.TemporaryDirectory() as tmpdir:
             log_dir = Path(tmpdir) / "test_logs"
@@ -196,7 +196,7 @@ class TestLoggerConfigComprehensive:
 
     def test_formatter_with_unknown_level(self):
         """测试格式化器处理未知日志级别"""
-        from src.logger_config import Formatter
+        from pyproxyswitch.logger_config import Formatter
 
         formatter = Formatter()
 
@@ -218,7 +218,7 @@ class TestLoggerConfigComprehensive:
 
     def test_setup_logger_with_all_custom_parameters(self):
         """测试 setup_logger 使用所有自定义参数"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         with tempfile.TemporaryDirectory() as tmpdir:
             log_dir = Path(tmpdir) / "custom_logs"
@@ -241,7 +241,7 @@ class TestLoggerConfigComprehensive:
 
     def test_logger_hierarchy_and_propagation(self):
         """测试日志器层次结构和传播"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         # 创建父子日志器
         parent_logger = setup_logger(name="test_parent")
@@ -252,7 +252,7 @@ class TestLoggerConfigComprehensive:
 
     def test_multiple_setup_logger_calls_same_name(self):
         """测试多次调用 setup_logger 使用相同名称"""
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         logger1 = setup_logger(name="test_same_name", log_level=logging.INFO)
         logger2 = setup_logger(name="test_same_name", log_level=logging.DEBUG)

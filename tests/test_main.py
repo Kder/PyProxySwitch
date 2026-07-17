@@ -66,7 +66,7 @@ class TestWindow:
     def test_window_init_system_tray_unavailable(self, mock_system_tray_unavailable):
         """测试系统托盘不可用时的初始化"""
         with patch("sys.exit") as mock_exit:
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             # 应该退出程序
             Window()
@@ -79,7 +79,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance") as mock_app_instance,
             patch("src.gui.main_window.logger") as mock_logger,
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
 
@@ -111,7 +111,7 @@ class TestWindow:
                 patch("src.gui.main_window.QCoreApplication.instance"),
                 patch("src.gui.main_window.logger"),
             ):
-                from src.gui.main_window import Window
+                from pyproxyswitch.gui.main_window import Window
 
                 window = Window()
 
@@ -129,7 +129,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.createActions = Mock()  # Mock createActions 方法
@@ -147,7 +147,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.item_text = "test_proxy"
@@ -171,7 +171,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.config = Mock()  # Mock config 方法
@@ -190,7 +190,7 @@ class TestWindow:
             patch("src.gui.main_window.logger"),
             patch("src.main.Config_Dialog") as mock_dialog,
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.dialog_exsit = False
@@ -211,7 +211,7 @@ class TestWindow:
             patch("src.gui.main_window.logger"),
             patch("src.main.Config_Dialog") as mock_dialog,
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.dialog_exsit = True
@@ -233,7 +233,7 @@ class TestWindow:
             patch("src.main.QtWidgets.QMessageBox") as mock_message_box,
             patch("src.main.QtGui.QPixmap") as mock_pixmap,
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
 
@@ -251,7 +251,7 @@ class TestWindow:
             patch("src.gui.main_window.logger"),
             patch("src.main.QtWidgets.QMessageBox"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.terminate_process = Mock()
@@ -275,7 +275,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.terminate_process = Mock()
@@ -300,7 +300,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.r_process = None
@@ -319,7 +319,7 @@ class TestWindow:
             patch("src.gui.main_window.logger"),
             patch("os.name", "nt"),
         ):  # Windows
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             mock_process = Mock()
@@ -343,7 +343,7 @@ class TestWindow:
             patch("src.gui.main_window.logger"),
             patch("os.name", "nt"),
         ):  # Windows
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             mock_process = Mock()
@@ -369,7 +369,7 @@ class TestWindow:
             patch("os.name", "posix"),
             patch("os.killpg") as mock_killpg,
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             mock_process = Mock()
@@ -395,7 +395,7 @@ class TestWindow:
             patch("src.main.pps_config.PROGRAM_PATH", "/test/path"),
             patch("os.name", "nt"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             mock_process = Mock()
@@ -422,7 +422,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
 
@@ -439,7 +439,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
 
@@ -460,7 +460,7 @@ class TestWindow:
             patch("src.main.pps_config.PROGRAM_PATH", "/test/path"),
             patch("os.name", "nt"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             mock_popen.side_effect = FileNotFoundError()
@@ -486,7 +486,7 @@ class TestWindow:
             patch("src.main.pps_config.PROGRAM_PATH", "/test/path"),
             patch("os.name", "nt"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             mock_popen.side_effect = PermissionError()
@@ -506,7 +506,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
 
@@ -531,7 +531,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
 
@@ -558,7 +558,7 @@ class TestWindow:
             patch("src.gui.main_window.QCoreApplication.instance"),
             patch("src.gui.main_window.logger"),
         ):
-            from src.gui.main_window import Window
+            from pyproxyswitch.gui.main_window import Window
 
             window = Window()
             window.trayIcon = Mock()
@@ -576,7 +576,7 @@ class TestAddProxyDialog:
     def test_dialog_init(self):
         """测试对话框初始化"""
         with patch("src.main.ProxyValidator") as mock_validator:
-            from src.gui.add_proxy_dialog import AddProxy_Dialog
+            from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
             dialog = AddProxy_Dialog()
 
@@ -592,7 +592,7 @@ class TestAddProxyDialog:
             mock_validator = Mock()
             mock_validator_class.return_value = mock_validator
 
-            from src.gui.add_proxy_dialog import AddProxy_Dialog
+            from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
             dialog = AddProxy_Dialog()
             dialog.le_proxy_name = Mock()
@@ -632,7 +632,7 @@ class TestAddProxyDialog:
             )
             mock_validator_class.return_value = mock_validator
 
-            from src.gui.add_proxy_dialog import AddProxy_Dialog
+            from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
             dialog = AddProxy_Dialog()
             dialog.le_proxy_name = Mock()
@@ -665,7 +665,7 @@ class TestProxyDelegates:
 
     def test_proxy_type_delegate(self):
         """测试代理类型委托"""
-        from src.gui.delegates import ProxyTypeDelegate
+        from pyproxyswitch.gui.delegates import ProxyTypeDelegate
 
         delegate = ProxyTypeDelegate()
 
@@ -680,7 +680,7 @@ class TestProxyDelegates:
 
     def test_proxy_port_delegate(self):
         """测试代理端口委托"""
-        from src.gui.delegates import ProxyPortDelegate
+        from pyproxyswitch.gui.delegates import ProxyPortDelegate
 
         delegate = ProxyPortDelegate()
 
@@ -698,7 +698,7 @@ class TestProxyDelegates:
             mock_validator = Mock()
             mock_validator_class.return_value = mock_validator
 
-            from src.gui.delegates import ProxyNameDelegate
+            from pyproxyswitch.gui.delegates import ProxyNameDelegate
 
             delegate = ProxyNameDelegate()
 
@@ -732,7 +732,7 @@ class TestConfigDialog:
             mock_config.get_proxies.return_value = []
             mock_config_class.return_value = mock_config
 
-            from src.gui.config_dialog import Config_Dialog
+            from pyproxyswitch.gui.config_dialog import Config_Dialog
 
             parent = Mock()
             parent.dialog_exsit = False
@@ -749,7 +749,7 @@ class TestConfigDialog:
 
 def test_pps_quote():
     """测试 pps_quote 函数"""
-    from src.main import pps_quote
+    from pyproxyswitch.main import pps_quote
 
     # 测试普通字符串
     assert pps_quote("test") == '"test"'
@@ -768,7 +768,7 @@ def test_main_function():
         patch("src.main.QtWidgets.QApplication") as mock_app,
         patch("src.main.Window") as mock_window,
     ):
-        from src.main import main
+        from pyproxyswitch.main import main
 
         main()
 

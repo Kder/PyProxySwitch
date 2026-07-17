@@ -16,8 +16,8 @@ sys.path.insert(0, str(src_path))
 
 try:
     from PySide6 import QtWidgets, QtCore
-    from src.gui.config_dialog import Config_Dialog
-    from src.config import ConfigManager
+    from pyproxyswitch.gui.config_dialog import Config_Dialog
+    from pyproxyswitch.config import ConfigManager
     PYSIDE_AVAILABLE = True
 except ImportError as e:
     PYSIDE_AVAILABLE = False

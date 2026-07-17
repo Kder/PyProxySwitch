@@ -49,7 +49,7 @@ class TestMainFunction:
         with patch.dict('sys.modules', {'PySide6': None}):
             with patch('builtins.print') as mock_print:
                 with pytest.raises(SystemExit) as exc_info:
-                    import src.main
+                    import pyproxyswitch.main
                     src.main.main()
 
                 assert exc_info.value.code == 1
@@ -71,7 +71,7 @@ class TestMainFunction:
         mock_dependencies['main_window'].Window.return_value = mock_window
 
         with patch('sys.exit') as mock_exit:
-            import src.main
+            import pyproxyswitch.main
             src.main.main()
 
             # 验证 setup_logger 被调用
@@ -105,7 +105,7 @@ class TestMainFunction:
         mock_dependencies['main_window'].Window.return_value = MagicMock()
 
         with patch('sys.exit'):
-            import src.main
+            import pyproxyswitch.main
             src.main.main(log_level=logging.DEBUG)
 
             # 验证 setup_logger 被调用时传入了正确的 log_level
@@ -119,7 +119,7 @@ class TestMainFunction:
         with patch('sys.version_info', (3, 8)):  # 模拟 Python 3.8
             with patch('builtins.print') as mock_print:
                 with pytest.raises(SystemExit) as exc_info:
-                    import src.main
+                    import pyproxyswitch.main
                     src.main.main()
 
                 assert exc_info.value.code == 1
@@ -133,7 +133,7 @@ class TestMainFunction:
 
         with patch('builtins.print') as mock_print:
             with pytest.raises(SystemExit) as exc_info:
-                import src.main
+                import pyproxyswitch.main
                 src.main.main()
 
             assert exc_info.value.code == 0
@@ -145,7 +145,7 @@ class TestMainFunction:
 
         with patch('builtins.print') as mock_print:
             with pytest.raises(SystemExit) as exc_info:
-                import src.main
+                import pyproxyswitch.main
                 src.main.main()
 
             assert exc_info.value.code == 1
@@ -161,7 +161,7 @@ class TestMainFunction:
 
         with patch('builtins.print') as mock_print:
             with pytest.raises(SystemExit) as exc_info:
-                import src.main
+                import pyproxyswitch.main
                 src.main.main()
 
             assert exc_info.value.code == 1
@@ -177,7 +177,7 @@ class TestMainFunction:
         with patch('src.main.main') as mock_main:
             with patch.object(sys, 'argv', ['main.py']):
                 # 模拟 __name__ == '__main__' 的情况
-                import src.main
+                import pyproxyswitch.main
 
                 # 重置模块状态，模拟直接执行
                 with patch.object(src.main, '__name__', '__main__'):
@@ -194,7 +194,7 @@ class TestMainModuleImports:
 
     def test_main_module_attributes(self):
         """测试 main 模块的属性"""
-        import src.main as main_module
+        import pyproxyswitch.main as main_module
 
         # 检查版本信息
         assert hasattr(main_module, '__version__')
@@ -211,7 +211,7 @@ class TestMainModuleImports:
 
     def test_version_format(self):
         """测试版本格式"""
-        import src.main as main_module
+        import pyproxyswitch.main as main_module
 
         version = main_module.__version__
 
@@ -252,7 +252,7 @@ class TestMainFunctionParameterHandling:
         mock_dependencies['main_window'].Window.return_value = MagicMock()
 
         with patch('sys.exit'):
-            import src.main
+            import pyproxyswitch.main
             src.main.main(log_level=None)
 
             # 验证 setup_logger 被调用时 log_level 为 None
@@ -270,7 +270,7 @@ class TestMainFunctionParameterHandling:
 
         for level in log_levels:
             with patch('sys.exit'):
-                import src.main
+                import pyproxyswitch.main
                 src.main.main(log_level=level)
 
                 # 验证 setup_logger 被调用时传入了正确的 log_level

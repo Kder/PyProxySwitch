@@ -8,7 +8,7 @@ UI代理类模块 - 包含tableView的各种代理类
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from src.proxy_validation import ProxyValidator
+from pyproxyswitch.proxy_validation import ProxyValidator
 
 
 class ProxyTypeDelegate(QtWidgets.QStyledItemDelegate):

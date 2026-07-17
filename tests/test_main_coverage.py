@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 def test_main_module_imports():
     """测试模块导入"""
-    from src.main import (
+    from pyproxyswitch.main import (
         __version__, __author__, __copyright__, __credits__,
         __license__, __status__, __projecturl__, __date__,
         __email__, __maintainer__, __url__, main
@@ -27,7 +27,7 @@ def test_main_module_imports():
 
 def test_main_function_signature():
     """测试 main 函数签名"""
-    from src.main import main
+    from pyproxyswitch.main import main
     import inspect
 
     # 验证函数签名
@@ -37,14 +37,14 @@ def test_main_function_signature():
 
 def test_main_function_with_none_log_level():
     """测试 main 函数带 None 日志级别"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数可以接受 None 参数
     assert callable(main)
 
 def test_main_module_constants():
     """测试模块常量"""
-    from src.main import (
+    from pyproxyswitch.main import (
         __version__, __date__, __status__, __projecturl__
     )
 
@@ -64,7 +64,7 @@ def test_main_module_constants():
 
 def test_main_module_info():
     """测试模块信息"""
-    import src.main as main_module
+    import pyproxyswitch.main as main_module
 
     # 验证模块有文档字符串
     assert main_module.__doc__ is not None
@@ -73,7 +73,7 @@ def test_main_module_info():
 
 def test_main_function_docstring():
     """测试 main 函数文档"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数有文档字符串
     assert main.__doc__ is not None
@@ -82,7 +82,7 @@ def test_main_function_docstring():
 def test_main_module_execution_context():
     """测试模块执行上下文"""
     # 验证当模块作为主程序运行时的情况
-    import src.main
+    import pyproxyswitch.main
 
     # 检查 __name__ 属性
     assert hasattr(src.main, '__name__')
@@ -91,14 +91,14 @@ def test_main_import_structure():
     """测试导入结构"""
     # 验证模块可以被正确导入
     try:
-        import src.main
-        from src.main import main
+        import pyproxyswitch.main
+        from pyproxyswitch.main import main
     except ImportError as e:
         pytest.fail(f"无法导入 src.main: {e}")
 
 def test_main_function_parameters():
     """测试 main 函数参数处理"""
-    from src.main import main
+    from pyproxyswitch.main import main
     import inspect
 
     # 获取函数签名
@@ -113,7 +113,7 @@ def test_main_function_parameters():
 
 def test_main_module_attributes():
     """测试模块属性"""
-    import src.main as main_module
+    import pyproxyswitch.main as main_module
 
     # 验证模块有必要的属性
     required_attrs = [
@@ -138,7 +138,7 @@ def test_main_module_attributes():
 
 def test_main_version_consistency():
     """测试版本一致性"""
-    from src.main import __version__
+    from pyproxyswitch.main import __version__
 
     # 验证版本格式一致性
     version_parts = __version__.split('.')
@@ -156,7 +156,7 @@ def test_main_version_consistency():
 
 def test_main_copyright_info():
     """测试版权信息"""
-    from src.main import __copyright__, __author__, __license__
+    from pyproxyswitch.main import __copyright__, __author__, __license__
 
     # 验证版权信息一致性
     assert __author__ in __copyright__
@@ -167,7 +167,7 @@ def test_main_copyright_info():
 
 def test_main_project_info():
     """测试项目信息"""
-    from src.main import __projecturl__, __email__, __maintainer__
+    from pyproxyswitch.main import __projecturl__, __email__, __maintainer__
 
     # 验证项目信息
     assert "kder.info" in __projecturl__
@@ -178,7 +178,7 @@ def test_main_project_info():
 
 def test_main_status_and_date():
     """测试状态和日期信息"""
-    from src.main import __status__, __date__
+    from pyproxyswitch.main import __status__, __date__
 
     # 验证状态
     valid_statuses = ["Alpha", "Beta", "Production", "Development"]
@@ -193,7 +193,7 @@ def test_main_status_and_date():
 
 def test_main_function_callable():
     """测试 main 函数可调用性"""
-    from src.main import main
+    from pyproxyswitch.main import main
 
     # 验证函数可以被调用（虽然会失败，但是应该是可调用的）
     assert callable(main)

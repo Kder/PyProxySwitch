@@ -197,7 +197,7 @@ class TestProxyProcessLogic:
 
         PyProxySwitch 使用外部 3proxy 进程管理，不需要内置 ProxyProcess 类
         """
-        import src.gui.main_window as main_module
+        import pyproxyswitch.gui.main_window as main_module
 
         # ProxyProcess 类在 main.py 中不存在
         assert not hasattr(main_module, "ProxyProcess")
@@ -359,7 +359,7 @@ class TestErrorHandling:
 
     def test_proxy_validation_error_handling(self):
         """测试代理验证错误处理"""
-        from src.errors import ProxyError, ProxyStartError
+        from pyproxyswitch.errors import ProxyError, ProxyStartError
 
         # 测试错误可以被创建
         error = ProxyError("Test error", "Log message")
@@ -370,7 +370,7 @@ class TestErrorHandling:
 
     def test_config_error_handling(self):
         """测试配置错误处理"""
-        from src.errors import ConfigError
+        from pyproxyswitch.errors import ConfigError
 
         error = ConfigError("Config failed", "Config log")
         assert str(error) is not None
@@ -381,7 +381,7 @@ class TestLoggingConfiguration:
 
     def test_logger_setup(self):
         """测试日志设置"""
-        from src.logger_config import setup_logger, logger
+        from pyproxyswitch.logger_config import setup_logger, logger
 
         # 验证日志器已设置
         assert logger is not None
@@ -393,7 +393,7 @@ class TestLoggingConfiguration:
         注意: setup_logger 的参数名是 log_level（int），不是 level（str）
         """
         import logging
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         # 测试不同日志级别 - 使用正确的参数名 log_level 和 int 值
         setup_logger("test_logger_gui", log_level=logging.DEBUG)

@@ -20,7 +20,7 @@ class TestConfigCoverage:
 
     def test_logger_import_failure(self, monkeypatch):
         """测试日志记录器导入失败的情况 - 覆盖 lines 39-41"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Mock _get_logger to raise ImportError
         with patch("src.config._get_logger") as mock_get_logger:
@@ -37,7 +37,7 @@ class TestConfigCoverage:
 
     def test_pps_config_import_failure(self, monkeypatch):
         """测试pps_config导入失败的情况 - 覆盖 lines 48-49"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Mock _import_pps_funcs to raise ImportError
         with patch("src.config._import_pps_funcs") as mock_import:
@@ -50,7 +50,7 @@ class TestConfigCoverage:
 
     def test_proxy_list_loading_with_none_function(self, monkeypatch):
         """测试代理列表加载时函数为None的情况 - 覆盖 line 129"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Mock function to return None for pps_load_proxylist
         with patch("src.config._import_pps_funcs") as mock_import:
@@ -67,7 +67,7 @@ class TestConfigCoverage:
 
     def test_load_config_json_decode_error(self, temp_dir):
         """测试JSON解析错误的处理 - 覆盖 lines 162-164"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "invalid.json"
 
@@ -82,7 +82,7 @@ class TestConfigCoverage:
 
     def test_load_config_io_error(self, temp_dir):
         """测试配置文件IO错误的处理 - 覆盖 line 181-184"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "nonexistent.json"
 
@@ -94,7 +94,7 @@ class TestConfigCoverage:
 
     def test_save_config_io_error(self, temp_dir):
         """测试保存配置文件时的IO错误 - 覆盖 lines 217, 226"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -109,7 +109,7 @@ class TestConfigCoverage:
 
     def test_save_proxies_exception_handling(self, temp_dir):
         """测试保存代理列表时的异常处理 - 覆盖 lines 250-251"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         proxy_list_path = Path(temp_dir) / "proxies.txt"
@@ -126,7 +126,7 @@ class TestConfigCoverage:
 
     def test_proxy_list_loading_with_exception(self, temp_dir):
         """测试代理列表加载时的通用异常处理"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         proxy_list_path = Path(temp_dir) / "proxies.txt"
@@ -148,7 +148,7 @@ class TestConfigCoverage:
 
     def test_backwards_compatibility_fix(self, temp_dir):
         """测试向后兼容性修复"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
 
@@ -171,7 +171,7 @@ class TestConfigCoverage:
 
     def test_multi_instance_behavior(self, temp_dir):
         """测试多实例模式"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # 重置单例
         ConfigManager.reset_singleton()
@@ -196,7 +196,7 @@ class TestConfigCoverage:
 
     def test_singleton_reset(self):
         """测试单例重置功能"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Create first instance
         original_instance = ConfigManager._instance
@@ -215,7 +215,7 @@ class TestConfigCoverage:
 
     def test_dict_interface_comprehensive(self, temp_dir):
         """测试字典接口的完整功能"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -243,7 +243,7 @@ class TestConfigCoverage:
 
     def test_update_method_detailed(self, temp_dir):
         """测试update方法的详细情况"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -257,7 +257,7 @@ class TestConfigCoverage:
 
     def test_reset_to_default_detailed(self, temp_dir):
         """测试reset_to_default方法的详细情况"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -276,7 +276,7 @@ class TestConfigCoverage:
 
     def test_repr_method_detailed(self, temp_dir):
         """测试__repr__方法的详细情况"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         config_path = Path(temp_dir) / "config.json"
         config = ConfigManager(config_path=str(config_path), use_singleton=False)
@@ -288,7 +288,7 @@ class TestConfigCoverage:
 
     def test_get_instance_methods(self):
         """测试类方法"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # Reset first
         ConfigManager.reset_singleton()

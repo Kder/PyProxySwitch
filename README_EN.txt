@@ -1,19 +1,30 @@
+PyProxySwitch  Version: 4.0.0
 
-PyProxySwitch  Version: 3.9.0
+PyProxySwitch is a cross-platform upstream proxy switcher written in Python
+and PySide6. Its local proxy server is implemented entirely with the Python
+standard library and does not launch or depend on 3proxy, polipo, IP Relay, or
+another third-party proxy binary.
 
-Description: PyProxySwitch is a cross-platform proxy switcher based on 3proxy, polipo and IP Relay
-to fast change proxy for browsers(Firefox,Chrome,Opera,IE,etc.) and other Internet applications,
-writen in Python and PySide6. Welcom to send me your feedback if you feel it useful.
+One local port accepts HTTP, SOCKS4/SOCKS4a and SOCKS5 clients. Configured
+upstreams may use HTTP, SOCKS4 or SOCKS5, with HTTP Basic and SOCKS5
+username/password authentication. NoProxy connects directly.
 
-Author:   Kder <kderlin (#) gmail dot com>
-Author Website:  http://www.kder.info
+The native core proxies TCP traffic. It supports HTTP forwarding/CONNECT and
+SOCKS CONNECT; SOCKS BIND, SOCKS5 UDP ASSOCIATE and content caching are not
+implemented.
+
+Changing the selected upstream atomically replaces an in-memory route. The
+listening socket and event loop remain running; existing connections retain
+their original route and new connections immediately use the new route.
+
+Run `python PyProxySwitch.py`, point an application's HTTP or SOCKS proxy to
+127.0.0.1:8888, then choose an upstream from the system tray. The default bind
+address is loopback-only for safety.
+
+Requirements: Python 3.10+ and PySide6. The proxy core has no non-standard
+dependency.
+
+Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info
-Last Update: 2026-04-01
-Licence: Apache License, Version 2.0
-         For licence of 3Proxy, polipo & IP Relay,please refer files in 'licenses' directory 
-         For more details, visit:
-         http://www.3proxy.org/
-         http://www.pps.jussieu.fr/~jch/software/polipo/
-         http://iprelay.sourceforge.net/
-         This program also used a module 'pyetc' in eurasia project[http://code.google.com/p/eurasia/](Ne BSD License)
- 
+Last Update: 2026-07-17
+License: Apache License, Version 2.0

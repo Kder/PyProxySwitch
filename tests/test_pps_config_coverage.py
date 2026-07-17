@@ -34,7 +34,7 @@ class TestPpsConfigUncoveredLines:
             mock_path_class.side_effect = path_side_effect
 
             # This should trigger the NameError handling path and fall back to sys.path[0]
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Verify that PATH0 was set using the fallback method
             assert pps_config_module.PATH0 is not None
@@ -43,7 +43,7 @@ class TestPpsConfigUncoveredLines:
     def test_line_81_file_case_path_resolution(self, monkeypatch):
         """测试第81行的文件情况路径解析"""
         # This tests the conditional path resolution logic
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # The actual path resolution depends on __file__ which is complex to mock
         # We verify the paths are constructed correctly
@@ -52,7 +52,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_120_122_translation_fallback(self, monkeypatch):
         """测试第120-122行的翻译回退机制"""
-        from src.pps_config import _
+        from pyproxyswitch.pps_config import _
 
         # Mock translation failure to trigger fallback
         with patch("src.pps_config.gettext.translation") as mock_translation:
@@ -60,7 +60,7 @@ class TestPpsConfigUncoveredLines:
 
             # Reload module to test fallback
             import importlib
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Should fall back to identity function
             result = _("test message")
@@ -79,7 +79,7 @@ class TestPpsConfigUncoveredLines:
             if "src.pps_config" in sys.modules:
                 importlib.reload(sys.modules["src.pps_config"])
 
-            from src.pps_config import ACTION
+            from pyproxyswitch.pps_config import ACTION
 
             assert "add" == ACTION
         finally:
@@ -94,7 +94,7 @@ class TestPpsConfigUncoveredLines:
             if "src.pps_config" in sys.modules:
                 importlib.reload(sys.modules["src.pps_config"])
 
-            from src.pps_config import ACTION
+            from pyproxyswitch.pps_config import ACTION
 
             assert None is ACTION
         finally:
@@ -102,7 +102,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_253_user_pass_single_element(self, temp_dir):
         """测试第253行的用户密码分割单元素情况"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # Test case where splitting user:pass results in single element
@@ -117,7 +117,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_256_proxy_type_fallback(self, temp_dir):
         """测试第256行的代理类型回退逻辑"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # Test case: third item is not user:pass but fourth item is proxy type
@@ -131,7 +131,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_386_proxy_exists_removal(self, monkeypatch):
         """测试第386行的代理存在时移除逻辑"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -170,7 +170,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_464_467_add_proxy_io_error(self, monkeypatch, capsys):
         """测试第464-467行的添加代理IO错误处理"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -195,7 +195,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_480_del_proxy_non_string_name(self, monkeypatch):
         """测试第480行的删除代理非字符串名称处理"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -224,7 +224,7 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_500_del_success_message(self, monkeypatch, capsys):
         """测试第500行的删除成功消息输出"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -258,14 +258,14 @@ class TestPpsConfigUncoveredLines:
 
     def test_line_507_539_main_execution_flow(self, monkeypatch):
         """测试第507-539行的主要执行流程"""
-        from src.pps_config import ACTION, pps_save_proxylist
+        from pyproxyswitch.pps_config import ACTION, pps_save_proxylist
 
         # Test add command flow
         original_argv = sys.argv.copy()
         sys.argv = ["pps_config.py", "add", "test_proxy", "192.168.1.1:8080"]
 
         try:
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Manually execute the main block logic
             if ACTION == "add":
@@ -283,7 +283,7 @@ class TestPpsConfigUncoveredLines:
         sys.argv = ["pps_config.py", "del", "test_proxy"]
 
         try:
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             if ACTION == "del":
                 if len(sys.argv) > 2:
@@ -300,7 +300,7 @@ class TestPpsConfigUncoveredLines:
         sys.argv = ["pps_config.py"]  # No action - batch mode
 
         try:
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             if ACTION is None:
                 # Simulate batch processing
@@ -314,7 +314,7 @@ class TestPpsConfigUncoveredLines:
         sys.argv = ["pps_config.py", "unknown"]
 
         try:
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Simulate unknown action handling
             if ACTION == "unknown":

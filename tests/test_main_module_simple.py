@@ -26,7 +26,7 @@ class TestMainModuleSimple:
         with patch.dict('sys.modules', {'PySide6': None}):
             with patch('builtins.print') as mock_print:
                 with pytest.raises(SystemExit) as exc_info:
-                    import src.main
+                    import pyproxyswitch.main
                     src.main.main()
 
                 assert exc_info.value.code == 1
@@ -39,7 +39,7 @@ class TestMainModuleSimple:
         with patch('sys.version_info', (3, 8)):  # 模拟 Python 3.8
             with patch('builtins.print') as mock_print:
                 with pytest.raises(SystemExit) as exc_info:
-                    import src.main
+                    import pyproxyswitch.main
                     src.main.main()
 
                 assert exc_info.value.code == 1
@@ -66,7 +66,7 @@ class TestMainModuleSimple:
                     PySide6.QtWidgets.QApplication.side_effect = KeyboardInterrupt()
 
                     with pytest.raises(SystemExit) as exc_info:
-                        import src.main
+                        import pyproxyswitch.main
                         src.main.main()
 
                     assert exc_info.value.code == 0
@@ -91,7 +91,7 @@ class TestMainModuleSimple:
                     PySide6.QtWidgets.QApplication.side_effect = Exception("Test error")
 
                     with pytest.raises(SystemExit) as exc_info:
-                        import src.main
+                        import pyproxyswitch.main
                         src.main.main()
 
                     assert exc_info.value.code == 1
@@ -101,7 +101,7 @@ class TestMainModuleSimple:
 
     def test_main_module_attributes(self):
         """测试 main 模块的属性"""
-        import src.main as main_module
+        import pyproxyswitch.main as main_module
 
         # 检查版本信息
         assert hasattr(main_module, '__version__')
@@ -118,7 +118,7 @@ class TestMainModuleSimple:
 
     def test_version_format(self):
         """测试版本格式"""
-        import src.main as main_module
+        import pyproxyswitch.main as main_module
 
         version = main_module.__version__
 
@@ -132,7 +132,7 @@ class TestMainModuleSimple:
 
     def test_main_function_signature(self):
         """测试 main 函数的签名"""
-        import src.main as main_module
+        import pyproxyswitch.main as main_module
         import inspect
 
         # 检查 main 函数的参数

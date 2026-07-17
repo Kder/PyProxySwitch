@@ -23,7 +23,7 @@ class TestAddProxyDialogSimple:
     def test_add_proxy_dialog_import(self):
         """测试 AddProxy_Dialog 类可以导入"""
         try:
-            from src.gui.add_proxy_dialog import AddProxy_Dialog
+            from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
             assert AddProxy_Dialog is not None
         except ImportError as e:
             if "PySide6" in str(e) or "res" in str(e):
@@ -33,7 +33,7 @@ class TestAddProxyDialogSimple:
 
     def test_proxy_validator_import_in_dialog(self):
         """测试对话框中的验证器导入"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
         assert validator is not None
@@ -47,7 +47,7 @@ class TestAddProxyDialogSimple:
 
     def test_validation_logic_without_gui(self):
         """测试验证逻辑（不依赖GUI）"""
-        from src.proxy_validation import ProxyValidator, ValidationError
+        from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 
         validator = ProxyValidator()
 
@@ -102,7 +102,7 @@ class TestAddProxyDialogSimple:
 
     def test_proxy_validation_parameters(self):
         """测试传递给验证器的参数格式"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -130,7 +130,7 @@ class TestAddProxyDialogSimple:
         """测试对话框继承结构（不实际创建实例）"""
         # 验证模块结构
         try:
-            import src.gui.add_proxy_dialog as dialog_module
+            import pyproxyswitch.gui.add_proxy_dialog as dialog_module
 
             # 检查类存在
             assert hasattr(dialog_module, 'AddProxy_Dialog')
@@ -147,7 +147,7 @@ class TestAddProxyDialogSimple:
 
     def test_validation_error_handling(self):
         """测试验证错误处理逻辑"""
-        from src.proxy_validation import ValidationError, ProxyValidator
+        from pyproxyswitch.proxy_validation import ValidationError, ProxyValidator
 
         # 测试各种验证错误情况
         error_cases = [

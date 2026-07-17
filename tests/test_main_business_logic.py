@@ -61,7 +61,7 @@ class TestProxyValidationIntegration:
 
     def test_proxy_validator_import(self):
         """测试代理验证器可以被导入"""
-        from src.proxy_validation import (
+        from pyproxyswitch.proxy_validation import (
             ProxyValidator,
             ValidationError,
             BatchImportValidator,
@@ -73,7 +73,7 @@ class TestProxyValidationIntegration:
 
     def test_proxy_validator_basic_validation(self):
         """测试代理验证器基本验证"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -87,7 +87,7 @@ class TestProxyValidationIntegration:
 
     def test_address_validation(self):
         """测试地址验证"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -101,7 +101,7 @@ class TestProxyValidationIntegration:
 
     def test_port_validation(self):
         """测试端口验证"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -119,13 +119,13 @@ class TestConfigManagerIntegration:
 
     def test_config_manager_import(self):
         """测试 ConfigManager 可以被导入"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         assert ConfigManager is not None
 
     def test_config_manager_singleton(self):
         """测试 ConfigManager 单例模式"""
-        from src.config import ConfigManager
+        from pyproxyswitch.config import ConfigManager
 
         # 重置单例
         ConfigManager.reset_singleton()
@@ -146,7 +146,7 @@ class TestErrorHandling:
 
     def test_proxy_error_import(self):
         """测试代理错误类可以导入"""
-        from src.errors import ProxyError, ProxyStartError, ProxyStopError, ConfigError
+        from pyproxyswitch.errors import ProxyError, ProxyStartError, ProxyStopError, ConfigError
 
         assert ProxyError is not None
         assert ProxyStartError is not None
@@ -155,21 +155,21 @@ class TestErrorHandling:
 
     def test_proxy_error_creation(self):
         """测试代理错误创建"""
-        from src.errors import ProxyError
+        from pyproxyswitch.errors import ProxyError
 
         error = ProxyError("User message", "Log message")
         assert str(error) == "User message"
 
     def test_proxy_start_error_creation(self):
         """测试代理启动错误创建"""
-        from src.errors import ProxyStartError
+        from pyproxyswitch.errors import ProxyStartError
 
         error = ProxyStartError("Failed to start", "Process error")
         assert str(error) == "Failed to start"
 
     def test_config_error_creation(self):
         """测试配置错误创建"""
-        from src.errors import ConfigError
+        from pyproxyswitch.errors import ConfigError
 
         error = ConfigError("Config failed", "Missing key")
         assert str(error) == "Config failed"
@@ -180,21 +180,21 @@ class TestLoggingConfiguration:
 
     def test_logger_import(self):
         """测试日志模块可以导入"""
-        from src.logger_config import setup_logger, logger
+        from pyproxyswitch.logger_config import setup_logger, logger
 
         assert setup_logger is not None
         assert logger is not None
 
     def test_logger_name(self):
         """测试日志器名称"""
-        from src.logger_config import logger
+        from pyproxyswitch.logger_config import logger
 
         assert logger.name == "PyProxySwitch"
 
     def test_logger_setup_with_custom_name(self):
         """测试使用自定义名称设置日志器"""
         import logging
-        from src.logger_config import setup_logger
+        from pyproxyswitch.logger_config import setup_logger
 
         # setup_logger takes log_level (int), not level (str)
         # log_level expects logging.DEBUG, logging.INFO, etc.
@@ -214,7 +214,7 @@ class TestPPSConfigModule:
 
     def test_pps_output_function(self):
         """测试 pps_output 函数"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         # 测试输出到 stdout
         # 这不会抛出异常
@@ -222,14 +222,14 @@ class TestPPSConfigModule:
 
     def test_pps_output_to_stderr(self):
         """测试 pps_output 到 stderr"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         # 测试输出到 stderr
         pps_output("Error message", "stderr")
 
     def test_pps_load_proxylist(self):
         """测试加载代理列表"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         # 测试加载一个有效的代理列表文件
         # 如果文件不存在，应该返回空列表或抛出异常
@@ -247,14 +247,14 @@ class TestBatchImportValidator:
 
     def test_batch_import_validator_import(self):
         """测试批量导入验证器可以导入"""
-        from src.proxy_validation import BatchImportValidator
+        from pyproxyswitch.proxy_validation import BatchImportValidator
 
         validator = BatchImportValidator()
         assert validator is not None
 
     def test_batch_import_single_line(self):
         """测试批量导入单行"""
-        from src.proxy_validation import BatchImportValidator
+        from pyproxyswitch.proxy_validation import BatchImportValidator
 
         validator = BatchImportValidator()
 
@@ -266,7 +266,7 @@ class TestBatchImportValidator:
 
     def test_batch_import_with_type(self):
         """测试带类型的批量导入"""
-        from src.proxy_validation import BatchImportValidator
+        from pyproxyswitch.proxy_validation import BatchImportValidator
 
         validator = BatchImportValidator()
 
@@ -281,7 +281,7 @@ class TestProxyValidatorEdgeCases:
 
     def test_empty_proxy_name(self):
         """测试空代理名称"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -290,7 +290,7 @@ class TestProxyValidatorEdgeCases:
 
     def test_invalid_port_zero(self):
         """测试端口为0"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -299,7 +299,7 @@ class TestProxyValidatorEdgeCases:
 
     def test_invalid_port_too_large(self):
         """测试端口过大"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -313,7 +313,7 @@ class TestProxyValidatorEdgeCases:
         because [0-9]? is optional. The explicit int(part) > 255 check
         should catch this case and raise ValidationError.
         """
-        from src.proxy_validation import ProxyValidator, ValidationError
+        from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 
         validator = ProxyValidator()
 
@@ -323,7 +323,7 @@ class TestProxyValidatorEdgeCases:
 
     def test_empty_address(self):
         """测试空地址"""
-        from src.proxy_validation import ProxyValidator
+        from pyproxyswitch.proxy_validation import ProxyValidator
 
         validator = ProxyValidator()
 
@@ -344,7 +344,7 @@ class TestVersionInfo:
     def test_main_module_version(self):
         """测试主模块版本"""
         try:
-            import src.main as main_module
+            import pyproxyswitch.main as main_module
 
             # 如果main.py可以导入，检查版本
             if hasattr(main_module, "__version__"):

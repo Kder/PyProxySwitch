@@ -11,13 +11,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 
-import src.pps_config as pps_config
+import pyproxyswitch.pps_config as pps_config
 
 # 导入UI文件
-from res.pps_conf_ui import Ui_Dialog_Config
-from src.config import ConfigManager
-from src.logger_config import logger
-from src.proxy_validation import BatchImportValidator, ProxyValidator
+from pyproxyswitch.resources.pps_conf_ui import Ui_Dialog_Config
+from pyproxyswitch.config import ConfigManager
+from pyproxyswitch.logger_config import logger
+from pyproxyswitch.proxy_validation import BatchImportValidator, ProxyValidator
 
 from .batch_import_dialog import BatchImportDialog
 
@@ -42,15 +42,18 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.proxy_user, self.proxy_pass) = range(6)
         self.langs = ['zh_CN', 'en']
         self.f_or_t = [False, True]
-        self.cmds = ['3proxy', 'polipo', 'ip_relay']
+        self.cmds = ['internal']
+
+        # The application now has one in-process backend.  Keep the field in
+        # the existing UI layout so older translations remain compatible.
+        self._configure_backend_selector()
 
         self.comboBox_lang.setCurrentIndex(
             self.langs.index(self._config.get('LANG')))
         self.checkBox_debug.setChecked(self.f_or_t[self._config.get('DEBUG')])
         self.checkBox_show_welcome.setChecked(
             self.f_or_t[self._config.get('SHOW_WELCOME')])
-        self.comboBox_cmd.setCurrentIndex(
-            self.cmds.index(self._config.get('CMD')))
+        self.comboBox_cmd.setCurrentIndex(0)
 
         self.le_localport.setValidator(QtGui.QIntValidator(0, 65535, self))
         self.le_localport.setText(str(self._config.get('LOCAL_PORT')))
@@ -122,6 +125,13 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         context_menu.exec(self.tableView.mapToGlobal(pnt))
 
+    def _configure_backend_selector(self):
+        """Keep the generated legacy combo box pinned to the native backend."""
+        self.comboBox_cmd.clear()
+        self.comboBox_cmd.addItem('internal')
+        self.comboBox_cmd.setEnabled(False)
+        self.label_2.setText(self.tr("Built-in HTTP/SOCKS proxy (no external process)"))
+
     def show_error(self, message: str):
         '''显示错误消息'''
         QtWidgets.QMessageBox.critical(self, self.tr("Error"), message)
@@ -143,6 +153,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         if event.type() == QtCore.QEvent.LanguageChange:
             # 重新翻译UI元素
             self.retranslateUi(self)
+            self._configure_backend_selector()
 
             # 更新数据模型的列标题
             model = self.data_model
@@ -192,23 +203,22 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 old_port = self._config.get('LOCAL_PORT')
                 self._config.set('LOCAL_PORT', port)
 
-                # 如果端口确实改变了，更新所有配置文件
+                # 改变监听端口必须重新绑定套接字；普通上游切换不重启。
                 if old_port != port:
                     try:
                         # 先保存配置到文件
                         self._config.save()
 
-                        # 更新pps_config中的全局CONFIG
-                        pps_config.update_config()
-
-                        # 重新生成所有代理的配置文件
-                        proxies = self._config.get_proxies()
-                        if proxies:
-                            self._generate_backend_configs(proxies)
-                            logger.info(f"Updated all proxy config files with new port: {port}")
+                        parent = self.parentWidget()
+                        if hasattr(parent, 'proxy_manager'):
+                            parent.proxy_manager.restart_listener()
+                        logger.info(f"Native proxy listener moved to port {port}")
                     except Exception as e:
-                        logger.error(f"Failed to update proxy config files with new port: {e}")
-                        # 继续执行，不阻止用户设置端口
+                        self._config.set('LOCAL_PORT', old_port)
+                        self._config.save()
+                        self.le_localport.setText(str(old_port))
+                        logger.error(f"Failed to move native proxy listener: {e}")
+                        self.show_error(str(e))
             else:
                 self.show_error(self.tr("Port must be between 1 and 65535"))
         except ValueError:
@@ -487,8 +497,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             # 重新加载代理列表并刷新菜单
             parent.proxy_list = self._config.get_proxies()
             parent.proxy_names = [i[0] for i in parent.proxy_list]
-            if parent.cmd != 'ip_relay':
-                parent.proxy_names.append('NoProxy')
+            parent.proxy_names.append('NoProxy')
             parent.refresh_menu()
             logger.info("Refreshed system tray menu with updated proxy list")
             # 如果当前代理不在列表中，切换到NoProxy
@@ -531,18 +540,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
 
     def _generate_noproxy_configs(self, local_port):
-        """生成NoProxy配置文件"""
-        pps_config.generate_noproxy_configs(local_port)
+        """Compatibility no-op: the native backend needs no generated file."""
 
 
     def _generate_backend_configs(self, proxies, local_port=None):
-        """生成后端代理配置文件"""
-        pps_config.regenerate_all_configs(proxies, local_port or self._config.get('LOCAL_PORT', 8888))
+        """Compatibility no-op: routes are read directly from proxy.txt."""
 
 
     def _cleanup_backend_configs(self):
-        """清理后端配置文件"""
-        pps_config.cleanup_configs()
+        """Compatibility no-op: the native backend owns no config directory."""
 
 
     def done(self, r):

@@ -12,10 +12,10 @@ from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QLibraryInfo, Slot
 
-import src.pps_config as pps_config
-from src.config import ConfigManager
-from src.logger_config import logger
-from src.proxy_manager import ProxyManager
+import pyproxyswitch.pps_config as pps_config
+from pyproxyswitch.config import ConfigManager
+from pyproxyswitch.logger_config import get_logger
+from pyproxyswitch.proxy_manager import ProxyManager
 
 
 class Window(QtWidgets.QDialog):
@@ -38,27 +38,26 @@ class Window(QtWidgets.QDialog):
         self.translator = QtCore.QTranslator(self)
         self.translator_qt = QtCore.QTranslator(self)
         self._load_translator()
-        # logger.debug(self._config.get_backend_config_dir("3proxy"))
-        logger.debug(f"Config file path: {self._config.get_config_path()}")
-        logger.debug(f"Proxy list file path: {self._config.get_proxy_list_path()}")
+        get_logger().debug(f"Config file path: {self._config.get_config_path()}")
+        get_logger().debug(f"Proxy list file path: {self._config.get_proxy_list_path()}")
 
     def _load_translator(self) -> None:
         """加载并安装翻译器"""
         lang = self._config.get('LANG', 'zh_CN')
         stdtranslator_path = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
         translator_path = str(Path(pps_config.PROGRAM_PATH) / 'i18n' / (lang + '.qm'))
-        logger.debug(f"Main Window - loading translator from: {translator_path}")
+        get_logger().debug(f"Main Window - loading translator from: {translator_path}")
         # 加载新翻译器
         if not self.translator_qt.load(QtCore.QLocale(lang), "qtbase", "_", stdtranslator_path):
-            logger.warning(f"QT base translator failed to load from: {stdtranslator_path}. "
+            get_logger().warning(f"QT base translator failed to load from: {stdtranslator_path}. "
                            f"Standard buttons may not be translated.")
         else:
-            logger.debug("QT translator loaded.")
+            get_logger().debug("QT translator loaded.")
         if not self.translator.load(translator_path):
-            logger.warning(f"Translator failed to load from: {translator_path}. "
+            get_logger().warning(f"Translator failed to load from: {translator_path}. "
                 f"UI may not be translated.")
         else:
-            logger.debug("Translator loaded.")
+            get_logger().debug("Translator loaded.")
         # 确保只有一个翻译器被安装
         app = QtCore.QCoreApplication.instance()
         if app:
@@ -79,20 +78,14 @@ class Window(QtWidgets.QDialog):
         self.proxy_list = self._config.get_proxies()
         self.proxy_names = [i[0] for i in self.proxy_list]
 
-        #根据上次退出时记录的代理项目，读取对应的ip和端口
+        # 根据上次退出时记录的代理项目恢复选择。
         self.item_text = self._config.get('LAST_ITEM')
-        if self.item_text not in self.proxy_names:
+        if self.item_text not in self.proxy_names and self.item_text != 'NoProxy':
             self.item_text = self._config.get('DEFAULT_ITEM')
 
         self.item = self.item_text
         self.port = ''
-        if self.cmd == 'ip_relay':
-            for i in self.proxy_list:
-                if i[0] == self.item_text:
-                    self.item = i[1]
-                    self.port = i[2]
-        else:
-            self.proxy_names.append('NoProxy')
+        self.proxy_names.append('NoProxy')
 
         self.icon = QtGui.QIcon(':/img/pps.png')
         self.setWindowIcon(self.icon)
@@ -113,13 +106,9 @@ class Window(QtWidgets.QDialog):
 
         # 启动默认代理（包括NoProxy）
         try:
-            # 对于ip_relay模式，传递地址和端口；其他模式只传递名称
-            if self.cmd == 'ip_relay':
-                self.proxy_manager.start_proxy(self.item_text, self.item, self.port, 'HTTP')
-            else:
-                self.proxy_manager.start_proxy(self.item_text)
+            self.proxy_manager.start_proxy(self.item_text)
         except Exception as e:
-            logger.error(f"Failed to start default proxy: {e}")
+            get_logger().error(f"Failed to start default proxy: {e}")
 
     def cleanup_tray_icon(self) -> None:
         """清理托盘图标"""
@@ -128,7 +117,7 @@ class Window(QtWidgets.QDialog):
                 self.trayIcon.hide()
                 self.trayIcon.deleteLater()
             except Exception as e:
-                logger.warning(f"Error cleaning up tray icon: {e}")
+                get_logger().warning(f"Error cleaning up tray icon: {e}")
             finally:
                 self.trayIcon = None
 
@@ -194,8 +183,7 @@ class Window(QtWidgets.QDialog):
             # 重新加载代理列表
             self.proxy_list = self._config.get_proxies()
             self.proxy_names = [i[0] for i in self.proxy_list]
-            if self.cmd != 'ip_relay':
-                self.proxy_names.append('NoProxy')
+            self.proxy_names.append('NoProxy')
             self.refresh_menu()
 
             # 如果当前代理不在列表中，切换到NoProxy
@@ -207,55 +195,28 @@ class Window(QtWidgets.QDialog):
     def about(self) -> None:
         '''显示关于对话框'''
         QtWidgets.QMessageBox.about(self, self.tr("About PyProxySwitch"),
-                "<h2>PyProxySwitch 3.9.0</h2>" + \
+                "<h2>PyProxySwitch 4.0.0</h2>" + \
         self.tr("<p>Copyright 2009-2026 Kder</p>"
-                "<p>A cross-platform proxy switcher based on 3proxy, polipo and IP Relay.</p>"
+                "<p>A cross-platform proxy switcher with a native Python HTTP/SOCKS server.</p>"
                 "<p>Licensed under Apache License 2.0</p>"
                 "<p>Visit <a href='http://pyproxyswitch.kder.info'>http://pyproxyswitch.kder.info</a> for more information.</p>"))
 
     @Slot()
     def switchProxy(self, proxy_name: str) -> None:
         '''切换代理'''
-        # 保存当前选择的代理
-        self._config.set('LAST_ITEM', proxy_name)
-        # 立即保存到磁盘
-        self._config.save()
-
-        # 如果选择的是NoProxy，启动NoProxy配置文件
-        if proxy_name == 'NoProxy':
-            try:
-                # 启动NoProxy配置文件
-                self.proxy_manager.start_proxy('NoProxy')
-            except Exception as e:
-                logger.error(f"Failed to start NoProxy: {e}")
-                # 即使启动失败也继续执行，避免用户完全无法使用
-            self.item_text = proxy_name
-            self.trayIcon.setToolTip(self.item_text + self.tray_tip)
-            # 刷新托盘菜单以更新选中状态
-            self.refresh_menu()
+        if proxy_name != 'NoProxy' and proxy_name not in self.proxy_names:
+            get_logger().error(f"Proxy {proxy_name} not found in proxy list")
             return
 
-        # 查找代理信息
-        proxy_info = None
-        for proxy in self.proxy_list:
-            if proxy[0] == proxy_name:
-                proxy_info = proxy
-                break
-
-        if proxy_info is None:
-            logger.error(f"Proxy {proxy_name} not found in proxy list")
-            return
-
-        # 根据代理类型启动代理
-        if self.cmd == 'ip_relay':
-            # ip_relay 模式需要实际地址和端口
-            self.proxy_manager.start_proxy(
-                proxy_name, proxy_info[1], proxy_info[2], proxy_info[3] if len(proxy_info) > 3 else 'HTTP'
-            )
-        else:
-            # 其他模式只使用代理名称
+        try:
             self.proxy_manager.start_proxy(proxy_name)
+        except Exception as e:
+            get_logger().error(f"Failed to switch to {proxy_name}: {e}")
+            QtWidgets.QMessageBox.critical(self, self.tr("Error"), str(e))
+            return
 
+        self._config.set('LAST_ITEM', proxy_name)
+        self._config.save()
         self.item_text = proxy_name
         # 使用翻译后的文本更新托盘提示
         translated_tip = self.tr(" - PyProxySwitch({})").format(self.cmd)

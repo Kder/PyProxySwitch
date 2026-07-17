@@ -25,9 +25,9 @@ import pytest
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.proxy_manager import ProxyManager
-from src.config import ConfigManager
-from src.errors import ProxyStartError, ProxyStopError, ConfigError
+from pyproxyswitch.proxy_manager import ProxyManager
+from pyproxyswitch.config import ConfigManager
+from pyproxyswitch.errors import ProxyStartError, ProxyStopError, ConfigError
 
 
 class TestProxyManagerInit:

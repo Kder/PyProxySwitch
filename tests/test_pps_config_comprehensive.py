@@ -30,7 +30,7 @@ class TestPpsConfigModuleInitialization:
 
     def test_module_path_resolution_name_error(self, monkeypatch):
         """测试 PATH0 解析时的 NameError 处理"""
-        from src.pps_config import PATH0, PROGRAM_PATH, CONF, PROXY_LIST
+        from pyproxyswitch.pps_config import PATH0, PROGRAM_PATH, CONF, PROXY_LIST
 
         # Mock Path(__file__) to raise NameError
         with patch("src.pps_config.Path") as mock_path_class:
@@ -38,7 +38,7 @@ class TestPpsConfigModuleInitialization:
 
             # Reload module to test initialization
             import importlib
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Reset module state
             if hasattr(pps_config_module, "__name__"):
@@ -47,7 +47,7 @@ class TestPpsConfigModuleInitialization:
 
     def test_program_path_file_case(self, temp_dir, monkeypatch):
         """测试当 PATH0 是文件时的 PROGRAM_PATH 设置"""
-        from src.pps_config import PROGRAM_PATH
+        from pyproxyswitch.pps_config import PROGRAM_PATH
 
         # Create a file at PATH0 location
         path0_file = temp_dir / "src" / "pps_config.py"
@@ -58,14 +58,14 @@ class TestPpsConfigModuleInitialization:
 
         # Reload to test initialization
         import importlib
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # The actual path resolution is complex due to __file__ dependency
         # We'll test this indirectly through other tests
 
     def test_config_and_proxy_list_paths(self, temp_dir, monkeypatch):
         """测试配置文件路径设置"""
-        from src.pps_config import CONF, PROXY_LIST
+        from pyproxyswitch.pps_config import CONF, PROXY_LIST
 
         # Mock the path construction
         monkeypatch.setattr(Path, "parent", Path(temp_dir))
@@ -81,7 +81,7 @@ class TestPpsConfigTranslationSetup:
 
     def test_gettext_translation_success(self, monkeypatch):
         """测试成功加载翻译文件"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Mock the module-level _ function directly
         def mock_gettext(x):
@@ -96,7 +96,7 @@ class TestPpsConfigTranslationSetup:
     def test_gettext_translation_failure(self, monkeypatch):
         """测试翻译文件加载失败时使用默认函数"""
         from unittest.mock import patch
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Mock translation failure
         with patch("src.pps_config.gettext.translation") as mock_translation:
@@ -122,7 +122,7 @@ class TestPpsConfigCommandLineParsing:
         if "src.pps_config" in sys.modules:
             importlib.reload(sys.modules["src.pps_config"])
 
-        from src.pps_config import ACTION
+        from pyproxyswitch.pps_config import ACTION
 
         assert "add" == ACTION
 
@@ -138,13 +138,13 @@ class TestPpsConfigCommandLineParsing:
         if "src.pps_config" in sys.modules:
             importlib.reload(sys.modules["src.pps_config"])
 
-        from src.pps_config import ACTION
+        from pyproxyswitch.pps_config import ACTION
 
         assert None is ACTION
 
     def test_output_message_formatting(self):
         """测试消息格式化输出"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         # Test string formatting
         with patch("sys.stdout.buffer.write") as mock_write:
@@ -159,7 +159,7 @@ class TestPpsConfigLoadProxylistEdgeCases:
 
     def test_load_proxylist_empty_user_pass_handling(self, temp_dir):
         """测试用户密码分割时的空值处理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # Test case where user_pass split results in single element
@@ -172,7 +172,7 @@ class TestPpsConfigLoadProxylistEdgeCases:
 
     def test_load_proxylist_socks_type_fallback(self, temp_dir):
         """测试 SOCKS 类型回退逻辑"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # Test case: third item is not user:pass but fourth item is proxy type
@@ -186,7 +186,7 @@ class TestPpsConfigLoadProxylistEdgeCases:
 
     def test_load_proxylist_index_error_exit(self, temp_dir):
         """测试 IndexError 时的退出行为"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # Create content that causes IndexError during addr_port split
@@ -205,7 +205,7 @@ class TestPpsConfigAddProxyMainExecution:
         self, temp_dir, monkeypatch
     ):
         """测试在主程序上下文中修改全局 PROXIES 列表"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -256,7 +256,7 @@ class TestPpsConfigAddProxyMainExecution:
     ):
         """测试主程序上下文的成功消息输出"""
         from unittest.mock import patch
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -295,7 +295,7 @@ class TestPpsConfigDelProxyMainExecution:
         self, temp_dir, monkeypatch
     ):
         """测试删除代理时修改全局 PROXIES 列表"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -337,7 +337,7 @@ class TestPpsConfigDelProxyMainExecution:
         self, temp_dir, monkeypatch, capsys
     ):
         """测试删除代理时的信息消息输出"""
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         # Set up main context
         original_main = getattr(pps_config_module, "__name__", "")
@@ -370,7 +370,7 @@ class TestPpsConfigMainExecutionFlow:
     def test_main_add_command_successful(self, monkeypatch, capsys):
         """测试 main 中添加代理命令的成功执行"""
         from unittest.mock import patch
-        from src.pps_config import add_proxy, pps_save_proxylist, sys
+        from pyproxyswitch.pps_config import add_proxy, pps_save_proxylist, sys
 
         # Mock command line arguments
         monkeypatch.setattr(
@@ -382,7 +382,7 @@ class TestPpsConfigMainExecutionFlow:
             patch("src.pps_config.add_proxy") as mock_add,
             patch("src.pps_config.pps_save_proxylist") as mock_save,
         ):
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Set ACTION to simulate command line execution
             pps_config_module.ACTION = "add"
@@ -406,7 +406,7 @@ class TestPpsConfigMainExecutionFlow:
     def test_main_del_command_successful(self, monkeypatch, capsys):
         """测试 main 中删除代理命令的成功执行"""
         from unittest.mock import patch
-        from src.pps_config import del_proxy, pps_save_proxylist, sys
+        from pyproxyswitch.pps_config import del_proxy, pps_save_proxylist, sys
 
         # Mock command line arguments
         monkeypatch.setattr(sys, "argv", ["pps_config.py", "del", "test_proxy"])
@@ -416,7 +416,7 @@ class TestPpsConfigMainExecutionFlow:
             patch("src.pps_config.del_proxy") as mock_del,
             patch("src.pps_config.pps_save_proxylist") as mock_save,
         ):
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Set ACTION to simulate command line execution
             pps_config_module.ACTION = "del"
@@ -436,7 +436,7 @@ class TestPpsConfigMainExecutionFlow:
     def test_main_batch_add_command(self, monkeypatch, capsys):
         """测试 main 中的批量添加代理命令"""
         from unittest.mock import patch
-        from src.pps_config import PROXY_LIST, add_proxy, pps_save_proxylist, sys
+        from pyproxyswitch.pps_config import PROXY_LIST, add_proxy, pps_save_proxylist, sys
 
         # Mock command line arguments for batch mode
         monkeypatch.setattr(sys, "argv", ["pps_config.py"])  # No action specified
@@ -448,7 +448,7 @@ class TestPpsConfigMainExecutionFlow:
             patch("src.pps_config.add_proxy") as mock_add,
             patch("src.pps_config.pps_save_proxylist") as mock_save,
         ):
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Set ACTION to simulate batch mode (None)
             pps_config_module.ACTION = None
@@ -471,12 +471,12 @@ class TestPpsConfigMainExecutionFlow:
 
         def test_main_help_display(self, monkeypatch, capsys):
             """测试 main 中的帮助信息显示"""
-            from src.pps_config import pps_output, PPS_MSG, USAGE, sys
+            from pyproxyswitch.pps_config import pps_output, PPS_MSG, USAGE, sys
 
             # Mock unknown action
             monkeypatch.setattr(sys, "argv", ["pps_config.py", "unknown"])
 
-            import src.pps_config as pps_config_module
+            import pyproxyswitch.pps_config as pps_config_module
 
             # Set ACTION to simulate unknown command
             pps_config_module.ACTION = "unknown"
@@ -500,7 +500,7 @@ class TestPpsConfigMainExecutionFlow:
 def test_main_error_exit_codes(monkeypatch, capsys):
     """测试 main 中的错误退出码"""
 
-    from src.pps_config import pps_output, PPS_MSG, USAGE, sys
+    from pyproxyswitch.pps_config import pps_output, PPS_MSG, USAGE, sys
 
     # Mock the main execution logic
     def mock_main_logic():
@@ -521,7 +521,7 @@ def test_main_error_exit_codes(monkeypatch, capsys):
         # Test add command too few arguments
         monkeypatch.setattr(sys, "argv", ["pps_config.py", "add", "proxy"])
 
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         pps_config_module.ACTION = "add"
 
@@ -533,7 +533,7 @@ def test_main_error_exit_codes(monkeypatch, capsys):
         # Test del command too few arguments
         monkeypatch.setattr(sys, "argv", ["pps_config.py", "del"])
 
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         pps_config_module.ACTION = "del"
 
@@ -545,7 +545,7 @@ def test_main_error_exit_codes(monkeypatch, capsys):
         # Test unknown action
         monkeypatch.setattr(sys, "argv", ["pps_config.py", "invalid"])
 
-        import src.pps_config as pps_config_module
+        import pyproxyswitch.pps_config as pps_config_module
 
         pps_config_module.ACTION = "unknown"
 

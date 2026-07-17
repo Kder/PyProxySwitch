@@ -69,7 +69,7 @@ class TestAddProxyDialog:
     def test_add_proxy_dialog_initialization(self, mock_qt_modules, mock_validator):
         """测试对话框初始化 (lines 20-33)"""
         # 导入并创建对话框
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog()
 
@@ -93,8 +93,8 @@ class TestAddProxyDialog:
 
     def test_done_with_accepted_validation_success(self, mock_qt_modules, mock_validator):
         """测试 done() 方法在验证成功时 (lines 35-53)"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
-        from src.proxy_validation import ValidationError
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.proxy_validation import ValidationError
 
         dialog = AddProxy_Dialog()
 
@@ -122,8 +122,8 @@ class TestAddProxyDialog:
 
     def test_done_with_accepted_validation_failure(self, mock_qt_modules, mock_validator):
         """测试 done() 方法在验证失败时 (lines 35-62)"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
-        from src.proxy_validation import ValidationError
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.proxy_validation import ValidationError
 
         dialog = AddProxy_Dialog()
 
@@ -149,7 +149,7 @@ class TestAddProxyDialog:
 
     def test_done_with_rejected(self, mock_qt_modules, mock_validator):
         """测试 done() 方法在拒绝时 (lines 63-64)"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog()
 
@@ -164,7 +164,7 @@ class TestAddProxyDialog:
 
     def test_show_error_method(self, mock_qt_modules, mock_validator):
         """测试 show_error() 方法 (lines 66-73)"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog()
 
@@ -183,8 +183,8 @@ class TestAddProxyDialog:
 
     def test_validation_error_handling(self, mock_qt_modules, mock_validator):
         """测试验证错误处理的各种情况"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
-        from src.proxy_validation import ValidationError
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.proxy_validation import ValidationError
 
         dialog = AddProxy_Dialog()
 
@@ -206,7 +206,7 @@ class TestAddProxyDialog:
 
     def test_proxy_validation_parameters(self, mock_qt_modules, mock_validator):
         """测试传递给验证器的参数"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog()
 
@@ -237,7 +237,7 @@ class TestAddProxyDialog:
 
     def test_dialog_inheritance(self, mock_qt_modules, mock_validator):
         """测试对话框继承关系"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog()
 
@@ -246,7 +246,7 @@ class TestAddProxyDialog:
 
     def test_tr_method_usage(self, mock_qt_modules, mock_validator):
         """测试 tr() 方法的使用"""
-        from src.gui.add_proxy_dialog import AddProxy_Dialog
+        from pyproxyswitch.gui.add_proxy_dialog import AddProxy_Dialog
 
         dialog = AddProxy_Dialog()
 

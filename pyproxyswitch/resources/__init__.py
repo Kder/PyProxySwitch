@@ -25,16 +25,16 @@ PyProxySwitch UI资源包
 
 使用方法：
     # 导入UI类
-    from res.add_proxy_ui import Ui_add_proxy_dialog
-    from res.pps_conf_ui import Ui_config_dialog
+    from pyproxyswitch.resources.add_proxy_ui import Ui_add_proxy_dialog
+    from pyproxyswitch.resources.pps_conf_ui import Ui_config_dialog
 
     # 导入资源
-    import res.pps_qrc
+    import pyproxyswitch.resources.pps_qrc
 
-版本: 3.9.0
+版本: 4.0.0
 """
 
-__version__ = "3.9.0"
+__version__ = "4.0.0"
 __description__ = "PyProxySwitch UI资源包"
 
 # 自动导入编译后的UI模块，便于外部使用

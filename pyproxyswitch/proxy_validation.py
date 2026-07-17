@@ -12,7 +12,7 @@ import socket
 from PySide6.QtCore import QObject, QRegularExpression, Signal
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 
-from src.logger_config import logger
+from pyproxyswitch.logger_config import logger
 
 
 class ValidationError(Exception):

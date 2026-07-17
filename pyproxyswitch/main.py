@@ -15,9 +15,9 @@
 # the License.
 
 '''
-PyProxySwitch is a cross-platform proxy switcher based on 3proxy, polipo and
-IP Relay to fast change proxy for browsers(Firefox,Chrome,Opera,IE, etc.) and
-other internet applications, writen in Python and PySide6.
+PyProxySwitch is a cross-platform proxy switcher with a native Python HTTP,
+SOCKS4 and SOCKS5 server. It changes upstream routes without restarting the
+local listener or interrupting existing connections.
 
 Welcom to send me your feedback if you feel it useful.
 '''
@@ -27,8 +27,8 @@ __author__ = 'Kder'
 __copyright__ = 'Copyright 2009-2026 Kder'
 __credits__ = ['Kder']
 
-__version__ = '3.9.0'
-__date__ = '2026-04-01'
+__version__ = '4.0.0'
+__date__ = '2026-07-17'
 __maintainer__ = "Kder"
 __email__ = '[kderlin (#) gmail dot com]'
 __url__ = 'http://www.kder.info'
@@ -53,15 +53,19 @@ def main(log_level=None):
         # 导入必要的模块
         import logging
 
-        from src.gui.main_window import Window
-        from src.logger_config import setup_logger
+        from pyproxyswitch.gui.main_window import Window
+        from pyproxyswitch.logger_config import setup_logger
+
+        # 设置默认日志级别
+        if log_level is None:
+            log_level = logging.INFO
 
         root_logger = logging.getLogger('PyProxySwitch')
         # 检查是否已经有logger配置，如果没有才重新配置
         if not root_logger.handlers:
             logger = setup_logger(log_level=log_level)
         else:
-            # 如果已经有handler，直接使用现有logger并更新其级别
+            # 如果已经有handler，直接使用现有logger
             logger = root_logger
             # 确保控制台处理器的级别正确
             for handler in logger.handlers:

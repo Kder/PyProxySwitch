@@ -9,8 +9,8 @@
 from PySide6 import QtGui, QtWidgets
 
 # 导入UI文件
-from res.add_proxy_ui import Ui_Dialog_AddProxy
-from src.proxy_validation import ProxyValidator, ValidationError
+from pyproxyswitch.resources.add_proxy_ui import Ui_Dialog_AddProxy
+from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 
 
 class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):

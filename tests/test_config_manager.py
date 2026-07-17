@@ -16,11 +16,11 @@ import sys
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.config import ConfigManager
+from pyproxyswitch.config import ConfigManager
 
 # 条件导入 pps_config，用于测试
 try:
-    import src.pps_config as pps_config
+    import pyproxyswitch.pps_config as pps_config
 
     HAS_PPS_CONFIG = True
 except ImportError:

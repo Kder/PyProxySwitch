@@ -23,7 +23,7 @@ class TestPpsOutput:
 
     def test_pps_output_stdout(self, capsys):
         """测试标准输出"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         pps_output("test message")
         captured = capsys.readouterr()
@@ -32,7 +32,7 @@ class TestPpsOutput:
 
     def test_pps_output_stderr(self, capsys):
         """测试标准错误输出"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         pps_output("error message", dest="stderr")
         captured = capsys.readouterr()
@@ -44,7 +44,7 @@ class TestPpsLoadProxylist:
 
     def test_load_simple_proxy(self, temp_dir):
         """测试加载简单代理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxy_file.write_text("test_proxy 192.168.1.1:8080\n", encoding="utf-8")
@@ -58,7 +58,7 @@ class TestPpsLoadProxylist:
 
     def test_load_proxy_with_auth(self, temp_dir):
         """测试加载带认证的代理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxy_file.write_text("auth_proxy 10.0.0.1:3128 user:pass\n", encoding="utf-8")
@@ -71,7 +71,7 @@ class TestPpsLoadProxylist:
 
     def test_load_proxy_with_socks_type(self, temp_dir):
         """测试加载 SOCKS 代理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxy_file.write_text("socks_proxy 203.0.113.5:1080 SOCKS5\n", encoding="utf-8")
@@ -82,7 +82,7 @@ class TestPpsLoadProxylist:
 
     def test_load_proxy_with_socks4(self, temp_dir):
         """测试加载 SOCKS4 代理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxy_file.write_text(
@@ -95,7 +95,7 @@ class TestPpsLoadProxylist:
 
     def test_load_proxy_with_auth_and_type(self, temp_dir):
         """测试加载带认证和类型的代理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxy_file.write_text(
@@ -110,7 +110,7 @@ class TestPpsLoadProxylist:
 
     def test_load_empty_lines(self, temp_dir):
         """测试空行被跳过"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxy_file.write_text(
@@ -123,7 +123,7 @@ class TestPpsLoadProxylist:
 
     def test_load_multiple_proxies(self, temp_dir):
         """测试加载多个代理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         content = """proxy1 192.168.1.1:8080
@@ -141,7 +141,7 @@ class TestPpsSaveProxylist:
 
     def test_save_simple_proxy(self, temp_dir):
         """测试保存简单代理"""
-        from src.pps_config import pps_save_proxylist
+        from pyproxyswitch.pps_config import pps_save_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxies = [("test_proxy", "192.168.1.1", "8080", "HTTP", "", "")]
@@ -155,7 +155,7 @@ class TestPpsSaveProxylist:
 
     def test_save_proxy_with_auth(self, temp_dir):
         """测试保存带认证的代理"""
-        from src.pps_config import pps_save_proxylist
+        from pyproxyswitch.pps_config import pps_save_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxies = [("auth_proxy", "10.0.0.1", "3128", "HTTP", "user", "pass")]
@@ -167,7 +167,7 @@ class TestPpsSaveProxylist:
 
     def test_save_proxy_without_auth(self, temp_dir):
         """测试保存无认证的代理"""
-        from src.pps_config import pps_save_proxylist
+        from pyproxyswitch.pps_config import pps_save_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxies = [("noauth_proxy", "10.0.0.1", "3128", "HTTP", "", "")]
@@ -180,7 +180,7 @@ class TestPpsSaveProxylist:
 
     def test_save_string_proxies(self, temp_dir):
         """测试保存字符串列表"""
-        from src.pps_config import pps_save_proxylist
+        from pyproxyswitch.pps_config import pps_save_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         proxies = ["proxy1", "proxy2"]
@@ -197,8 +197,8 @@ class TestPpsExcHandle:
 
     def test_exc_handle_debug_on(self, monkeypatch):
         """测试调试模式开启时的异常处理"""
-        import src.pps_config as pps_config
-        from src.pps_config import pps_exc_handle
+        import pyproxyswitch.pps_config as pps_config
+        from pyproxyswitch.pps_config import pps_exc_handle
 
         # 设置调试模式
         original_config = pps_config.CONFIG.copy()
@@ -222,8 +222,8 @@ class TestPpsExcHandle:
 
     def test_exc_handle_debug_off(self, monkeypatch):
         """测试调试模式关闭时的异常处理"""
-        import src.pps_config as pps_config
-        from src.pps_config import pps_exc_handle
+        import pyproxyswitch.pps_config as pps_config
+        from pyproxyswitch.pps_config import pps_exc_handle
 
         # 设置调试模式关闭
         original_config = pps_config.CONFIG.copy()
@@ -250,7 +250,7 @@ class TestPpsSavecfg:
 
     def test_save_config(self, temp_dir, monkeypatch):
         """测试保存配置"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 设置配置文件路径
         config_file = temp_dir / "test_config.json"
@@ -268,7 +268,7 @@ class TestPpsSavecfg:
 
     def test_save_config_io_error(self, temp_dir, monkeypatch, capsys):
         """测试保存配置失败"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 设置只读配置文件路径
         readonly_file = temp_dir / "readonly" / "config.json"
@@ -286,7 +286,7 @@ class TestDelProxy:
 
     def test_del_proxy_basic(self, temp_dir, monkeypatch):
         """测试基本删除代理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 创建测试目录结构
         polipo_dir = temp_dir / "cfg" / "polipo"
@@ -312,7 +312,7 @@ class TestDelProxy:
 
     def test_del_proxy_not_found(self, temp_dir, monkeypatch):
         """测试删除不存在的代理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         monkeypatch.setattr(pps_config, "PROGRAM_PATH", str(temp_dir))
 
@@ -325,7 +325,7 @@ class TestLoadcfg:
 
     def test_load_config_with_old_typo(self, temp_dir):
         """测试加载旧版本拼写错误的配置"""
-        from src.pps_config import pps_loadcfg
+        from pyproxyswitch.pps_config import pps_loadcfg
 
         config_file = temp_dir / "config.json"
         config = {
@@ -344,7 +344,7 @@ class TestLoadcfg:
 
     def test_load_config_without_typo(self, temp_dir):
         """测试加载正确配置"""
-        from src.pps_config import pps_loadcfg
+        from pyproxyswitch.pps_config import pps_loadcfg
 
         config_file = temp_dir / "config.json"
         config = {"FIRST_RUN": 0, "CMD": "3proxy"}
@@ -362,7 +362,7 @@ class TestAddProxy:
 
     def test_add_proxy_simple(self, temp_dir, monkeypatch):
         """测试添加简单代理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 创建目录结构
         polipo_dir = temp_dir / "cfg" / "polipo"
@@ -383,7 +383,7 @@ class TestAddProxy:
 
     def test_add_proxy_with_auth(self, temp_dir, monkeypatch):
         """测试添加带认证的代理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 创建目录结构
         polipo_dir = temp_dir / "cfg" / "polipo"
@@ -406,7 +406,7 @@ class TestAddProxy:
 
     def test_add_proxy_socks5(self, temp_dir, monkeypatch):
         """测试添加 SOCKS5 代理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 创建目录结构
         polipo_dir = temp_dir / "cfg" / "polipo"
@@ -429,7 +429,7 @@ class TestAddProxy:
 
     def test_add_proxy_invalid_name(self, temp_dir, monkeypatch, capsys):
         """测试添加无效名称的代理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         monkeypatch.setattr(pps_config, "PROGRAM_PATH", str(temp_dir))
 
@@ -446,7 +446,7 @@ class TestPpsConfigErrorHandling:
 
     def test_loadcfg_invalid_json(self, temp_dir):
         """测试加载无效JSON格式文件"""
-        from src.pps_config import pps_loadcfg
+        from pyproxyswitch.pps_config import pps_loadcfg
 
         config_file = temp_dir / "invalid.json"
         config_file.write_text("{ invalid json", encoding="utf-8")
@@ -458,7 +458,7 @@ class TestPpsConfigErrorHandling:
 
     def test_loadcfg_nonexistent_file(self):
         """测试加载不存在的配置文件"""
-        from src.pps_config import pps_loadcfg
+        from pyproxyswitch.pps_config import pps_loadcfg
 
         # 在测试环境中，应该返回默认配置而不是抛出异常
         config = pps_loadcfg("/nonexistent/path/config.json")
@@ -467,7 +467,7 @@ class TestPpsConfigErrorHandling:
 
     def test_load_proxylist_index_error(self, temp_dir):
         """测试加载代理列表时的IndexError处理"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # 创建会导致IndexError的内容（地址没有端口）
@@ -481,7 +481,7 @@ class TestPpsConfigErrorHandling:
 
     def test_save_proxylist_os_error(self, temp_dir, monkeypatch):
         """测试保存代理列表时OSError处理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 使用一个不存在的目录来触发OSError
         invalid_path = temp_dir / "nonexistent" / "proxy.txt"
@@ -508,7 +508,7 @@ class TestPpsConfigErrorHandling:
 
     def test_savecfg_io_error(self, temp_dir, monkeypatch):
         """测试保存配置文件时IOError处理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # Mock pps_exc_handle to capture calls
         exc_handle_calls = []
@@ -530,7 +530,7 @@ class TestPpsConfigErrorHandling:
 
     def test_add_proxy_validation_error(self, temp_dir, monkeypatch, capsys):
         """测试添加代理时的验证错误处理"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         monkeypatch.setattr(pps_config, "PROGRAM_PATH", str(temp_dir))
 
@@ -543,7 +543,7 @@ class TestPpsConfigErrorHandling:
 
     def test_add_proxy_config_file_creation_success(self, temp_dir, monkeypatch):
         """测试添加代理时成功创建配置文件"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
         from pathlib import Path
 
         # 设置一个有效的程序路径（使用temp目录）
@@ -564,7 +564,7 @@ class TestPpsConfigErrorHandling:
 
     def test_del_proxy_success(self, temp_dir, monkeypatch, capsys):
         """测试删除代理时成功删除配置文件"""
-        import src.pps_config as pps_config
+        import pyproxyswitch.pps_config as pps_config
 
         # 创建有效的程序路径
         program_dir = temp_dir / "program"
@@ -596,7 +596,7 @@ class TestPpsOutputEdgeCases:
 
     def test_pps_output_non_string_input(self, capsys):
         """测试 pps_output 非字符串输入（覆盖 line 222）"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         # 测试非字符串输入（应该转换为字符串）
         pps_output(12345)  # 数字输入
@@ -606,7 +606,7 @@ class TestPpsOutputEdgeCases:
 
     def test_pps_output_none_input(self, capsys):
         """测试 pps_output None 输入"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         pps_output(None)  # None 输入
         captured = capsys.readouterr()
@@ -615,7 +615,7 @@ class TestPpsOutputEdgeCases:
 
     def test_pps_output_list_input(self, capsys):
         """测试 pps_output 列表输入"""
-        from src.pps_config import pps_output
+        from pyproxyswitch.pps_config import pps_output
 
         pps_output([1, 2, 3])  # 列表输入
         captured = capsys.readouterr()
@@ -628,7 +628,7 @@ class TestPpsLoadProxylistEdgeCases:
 
     def test_load_proxy_with_user_pass_no_password(self, temp_dir):
         """测试加载代理时用户名后面有冒号但无密码（覆盖 line 255）"""
-        from src.pps_config import pps_load_proxylist
+        from pyproxyswitch.pps_config import pps_load_proxylist
 
         proxy_file = temp_dir / "proxy.txt"
         # 写入用户名后面有冒号但没有密码的格式
@@ -731,7 +731,7 @@ class TestGetActionForTests:
         test_argv = ["script.py", "add", "test_proxy", "192.168.1.1:8080"]
         monkeypatch.setattr(sys, "argv", test_argv)
 
-        from src.pps_config import get_action_for_tests
+        from pyproxyswitch.pps_config import get_action_for_tests
 
         action = get_action_for_tests()
         assert action == "add"
@@ -742,7 +742,7 @@ class TestGetActionForTests:
         test_argv = ["script.py", "-v", "add", "test_proxy"]
         monkeypatch.setattr(sys, "argv", test_argv)
 
-        from src.pps_config import get_action_for_tests
+        from pyproxyswitch.pps_config import get_action_for_tests
 
         action = get_action_for_tests()
         assert action == "add"
@@ -753,7 +753,7 @@ class TestGetActionForTests:
         test_argv = ["script.py"]
         monkeypatch.setattr(sys, "argv", test_argv)
 
-        from src.pps_config import get_action_for_tests
+        from pyproxyswitch.pps_config import get_action_for_tests
 
         action = get_action_for_tests()
         assert action is None
@@ -764,7 +764,7 @@ class TestGetActionForTests:
         test_argv = []
         monkeypatch.setattr(sys, "argv", test_argv)
 
-        from src.pps_config import get_action_for_tests
+        from pyproxyswitch.pps_config import get_action_for_tests
 
         action = get_action_for_tests()
         assert action is None

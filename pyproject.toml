@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyProxySwitch"
-version = "3.9.0"
-description = "A cross-platform proxy switcher based on 3proxy, polipo and IP Relay"
+version = "4.0.0"
+description = "A cross-platform proxy switcher with a native Python HTTP/SOCKS server"
 authors = [
     {name = "Kder Lin", email = "kderlin@gmail.com"}
 ]
 license = {text = "Apache License, Version 2.0"}
-readme = "README"
+readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["proxy", "network", "tool"]
 classifiers = [
@@ -65,7 +65,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["src"]
+source = ["pyproxyswitch"]
 branch = true
 omit = [
     "tests/*",
@@ -92,12 +92,17 @@ Repository = "https://github.com/kderlin/PyProxySwitch"
 "Bug Reports" = "https://github.com/kderlin/PyProxySwitch/issues"
 
 [project.gui-scripts]
-pyproxyswitch = "src.main:main"
+pyproxyswitch = "pyproxyswitch.main:main"
+
+[project.scripts]
+pyproxyswitch-cli = "pyproxyswitch.__main__:main"
 
 [tool.setuptools]
-packages = ["src", "res"]
-package-dir = {"" = "."}
 include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyproxyswitch*"]
 
 [tool.black]
 line-length = 100
@@ -144,7 +149,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["src", "res"]
+known-first-party = ["pyproxyswitch"]
 
 [tool.mypy]
 python_version = "3.10"

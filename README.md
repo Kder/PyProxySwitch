@@ -1,94 +1,57 @@
 ﻿[![Tests](https://github.com/Kder/PyProxySwitch/actions/workflows/test.yml/badge.svg)](https://github.com/Kder/PyProxySwitch/actions/workflows/test.yml)
 
-PyProxySwitch  版本: 3.9.0
+PyProxySwitch  版本: 4.0.0
 
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件  
 网站: http://www.kder.info  
 项目主页: http://pyproxyswitch.kder.info/  
-最近更新: 2026-04-01  
+最近更新: 2026-07-17
 许可: Apache License, Version 2.0  
-    本程序用到了以下三个开源软件的二进制文件：  
-      3proxy： https://3proxy.org/  
-      polipo： http://www.pps.jussieu.fr/~jch/software/polipo/  
-      iprelay：http://iprelay.sourceforge.net/  
-    (它们的许可请见licenses目录)  
 
 # 简介
 
-PyProxySwitch(PPS)是一个跨平台的代理切换程序，本程序的主要结构是 本地代理服务器（基于polipo/3proxy/iprelay） + 快速切换父级代理（基于Python+PySide6），实现快速切换各种应用程序（如浏览器等）的代理设置。   
+PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，本地代理服务器完全由 Python 标准库实现，不再启动或依赖 3proxy、polipo、IP Relay 等第三方二进制文件。
+
+内置服务器在同一个本地端口自动识别 HTTP、SOCKS4/SOCKS4a 和 SOCKS5 客户端协议；上游支持 HTTP、SOCKS4 和 SOCKS5（含 HTTP Basic、SOCKS5 用户名/密码认证）。选择 `NoProxy` 时直接连接目标。
+
+切换上游只原子替换内存中的路由快照，不重启监听套接字或事件循环。已建立连接继续使用切换前的上游，新连接立即使用新上游，这与 sing-box 一类代理核心的热切换行为相近。
 
 # 用法
 
-- 解压后运行PyProxySwitch.py（源代码版本）或者PyProxySwitch.exe（Windows可执行文件版本），然后把浏览器或其他需要设置代理的程序的代理设置为127.0.0.1:8888，右击右下角系统托盘中的图标即可快速切换代理。   
+- 解压后运行 `python PyProxySwitch.py`（源代码版本）或者 PyProxySwitch.exe（Windows 可执行文件版本），然后把浏览器或其他应用的 HTTP 或 SOCKS 代理设置为 `127.0.0.1:8888`。右击系统托盘图标即可热切换上游。
 - 双击系统托盘图标（或者右击系统托盘图标，点击“设置”），会弹出设置对话框，可进行添加/删除/修改代理、设置本地端口、语言等操作。
+- 为避免意外成为局域网公开代理，默认仅监听 `127.0.0.1`；可通过 `PPS.conf` 的 `LOCAL_ADDRESS` 显式调整。
 
 ## 批量添加代理
 
-使用src目录下的pps_config.py（Windows平台用bin目录下的pps_config.exe）  
-首先将各个代理以“代理名称 代理地址:端口 用户名:密码 代理类型”的形式（代理名称可以是自定义的任何名字,[用户名:密码]仅用于需要认证的代理,一般情况下不需要,可省略。代理类型也可省略（默认是HTTP），支持的类型有SOCKS4和SOCKS5），每行一个，名称不要使用特殊字符/标点符号，最好使用字母、数字和下划线等，如：  
+可在设置界面批量编辑，或者直接编辑 UTF-8 编码的 `cfg/proxy.txt`。每行格式为“代理名称 代理地址:端口 用户名:密码 代理类型”；认证信息和类型可省略，默认类型为 HTTP。例如：
 ```
       test1 test1.com:8080  
       test2 test2.com:8080 user:pass  
       test3 1.2.3.4:80  
       socks_proxy socksproxy.com:3128 SOCKS5  
 ```
-   （可参考自带的proxy.txt的示例）  
-添加到cfg目录下的proxy.txt文件中【必须是UTF-8编码】，双击pps_config.py或pps_config.exe即可批量导入代理。   
 
-## 批量删除代理
-```
-    使用bin下的pps_config，用法：pps_config del 代理名称1 代理名称2 代理名称3 ……   
-    例如 pps_config del test1 test2 
-```
+代理列表在运行时直接读取，不再生成各后端的 `.conf` 文件。
 
-# 自定义代理及菜单项
+# 实现与性能
 
-使用pps_config(py源代码或者exe可执行文件)【推荐】  
+代理核心使用独立后台线程中的单个 `asyncio` 事件循环，采用每方向 512 KiB 分块、传输层背压、TCP_NODELAY/KEEPALIVE 和 2 MiB 写缓冲高水位。数据转发路径是网络 I/O 受限，不做内容解析、缓存或逐字节 Python 运算，因此目前没有引入 Cython；这也避免了额外编译链和平台相关二进制。若后续基准显示 CPU 成为瓶颈，可在不改变协议层 API 的前提下替换转发泵。
 
-pps_config 是PyProxySwitch(PPS)的配置程序，可以为PPS添加或者删除代理   
+普通明文 HTTP 请求为了正确处理跨主机连接复用，会显式使用 `Connection: close`；HTTPS `CONNECT` 和 SOCKS 隧道不受此限制。
 
-## pps_config用法
-
-- 添加代理(仅支持添加单个代理，批量添加请使用pps_config配合proxy.txt，见上面的说明)：
-```
-    pps_config add 代理名称 代理地址:端口 用户名:密码 代理类型
-         代理名称可以是自定义的任何名字，[用户名:密码]仅用于需要认证的代理，一般情况下不需要，可省略
-         代理类型也可省略（默认是HTTP），支持的类型有SOCKS4和SOCKS5
-    例如：pps_config add test1 test1.com:8080 
-          pps_config add test2 test2.com:8080 user:pass
-          pps_config add socks_proxy socksproxy.com:3128 SOCKS5
-    或者：pps_config add test3 1.2.3.4:80
-```
-
-- 删除代理(支持批量删除)：
-```
-    pps_config del 代理名称1 代理名称2 ...
-    例如：pps_config del test1
-          pps_config del test1 test2 test3
-```
-
-## 【不推荐】手动设置代理及菜单项
-cfg目录下的配置文件PPS.conf中可以定义菜单项，3proxy/polipo目录下是各个菜单项对应的配置文件，用户可根据需要进行自定义，其中最主要的是父级代理parentProxy的设置，其他更高级的用法可参见3proxy/polipo/iprelay各自的文档。   
-    
-以polipo为例，比如你的代理地址是1.2.3.4:80 ，类型为HTTP：  
-
-  1. 打开cfg/polipo目录下一个配置文件，例如Tor.conf，找到类似这一行 parentProxy = "127.0.0.1:9050"，将其改为你的代理地址：parentProxy = "1.2.3.4:80"，保存。  
-  2. 然后把Tor.conf改为你想要的名称，例如proxy1.conf 。  
-  3. 修改proxy.txt，添加一行： proxy1 1.2.3.4:80 HTTP ，保存。  
-  4. 退出，重新启动PyProxySwitch，右键，就可以切换到你新添加的代理了。   
-
-若用的是3proxy，则要修改cfg/3proxy目录下的对应文件中的parent 1000 http 1.2.3.4 80为 parent 1000 http 地址 端口　的形式   
-
-默认的本地代理程序是 polipo（支持内容缓存，功能强大），另外还有3proxy（支持DNS缓存，不支持内容缓存，功能强大）和ip_relay（仅是端口转发，本身无代理功能）   
+当前核心面向 TCP 代理：支持 HTTP 转发/CONNECT 与 SOCKS CONNECT，不实现 SOCKS BIND、SOCKS5 UDP ASSOCIATE 或内容缓存。
 
 # 系统要求
 
-* 源代码版本: Python3.10+和PySide6  
+* 源代码版本：Python 3.10+ 和 PySide6
+* 代理核心仅使用 Python 标准库
 
 
 # 更新历史
 
-* 3.9.0 界面界面代码重构，改进配置管理和命令行参数支持  
+* 4.0.0 使用 Python 原生 HTTP/SOCKS 代理核心，实现无进程重启的上游热切换，移除运行时第三方二进制依赖 2026-07-17
+* 3.9.0 界面代码重构，改进配置管理和命令行参数支持
 * 3.8.0 重构代码，改进进程处理、异常处理和日志功能 2026-03-17  
 * 3.7   迁移至PySide6 2026-03-09  
 * 3.6   新增代理验证模块，实现严格的代理参数验证机制；从PyQt4迁移至PyQt6；重构配置处理逻辑；移除过时的构建脚本 2026-03-08  

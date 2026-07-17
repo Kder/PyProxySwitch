@@ -128,7 +128,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Proxy Tool</string>
+      <string>Proxy Core</string>
      </property>
     </widget>
     <widget class="QComboBox" name="comboBox_cmd">
@@ -142,17 +142,7 @@
      </property>
      <item>
       <property name="text">
-       <string>3proxy</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>polipo</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>ip_relay</string>
+       <string>internal</string>
       </property>
      </item>
     </widget>
@@ -257,7 +247,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>(Don't change this in normal use)</string>
+      <string>Built-in HTTP/SOCKS proxy (no external process)</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
