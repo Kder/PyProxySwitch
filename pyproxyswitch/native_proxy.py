@@ -30,6 +30,7 @@ _BUFFER_SIZE = 512 * 1024
 _HEADER_LIMIT = 64 * 1024
 _WRITE_HIGH_WATER = 2 * 1024 * 1024
 _WRITE_LOW_WATER = 512 * 1024
+_WRITER_CLOSE_TIMEOUT = 0.25
 _SUPPORTED_TYPES = frozenset({"DIRECT", "HTTP", "SOCKS4", "SOCKS5"})
 _HTTP_TOKEN_CHARS = frozenset(
     "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -247,14 +248,18 @@ class NativeProxyServer:
             else:
                 raise
         finally:
-            if self._server is not None:
-                self._server.close()
-                await self._server.wait_closed()
+            server = self._server
+            if server is not None:
+                # Stop accepting clients first, but do not wait for the server
+                # until its active client handlers have released their sockets.
+                server.close()
             tasks = tuple(self._client_tasks)
             for task in tasks:
                 task.cancel()
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
+            if server is not None:
+                await server.wait_closed()
 
     async def _handle_client(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -904,8 +909,20 @@ class NativeProxyServer:
     @staticmethod
     async def _close_writer(writer: asyncio.StreamWriter) -> None:
         writer.close()
-        with contextlib.suppress(Exception):
-            await writer.wait_closed()
+        try:
+            await asyncio.wait_for(writer.wait_closed(), timeout=_WRITER_CLOSE_TIMEOUT)
+        except asyncio.CancelledError:
+            NativeProxyServer._abort_writer(writer)
+            raise
+        except Exception:
+            NativeProxyServer._abort_writer(writer)
+
+    @staticmethod
+    def _abort_writer(writer: asyncio.StreamWriter) -> None:
+        transport = getattr(writer, "transport", None)
+        if transport is not None:
+            with contextlib.suppress(Exception):
+                transport.abort()
 
     @staticmethod
     async def _timed(awaitable: Awaitable[_T], timeout: float) -> _T:

@@ -367,6 +367,59 @@ def test_start_timeout_cannot_create_a_late_listener() -> None:
     assert server.stop()
 
 
+def test_stop_closes_active_client_before_waiting_for_server() -> None:
+    server = NativeProxyServer(host="127.0.0.1", port=0, handshake_timeout=60)
+    server.start()
+    client = socket.create_connection(("127.0.0.1", server.bound_port), timeout=2)
+    stopped = False
+    try:
+        client.sendall(b"\x05")
+        wait_step = threading.Event()
+        for _ in range(100):
+            if server._client_tasks:
+                break
+            wait_step.wait(0.01)
+        assert server._client_tasks
+
+        stopped = server.stop(timeout=2)
+    finally:
+        client.close()
+        if not stopped:
+            assert server.stop(timeout=2)
+
+    assert stopped
+
+
+def test_close_writer_aborts_a_stalled_transport() -> None:
+    class StalledTransport:
+        def __init__(self) -> None:
+            self.aborted = False
+
+        def abort(self) -> None:
+            self.aborted = True
+
+    class StalledWriter:
+        def __init__(self) -> None:
+            self.closed = False
+            self.transport = StalledTransport()
+
+        def close(self) -> None:
+            self.closed = True
+
+        async def wait_closed(self) -> None:
+            await asyncio.Event().wait()
+
+    writer = StalledWriter()
+
+    async def run_test() -> None:
+        await asyncio.wait_for(NativeProxyServer._close_writer(writer), timeout=1)
+
+    asyncio.run(run_test())
+
+    assert writer.closed
+    assert writer.transport.aborted
+
+
 def test_http_upgrade_headers_are_forwarded() -> None:
     server = NativeProxyServer()
 
