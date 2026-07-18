@@ -30,8 +30,15 @@ itself uses only the Python standard library.
 
 After changing a Qt Designer file under pyproxyswitch/resources, run
 `python tools/generate_ui.py`. Use `python tools/generate_ui.py --check` to
-verify that the tracked Python modules are current. The script works on
-Windows, Linux and macOS.
+verify that the tracked Python modules are current.
+
+Run `python tools/generate_i18n.py update` to update the Qt TS translation
+sources from Python and UI files, then run `python tools/generate_i18n.py
+compile` after editing translations to build the QM catalogs used by the
+application. Running the script without an action performs both stages, and
+`python tools/generate_i18n.py --check` verifies every generated translation
+file. Both generators use the PySide6 tools from the active Python environment
+and work on Windows, Linux and macOS.
 
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info
