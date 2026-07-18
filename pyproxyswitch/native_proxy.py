@@ -104,6 +104,7 @@ class NativeProxyServer:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._server: asyncio.AbstractServer | None = None
         self._stop_event: asyncio.Event | None = None
+        self._stop_requested = threading.Event()
         self._ready = threading.Event()
         self._startup_error: BaseException | None = None
         self._bound_port = 0
@@ -151,6 +152,7 @@ class NativeProxyServer:
             self._ready = threading.Event()
             self._startup_error = None
             self._bound_port = 0
+            self._stop_requested.clear()
             self._thread = threading.Thread(
                 target=self._thread_main,
                 name="PyProxySwitch-native-proxy",
@@ -169,6 +171,9 @@ class NativeProxyServer:
 
     def stop(self, timeout: float = 5.0) -> bool:
         """Stop accepting clients, close active connections and join the loop."""
+        # This flag closes the race where stop() is called before the new
+        # event loop has published its asyncio.Event.
+        self._stop_requested.set()
         with self._state_lock:
             thread = self._thread
             loop = self._loop
@@ -204,6 +209,8 @@ class NativeProxyServer:
     async def _run_server(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._stop_event = asyncio.Event()
+        if self._stop_requested.is_set():
+            return
         try:
             self._server = await asyncio.start_server(
                 self._handle_client,
@@ -656,6 +663,9 @@ class NativeProxyServer:
         for name, value in headers:
             if name.lower() == "connection":
                 connection_tokens.update(token.strip().lower() for token in value.split(","))
+        is_upgrade = "upgrade" in connection_tokens and any(
+            name.lower() == "upgrade" and value.strip() for name, value in headers
+        )
         removed = {
             "connection",
             "proxy-connection",
@@ -663,15 +673,22 @@ class NativeProxyServer:
             "keep-alive",
             *connection_tokens,
         }
+        if is_upgrade:
+            # Upgrade is hop-by-hop, but a forwarding proxy can explicitly
+            # opt in by recreating Connection: Upgrade on the next hop.
+            removed.discard("upgrade")
         output = [f"{method} {target} {version}"]
         output.extend(f"{name}: {value}" for name, value in headers if name.lower() not in removed)
         if http_upstream is not None:
             auth = self._basic_auth(http_upstream)
             if auth:
                 output.append(f"Proxy-Authorization: Basic {auth}")
-        # One request per plain-HTTP client connection avoids incorrectly
-        # pinning a reused proxy connection to the first requested hostname.
-        output.append("Connection: close")
+        if is_upgrade:
+            output.append("Connection: Upgrade")
+        else:
+            # One request per plain-HTTP client connection avoids incorrectly
+            # pinning a reused proxy connection to the first requested hostname.
+            output.append("Connection: close")
         return ("\r\n".join(output) + "\r\n\r\n").encode("latin-1")
 
     @staticmethod

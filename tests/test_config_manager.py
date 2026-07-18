@@ -130,3 +130,18 @@ def test_update_applies_log_path_side_effect(tmp_path, monkeypatch):
     config.update({"LOG_PATH": str(tmp_path / "logs")})
 
     assert updates == [True]
+
+
+def test_failed_atomic_config_save_preserves_previous_file(tmp_path, monkeypatch):
+    config = make_config(tmp_path, {"LANG": "zh_CN"})
+    original = config.config_path.read_text(encoding="utf-8")
+    config.set("LANG", "en")
+
+    def fail_replace(source, destination):
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr("pyproxyswitch.atomic_write.os.replace", fail_replace)
+
+    assert not config.save()
+    assert config.config_path.read_text(encoding="utf-8") == original
+    assert not list(config.config_path.parent.glob(f".{config.config_path.name}.*.tmp"))

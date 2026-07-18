@@ -110,17 +110,10 @@ class ProxyValidator(QObject):
         if not address:
             raise ValidationError("代理地址不能为空")
 
-        # 兼容地址框中附带端口的输入，并确保端口不会被静默丢弃。
-        if address.startswith("[") and "]:" in address:
-            split_pos = address.rfind("]:")
-            host = address[1:split_pos]
-            port_part = address[split_pos + 2 :]
-            self.validate_proxy_port(port_part)
-            address = host
-        elif address.count(":") == 1:
-            host, port_part = address.rsplit(":", 1)
-            self.validate_proxy_port(port_part)
-            address = host
+        # 地址和端口使用独立字段。拒绝内嵌端口，避免两个端口不一致时
+        # 静默采用另一个值。
+        if (address.startswith("[") and "]:" in address) or address.count(":") == 1:
+            raise ValidationError("代理地址不能包含端口号，请使用独立的端口字段")
 
         # 首先检查是否包含危险字符（适用于所有地址格式）
         dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`"]

@@ -9,6 +9,7 @@ from collections.abc import ItemsView, Iterable, KeysView, Sequence, ValuesView
 from pathlib import Path
 from typing import Any
 
+from .atomic_write import atomic_write_text
 from .paths import CONFIG_FILE, PROXY_LIST_FILE, initialize_user_config
 from .proxy_list import ProxyEntry, load_proxy_list, save_proxy_list
 
@@ -126,20 +127,21 @@ class ConfigManager:
     def reload(self) -> None:
         self.load()
 
-    def save(self) -> None:
+    def save(self) -> bool:
+        """Persist settings atomically and report whether the write succeeded."""
+
         try:
-            self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            with self.config_path.open("w", encoding="utf-8") as config_file:
-                json.dump(
-                    self._config,
-                    config_file,
-                    indent=2,
-                    sort_keys=True,
-                    ensure_ascii=False,
-                )
-                config_file.write("\n")
+            content = json.dumps(
+                self._config,
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+            atomic_write_text(self.config_path, content + "\n")
         except (OSError, TypeError) as exc:
             logger.error("Failed to save configuration: %s", exc)
+            return False
+        return True
 
     def get_proxies(self) -> list[ProxyEntry]:
         return list(self._proxies)
@@ -159,11 +161,15 @@ class ConfigManager:
         self._proxies = normalized
         self._sync_proxy_names()
 
-    def save_proxies(self) -> None:
+    def save_proxies(self) -> bool:
+        """Persist the proxy list atomically and report whether the write succeeded."""
+
         try:
             save_proxy_list(self._proxies, self.proxy_list_path)
         except (OSError, ValueError) as exc:
             logger.error("Failed to save proxy list: %s", exc)
+            return False
+        return True
 
     def reset_to_default(self) -> None:
         self._config = self._get_default_config()

@@ -188,3 +188,48 @@ def test_gui_entry_point_keeps_tray_app_alive(monkeypatch) -> None:
         root_logger.handlers = previous_handlers
 
     assert events == [False]
+
+
+def test_listener_start_failure_is_visible_in_tray(qapp, tmp_path, monkeypatch) -> None:
+    _make_config(tmp_path)
+    errors = []
+    monkeypatch.setattr(QtWidgets.QSystemTrayIcon, "isSystemTrayAvailable", lambda: True)
+    monkeypatch.setattr(QtWidgets.QSystemTrayIcon, "show", lambda self: None)
+    monkeypatch.setattr(
+        "pyproxyswitch.gui.main_window.ProxyManager.start_proxy",
+        lambda self, name: (_ for _ in ()).throw(OSError("port already in use")),
+    )
+    monkeypatch.setattr(
+        QtWidgets.QMessageBox,
+        "critical",
+        lambda *args: errors.append(args[2]),
+    )
+
+    window = main_window.Window()
+    try:
+        assert not window.proxy_service_available
+        assert window.tr("Proxy service unavailable") in window.trayIcon.toolTip()
+        assert errors and "port already in use" in errors[0]
+    finally:
+        window.cleanup_tray_icon()
+
+
+def test_failed_proxy_save_restores_table_and_config(qapp, tmp_path, monkeypatch) -> None:
+    config = _make_config(
+        tmp_path,
+        [("one", "localhost", "8080", "HTTP", "", "")],
+    )
+    dialog = Config_Dialog()
+    errors = []
+    monkeypatch.setattr(dialog, "show_error", errors.append)
+    monkeypatch.setattr(config, "save_proxies", lambda: False)
+
+    address_index = dialog.data_model.index(0, dialog.proxy_address)
+    dialog.data_model.setData(address_index, "changed.example", QtCore.Qt.ItemDataRole.EditRole)
+
+    assert config.get_proxies()[0][1] == "localhost"
+    assert (
+        dialog.data_model.data(dialog.data_model.index(0, dialog.proxy_address))
+        == "localhost"
+    )
+    assert errors

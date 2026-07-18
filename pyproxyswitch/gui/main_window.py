@@ -32,6 +32,7 @@ class Window(QtWidgets.QDialog):
         self.proxy_manager = ProxyManager(self._config)
 
         self.trayIcon = None  # 初始化托盘图标引用
+        self.proxy_service_available = False
 
         # 初始化翻译器
         self.translator = QtCore.QTranslator(self)
@@ -100,7 +101,7 @@ class Window(QtWidgets.QDialog):
         self.setWindowIcon(self.icon)
         self.trayIcon = QtWidgets.QSystemTrayIcon(self)
         self.trayIcon.setIcon(self.icon)
-        self.trayIcon.setToolTip(f"{self.item_text} - PyProxySwitch")
+        self.trayIcon.setToolTip(self.tr("Proxy service starting") + " - PyProxySwitch")
         self.trayIcon.show()
 
         self.refresh_menu()
@@ -110,13 +111,33 @@ class Window(QtWidgets.QDialog):
         if self._config.get("SHOW_WELCOME", 1) == 1:
             self.showWelcome()
             self._config.set("SHOW_WELCOME", 0)
-            self._config.save()
+            if not self._config.save():
+                self._config.set("SHOW_WELCOME", 1)
+                get_logger().warning("Failed to persist the welcome-message setting")
 
         # 启动默认代理（包括NoProxy）
         try:
             self.proxy_manager.start_proxy(self.item_text)
+            self.set_proxy_service_available(True)
         except Exception as e:
             get_logger().error(f"Failed to start default proxy: {e}")
+            self.set_proxy_service_available(False)
+            QtWidgets.QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to start proxy service: {error}").format(error=e),
+            )
+
+    def set_proxy_service_available(self, available: bool) -> None:
+        """Update the tray state so a failed listener is never shown as healthy."""
+
+        self.proxy_service_available = available
+        if self.trayIcon is None:
+            return
+        if available:
+            self.trayIcon.setToolTip(f"{self.item_text} - PyProxySwitch")
+        else:
+            self.trayIcon.setToolTip(self.tr("Proxy service unavailable") + " - PyProxySwitch")
 
     def cleanup_tray_icon(self) -> None:
         """清理托盘图标"""
@@ -223,10 +244,18 @@ class Window(QtWidgets.QDialog):
             QtWidgets.QMessageBox.critical(self, self.tr("Error"), str(e))
             return
 
+        self.set_proxy_service_available(True)
+        previous_item = self._config.get("LAST_ITEM", "NoProxy")
         self._config.set("LAST_ITEM", proxy_name)
-        self._config.save()
+        if not self._config.save():
+            self._config.set("LAST_ITEM", previous_item)
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Proxy switched, but the selection could not be saved."),
+            )
         self.item_text = proxy_name
-        self.trayIcon.setToolTip(f"{self.item_text} - PyProxySwitch")
+        self.set_proxy_service_available(True)
 
         # 刷新托盘菜单以更新选中状态
         self.refresh_menu()
@@ -261,11 +290,7 @@ class Window(QtWidgets.QDialog):
 
     def on_language_changed(self, new_lang: str) -> None:
         """语言更改事件处理"""
-        # 保存新语言设置
-        self._config.set("LANG", new_lang)
-        self._config.save()
-
-        # 重新加载翻译器
+        # 设置已由配置对话框持久化；这里只刷新当前应用的翻译器。
         self._load_translator()
 
         # 刷新菜单以立即显示新语言

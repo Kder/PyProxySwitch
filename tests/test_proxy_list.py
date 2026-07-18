@@ -74,3 +74,20 @@ def test_load_proxy_list_skips_invalid_and_duplicate_entries(tmp_path):
 def test_format_proxy_rejects_line_breaks():
     with pytest.raises(ValueError, match="line breaks"):
         format_proxy(("name", "host", "80", "HTTP", "user", "bad\npassword"))
+
+
+def test_failed_atomic_proxy_save_preserves_previous_file(tmp_path, monkeypatch):
+    path = tmp_path / "proxy.txt"
+    original = "old localhost:8080\n"
+    path.write_text(original, encoding="utf-8")
+
+    def fail_replace(source, destination):
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr("pyproxyswitch.atomic_write.os.replace", fail_replace)
+
+    with pytest.raises(OSError, match="simulated replace failure"):
+        save_proxy_list([("new", "localhost", "8081", "HTTP", "", "")], path)
+
+    assert path.read_text(encoding="utf-8") == original
+    assert not list(tmp_path.glob(".proxy.txt.*.tmp"))

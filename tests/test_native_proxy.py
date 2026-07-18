@@ -55,6 +55,21 @@ class _HttpHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
+class _UpgradeEchoHandler(socketserver.BaseRequestHandler):
+    def handle(self) -> None:
+        request = _recv_until(self.request, b"\r\n\r\n")
+        if b"Connection: Upgrade\r\n" not in request or b"Upgrade: websocket\r\n" not in request:
+            self.request.sendall(b"HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n")
+            return
+        self.request.sendall(
+            b"HTTP/1.1 101 Switching Protocols\r\n"
+            b"Connection: Upgrade\r\n"
+            b"Upgrade: websocket\r\n\r\n"
+        )
+        while data := self.request.recv(65536):
+            self.request.sendall(data)
+
+
 @contextlib.contextmanager
 def _running_tcp_server(handler: type[socketserver.BaseRequestHandler]):
     server = _ThreadingServer(("127.0.0.1", 0), handler)
@@ -258,6 +273,70 @@ def test_server_can_restart_after_bind_failure() -> None:
     server.start()
     assert server.is_running
     assert server.stop()
+
+
+def test_start_timeout_cannot_create_a_late_listener() -> None:
+    server = NativeProxyServer(host="127.0.0.1", port=0)
+    release_thread = threading.Event()
+    original_thread_main = server._thread_main
+
+    def delayed_thread_main() -> None:
+        release_thread.wait(timeout=1)
+        original_thread_main()
+
+    server._thread_main = delayed_thread_main
+
+    with pytest.raises(TimeoutError, match="Timed out"):
+        server.start(timeout=0.01)
+
+    release_thread.set()
+    assert server._thread is not None
+    server._thread.join(timeout=1)
+
+    assert not server.is_running
+    assert server.bound_port == 0
+    assert server.stop()
+
+
+def test_http_upgrade_headers_are_forwarded() -> None:
+    server = NativeProxyServer()
+
+    request = server._build_http_request(
+        "GET",
+        "/socket",
+        "HTTP/1.1",
+        [
+            ("Host", "example.test"),
+            ("Connection", "keep-alive, Upgrade"),
+            ("Upgrade", "websocket"),
+        ],
+        None,
+    )
+
+    assert b"Upgrade: websocket\r\n" in request
+    assert b"Connection: Upgrade\r\n" in request
+    assert b"Connection: close\r\n" not in request
+
+
+def test_http_upgrade_switches_to_bidirectional_relay() -> None:
+    with (
+        _running_tcp_server(_UpgradeEchoHandler) as (_, destination_port),
+        _running_proxy() as proxy,
+        socket.create_connection(("127.0.0.1", proxy.bound_port), timeout=2) as client,
+    ):
+        client.sendall(
+            (
+                f"GET http://127.0.0.1:{destination_port}/socket HTTP/1.1\r\n"
+                f"Host: 127.0.0.1:{destination_port}\r\n"
+                "Connection: keep-alive, Upgrade\r\n"
+                "Upgrade: websocket\r\n\r\n"
+            ).encode()
+        )
+        response = _recv_until(client, b"\r\n\r\n")
+        assert b"101 Switching Protocols" in response
+
+        client.sendall(b"upgrade-echo")
+        assert _recv_exact(client, len(b"upgrade-echo")) == b"upgrade-echo"
 
 
 def test_connect_closes_remote_when_client_drops_during_success_reply() -> None:

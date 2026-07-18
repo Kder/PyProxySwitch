@@ -126,10 +126,16 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     def change_language(self, idx):
         """实时改变界面语言"""
         lang = self.langs[idx]
+        old_lang = self._config.get("LANG")
 
         # 保存新语言设置并通知主窗口
         self._config.set("LANG", lang)
-        self._config.save()
+        if not self._config.save():
+            self._config.set("LANG", old_lang)
+            with QtCore.QSignalBlocker(self.comboBox_lang):
+                self.comboBox_lang.setCurrentIndex(self.langs.index(old_lang))
+            self.show_error(self.tr("Failed to save configuration"))
+            return
 
         parent = self.parentWidget()
         if hasattr(parent, "on_language_changed"):
@@ -166,8 +172,14 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     def change_debug(self, state):
         """改变调试模式"""
         debug = 1 if state == 2 else 0  # Qt.Checked = 2 in signal
+        old_debug = self._config.get("DEBUG")
         self._config.set("DEBUG", debug)
-        self._config.save()
+        if not self._config.save():
+            self._config.set("DEBUG", old_debug)
+            with QtCore.QSignalBlocker(self.checkBox_debug):
+                self.checkBox_debug.setChecked(bool(old_debug))
+            self.show_error(self.tr("Failed to save configuration"))
+            return
         console_level = logging.DEBUG if debug else logging.INFO
         for handler in logger.handlers:
             if isinstance(handler, logging.StreamHandler) and not isinstance(
@@ -178,8 +190,13 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     def change_show_welcome(self, state):
         """改变显示欢迎信息设置"""
         show = 1 if state == 2 else 0  # Qt.Checked = 2 in signal
+        old_show = self._config.get("SHOW_WELCOME")
         self._config.set("SHOW_WELCOME", show)
-        self._config.save()
+        if not self._config.save():
+            self._config.set("SHOW_WELCOME", old_show)
+            with QtCore.QSignalBlocker(self.checkBox_show_welcome):
+                self.checkBox_show_welcome.setChecked(bool(old_show))
+            self.show_error(self.tr("Failed to save configuration"))
 
     def change_localport(self):
         """改变本地端口"""
@@ -193,18 +210,35 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 if old_port != port:
                     try:
                         # 先保存配置到文件
-                        self._config.save()
+                        if not self._config.save():
+                            self._config.set("LOCAL_PORT", old_port)
+                            self.le_localport.setText(str(old_port))
+                            self.show_error(self.tr("Failed to save configuration"))
+                            return
 
                         parent = self.parentWidget()
                         if hasattr(parent, "proxy_manager"):
                             parent.proxy_manager.restart_listener()
+                            if hasattr(parent, "set_proxy_service_available"):
+                                parent.set_proxy_service_available(True)
                         logger.info(f"Native proxy listener moved to port {port}")
                     except Exception as e:
                         self._config.set("LOCAL_PORT", old_port)
-                        self._config.save()
+                        restored = self._config.save()
                         self.le_localport.setText(str(old_port))
+                        parent = self.parentWidget()
+                        if hasattr(parent, "set_proxy_service_available") and hasattr(
+                            parent, "proxy_manager"
+                        ):
+                            server = parent.proxy_manager.server
+                            parent.set_proxy_service_available(
+                                server is not None and server.is_running
+                            )
                         logger.error(f"Failed to move native proxy listener: {e}")
-                        self.show_error(str(e))
+                        message = str(e)
+                        if not restored:
+                            message += "\n" + self.tr("Failed to restore the previous configuration")
+                        self.show_error(message)
             else:
                 self.show_error(self.tr("Port must be between 1 and 65535"))
         except ValueError:
@@ -299,8 +333,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.data_model.setData(top_left, normalized, Qt.ItemDataRole.UserRole)
 
         # 保存更改
-        self.save_proxies()
-        self.refresh_menu()
+        if self.save_proxies():
+            self.refresh_menu()
 
     def _validate_cell_data(self, row, col, value):
         """验证单元格数据"""
@@ -359,13 +393,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         proxy_list = [list(proxy) for proxy in valid_proxies]
 
         # 更新配置管理器
+        old_proxies = self._config.get_proxies()
         self._config.set_proxies(proxy_list)
-        self._config.save_proxies()
+        if not self._config.save_proxies():
+            self._config.set_proxies(old_proxies)
+            self.show_error(self.tr("Failed to save proxy list"))
+            return
 
         # 更新界面
-        self.data_model = self.create_model(self)
-        self.tableView.setModel(self.data_model)
-        self.data_model.dataChanged.connect(self.on_data_changed)
+        self._reload_proxy_model()
 
         # 保存并刷新
         self.refresh_menu()
@@ -387,8 +423,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
             if self.add_item(self.data_model, proxy_data):
                 # 保存到配置文件
-                self.save_proxies()
-                self.refresh_menu()
+                if self.save_proxies():
+                    self.refresh_menu()
             else:
                 self.show_error(self.tr("A proxy with this name already exists"))
 
@@ -453,8 +489,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                         self.data_model.setData(model_index, value, Qt.ItemDataRole.UserRole)
 
                 # 保存到配置文件
-                self.save_proxies()
-                self.refresh_menu()
+                if self.save_proxies():
+                    self.refresh_menu()
 
             except Exception as e:
                 self.show_error(str(e))
@@ -473,8 +509,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             if reply == QtWidgets.QMessageBox.Yes:
                 self.data_model.removeRow(current.row())
                 # 刷新菜单
-                self.save_proxies()
-                self.refresh_menu()
+                if self.save_proxies():
+                    self.refresh_menu()
 
     def refresh_menu(self):
         """刷新托盘菜单"""
@@ -495,8 +531,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 # 获取新的不可变 Upstream 快照。
                 try:
                     parent.proxy_manager.start_proxy(parent.item_text)
+                    if hasattr(parent, "set_proxy_service_available"):
+                        parent.set_proxy_service_available(True)
                 except Exception as exc:
                     logger.error("Failed to apply updated proxy settings: %s", exc)
+                    if hasattr(parent, "set_proxy_service_available"):
+                        server = parent.proxy_manager.server
+                        parent.set_proxy_service_available(
+                            server is not None and server.is_running
+                        )
                     self.show_error(str(exc))
         else:
             logger.warning("Parent widget does not have refresh_menu method")
@@ -516,6 +559,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         BatchImportDialog.export_proxies_to_file(self, proxies)
 
+    def _reload_proxy_model(self):
+        """Rebuild the table from the last successfully persisted proxy state."""
+
+        self.data_model = self.create_model(self)
+        self.tableView.setModel(self.data_model)
+        self.data_model.dataChanged.connect(self.on_data_changed)
+        if self.data_model.rowCount():
+            self.tableView.setCurrentIndex(self.data_model.index(0, 0))
+
     def save_proxies(self):
         """保存代理到配置文件"""
         proxies = []
@@ -530,8 +582,14 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             proxy = [name, address, port, ptype, user, pwd]  # IMPORTANT!
             proxies.append(proxy)
 
+        old_proxies = self._config.get_proxies()
         self._config.set_proxies(proxies)
-        self._config.save_proxies()
+        if not self._config.save_proxies():
+            self._config.set_proxies(old_proxies)
+            self._reload_proxy_model()
+            self.show_error(self.tr("Failed to save proxy list"))
+            return False
+        return True
 
     def done(self, r):
         """对话框完成时调用"""

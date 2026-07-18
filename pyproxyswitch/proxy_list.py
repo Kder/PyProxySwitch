@@ -8,6 +8,7 @@ from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import TypeAlias
 
+from .atomic_write import atomic_write_text
 from .proxy_validation import BatchImportValidator, ValidationError
 
 ProxyEntry: TypeAlias = tuple[str, str, str, str, str, str]
@@ -59,9 +60,8 @@ def save_proxy_list(proxies: Iterable[Sequence[str]], path: str | Path) -> None:
     """Replace *path* with the supplied proxy entries."""
 
     destination = Path(path)
-    destination.parent.mkdir(parents=True, exist_ok=True)
     content = "".join(f"{format_proxy(proxy)}\n" for proxy in proxies)
-    destination.write_text(content, encoding="utf-8")
+    atomic_write_text(destination, content)
 
 
 __all__ = ["ProxyEntry", "format_proxy", "load_proxy_list", "save_proxy_list"]

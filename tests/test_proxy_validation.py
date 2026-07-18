@@ -532,18 +532,16 @@ class TestBatchImportEdgeCases:
 class TestProxyValidationEdgeCases:
     """代理验证边缘情况测试 - 覆盖未覆盖的代码行"""
 
-    def test_ipv6_address_with_port_parsing(self, proxy_validator):
-        """测试IPv6地址带端口的解析（覆盖lines 114-119）"""
-        # 测试 [::1]:8080 格式
-        result = proxy_validator.validate_proxy_address("[::1]:8080")
-        assert result == "::1"
+    def test_address_field_rejects_embedded_port(self, proxy_validator):
+        """地址字段拒绝内嵌端口，避免与独立端口字段冲突。"""
+        with pytest.raises(ValidationError, match="不能包含端口号"):
+            proxy_validator.validate_proxy_address("[::1]:8080")
 
-        # 测试 [2001:db8::1]:8080 格式
-        result = proxy_validator.validate_proxy_address("[2001:db8::1]:8080")
-        assert result == "2001:db8::1"
+        with pytest.raises(ValidationError, match="不能包含端口号"):
+            proxy_validator.validate_proxy_address("[2001:db8::1]:8080")
 
-        with pytest.raises(ValidationError):
-            proxy_validator.validate_proxy_address("[::1]:invalid")
+        with pytest.raises(ValidationError, match="不能包含端口号"):
+            proxy_validator.validate_proxy_address("proxy.example:8080")
 
     def test_ipv6_socket_validation(self, proxy_validator):
         """测试IPv6地址socket验证（覆盖lines 134-145）"""
