@@ -52,6 +52,9 @@ class _HttpHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_OPTIONS(self) -> None:
+        self.do_GET()
+
     def log_message(self, format: str, *args: object) -> None:
         pass
 
@@ -166,6 +169,37 @@ def test_plain_http_forwarding_through_http_upstream() -> None:
             response.extend(chunk)
 
     assert response.endswith(b"proxied:/chained")
+
+
+def test_explicit_zero_port_in_absolute_http_url_is_rejected() -> None:
+    server = NativeProxyServer(port=0)
+
+    with pytest.raises(ProxyProtocolError, match="Invalid HTTP URL port"):
+        server._http_destination("http://example.com:0/test", [])
+
+
+def test_options_asterisk_is_preserved_through_http_upstream() -> None:
+    with (
+        _running_http_server() as (_, destination_port),
+        _running_proxy() as upstream_server,
+        _running_proxy(
+            upstream=Upstream(
+                name="http-upstream",
+                proxy_type="HTTP",
+                host="127.0.0.1",
+                port=upstream_server.bound_port,
+            )
+        ) as proxy,
+        socket.create_connection(("127.0.0.1", proxy.bound_port), timeout=2) as client,
+    ):
+        client.sendall(
+            f"OPTIONS * HTTP/1.1\r\nHost: 127.0.0.1:{destination_port}\r\n\r\n".encode()
+        )
+        response = bytearray()
+        while chunk := client.recv(4096):
+            response.extend(chunk)
+
+    assert response.endswith(b"proxied:*")
 
 
 def test_http_connect_tunnel() -> None:

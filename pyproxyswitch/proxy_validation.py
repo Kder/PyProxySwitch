@@ -178,8 +178,11 @@ class ProxyValidator(QObject):
         if not port:
             raise ValidationError("端口号不能为空")
 
-        if not port.isdigit():
+        if not port.isascii() or not port.isdigit():
             raise ValidationError("端口号必须是数字")
+
+        if len(port) > 5:
+            raise ValidationError("端口号必须在1-65535之间")
 
         port_num = int(port)
 

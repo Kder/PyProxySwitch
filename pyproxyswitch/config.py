@@ -95,7 +95,7 @@ class ConfigManager:
             self._proxies = (
                 load_proxy_list(self.proxy_list_path) if self.proxy_list_path.exists() else []
             )
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             logger.error("Failed to load proxy list: %s", exc)
             self._proxies = []
         self._sync_proxy_names()
@@ -138,7 +138,7 @@ class ConfigManager:
                 ensure_ascii=False,
             )
             atomic_write_text(self.config_path, content + "\n")
-        except (OSError, TypeError) as exc:
+        except (OSError, TypeError, ValueError) as exc:
             logger.error("Failed to save configuration: %s", exc)
             return False
         return True

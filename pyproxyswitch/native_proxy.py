@@ -337,7 +337,7 @@ class NativeProxyServer:
                     self._open_endpoint(upstream.host, upstream.port),
                     self.connect_timeout,
                 )
-                outgoing_target = absolute_url
+                outgoing_target = path if path == "*" else absolute_url
             else:
                 remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
                 outgoing_target = path
@@ -692,9 +692,12 @@ class NativeProxyServer:
                 raise ProxyProtocolError("Only plain HTTP absolute URLs are supported")
             host = parsed.hostname
             try:
-                port = parsed.port or 80
+                parsed_port = parsed.port
             except ValueError as exc:
                 raise ProxyProtocolError("Invalid HTTP URL port") from exc
+            port = 80 if parsed_port is None else parsed_port
+            if not 1 <= port <= 65535:
+                raise ProxyProtocolError("Invalid HTTP URL port")
             path = urlunsplit(SplitResult("", "", parsed.path or "/", parsed.query, ""))
             authority = self._format_authority(host, port, omit_default=80)
             absolute_url = urlunsplit(

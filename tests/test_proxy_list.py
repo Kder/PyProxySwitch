@@ -59,6 +59,8 @@ def test_load_proxy_list_skips_invalid_and_duplicate_entries(tmp_path):
     path.write_text(
         "bad-port localhost:70000\n"
         "bad-type localhost:1080 FTP\n"
+        "unicode-port localhost:\u00b2\n"
+        f"huge-port localhost:{'9' * 5000}\n"
         "first localhost:8080\n"
         "first localhost:8081\n"
         "lowercase localhost:1080 socks5\n",
@@ -71,9 +73,13 @@ def test_load_proxy_list_skips_invalid_and_duplicate_entries(tmp_path):
     ]
 
 
-def test_format_proxy_rejects_line_breaks():
+@pytest.mark.parametrize("field", range(6))
+def test_format_proxy_rejects_line_breaks(field):
+    entry = ["name", "host", "80", "HTTP", "user", "password"]
+    entry[field] += "\ninvalid"
+
     with pytest.raises(ValueError, match="line breaks"):
-        format_proxy(("name", "host", "80", "HTTP", "user", "bad\npassword"))
+        format_proxy(entry)
 
 
 def test_failed_atomic_proxy_save_preserves_previous_file(tmp_path, monkeypatch):

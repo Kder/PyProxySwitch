@@ -151,3 +151,26 @@ def test_failed_atomic_config_save_preserves_previous_file(tmp_path, monkeypatch
     assert not config.save()
     assert config.config_path.read_text(encoding="utf-8") == original
     assert not list(config.config_path.parent.glob(f".{config.config_path.name}.*.tmp"))
+
+
+def test_invalid_unicode_config_value_returns_save_failure(tmp_path):
+    config = make_config(tmp_path)
+    config.set("INVALID_UNICODE", "\ud800")
+
+    assert not config.save()
+    assert not list(config.config_path.parent.glob(f".{config.config_path.name}.*.tmp"))
+
+
+def test_invalid_proxy_list_encoding_does_not_prevent_startup(tmp_path):
+    config_path = tmp_path / "PPS.conf"
+    proxy_path = tmp_path / "proxy.txt"
+    proxy_path.write_bytes(b"invalid\xffencoding\n")
+
+    config = ConfigManager(
+        config_path=config_path,
+        proxy_list_path=proxy_path,
+        use_singleton=False,
+    )
+
+    assert config.get_proxies() == []
+    assert proxy_path.read_bytes() == b"invalid\xffencoding\n"

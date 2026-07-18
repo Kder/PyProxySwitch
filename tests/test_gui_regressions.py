@@ -172,6 +172,32 @@ def test_export_uses_round_trip_safe_proxy_format(qapp, tmp_path, monkeypatch) -
     ]
 
 
+def test_failed_atomic_export_preserves_previous_file(qapp, tmp_path, monkeypatch) -> None:
+    destination = tmp_path / "exported.txt"
+    destination.write_text("existing\n", encoding="utf-8")
+    parent = QtWidgets.QWidget()
+    monkeypatch.setattr(
+        QtWidgets.QFileDialog,
+        "getSaveFileName",
+        lambda *args: (str(destination), "Text Files (*.txt)"),
+    )
+    monkeypatch.setattr(QtWidgets.QMessageBox, "critical", lambda *args: None)
+
+    def fail_replace(source, target):
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr("pyproxyswitch.atomic_write.os.replace", fail_replace)
+
+    exported = BatchImportDialog.export_proxies_to_file(
+        parent,
+        [("new", "localhost", "8080", "HTTP", "", "")],
+    )
+
+    assert not exported
+    assert destination.read_text(encoding="utf-8") == "existing\n"
+    assert not list(tmp_path.glob(".exported.txt.*.tmp"))
+
+
 def test_refreshing_menu_reapplies_edited_active_proxy(qapp, tmp_path) -> None:
     _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
 

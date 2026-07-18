@@ -46,7 +46,10 @@ def format_proxy(entry: Sequence[str]) -> str:
         raise ValueError("A proxy entry must contain exactly six fields")
 
     name, address, port, proxy_type, username, password = map(str, entry)
-    if any("\n" in value or "\r" in value for value in (name, address, username, password)):
+    if any(
+        "\n" in value or "\r" in value
+        for value in (name, address, port, proxy_type, username, password)
+    ):
         raise ValueError("Proxy fields cannot contain line breaks")
     parts = [name, f"{address}:{port}"]
     if username or password:

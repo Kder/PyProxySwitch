@@ -12,12 +12,12 @@
 <context>
     <name>BatchImportDialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="44"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="45"/>
         <source>Batch Add/Modify/Delete Proxy</source>
         <translation>Batch Add/Modify/Delete Proxy</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="48"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="49"/>
         <source>Please use the following syntax for one proxy per line:
 
 proxy_name address:port username:password proxy_type
@@ -46,64 +46,64 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 </translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="73"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="74"/>
         <source>Preview</source>
         <translation>Preview</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="104"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="105"/>
         <source>Valid proxies found:</source>
         <translation>Valid proxies found:</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="110"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="111"/>
         <source>more</source>
         <translation>more</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="114"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="115"/>
         <source>Import Preview</source>
         <translation>Import Preview</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="136"/>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="148"/>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="155"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="137"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="149"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="156"/>
         <source>Import Failed</source>
         <translation>Import Failed</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="137"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="138"/>
         <source>No valid proxies found.</source>
         <translation>No valid proxies found.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="187"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="188"/>
         <source>Export Proxies</source>
         <translation>Export Proxies</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="189"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="190"/>
         <source>Text Files (*.txt);;All Files (*)</source>
         <translation>Text Files (*.txt);;All Files (*)</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="213"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="216"/>
         <source>Success</source>
         <translation>Success</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="214"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="217"/>
         <source>Proxies exported successfully</source>
         <translation>Proxies exported successfully</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="221"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="224"/>
         <source>Failed to export proxies</source>
         <translation>Failed to export proxies</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="226"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="229"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>

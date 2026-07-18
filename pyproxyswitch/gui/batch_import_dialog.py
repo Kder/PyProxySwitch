@@ -11,6 +11,7 @@ from collections.abc import Sequence
 
 from PySide6 import QtCore, QtWidgets
 
+from pyproxyswitch.atomic_write import atomic_write_text
 from pyproxyswitch.proxy_list import format_proxy
 from pyproxyswitch.proxy_validation import (
     BatchImportValidator,
@@ -195,18 +196,20 @@ class BatchImportDialog(QtWidgets.QDialog):
             return False
 
         try:
-            with open(file_name, "w", encoding="utf-8") as f:
-                for proxy in proxies:
-                    if len(proxy) < 4:
-                        continue
-                    name = str(proxy[0])
-                    address = str(proxy[1])
-                    port = str(proxy[2])
-                    ptype = str(proxy[3]) if len(proxy) > 3 else "HTTP"
-                    user = str(proxy[4]) if len(proxy) > 4 else ""
-                    pwd = str(proxy[5]) if len(proxy) > 5 else ""
+            lines = []
+            for proxy in proxies:
+                if len(proxy) < 4:
+                    continue
+                name = str(proxy[0])
+                address = str(proxy[1])
+                port = str(proxy[2])
+                ptype = str(proxy[3]) if len(proxy) > 3 else "HTTP"
+                user = str(proxy[4]) if len(proxy) > 4 else ""
+                pwd = str(proxy[5]) if len(proxy) > 5 else ""
+                lines.append(format_proxy((name, address, port, ptype, user, pwd)))
 
-                    f.write(format_proxy((name, address, port, ptype, user, pwd)) + "\n")
+            content = "".join(f"{line}\n" for line in lines)
+            atomic_write_text(file_name, content)
 
             QtWidgets.QMessageBox.information(
                 parent,
