@@ -6,13 +6,14 @@
 此模块包含Config_Dialog类，负责代理列表管理和应用程序配置。
 """
 
+import logging
+
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 from pyproxyswitch.config import ConfigManager
-from pyproxyswitch.logger_config import logger
-from pyproxyswitch.proxy_validation import BatchImportValidator, ProxyValidator
+from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 
 # 导入UI文件
 from pyproxyswitch.resources.pps_conf_ui import Ui_Dialog_Config
@@ -21,6 +22,8 @@ from .batch_import_dialog import BatchImportDialog
 
 # 导入代理类
 from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
+
+logger = logging.getLogger("PyProxySwitch")
 
 
 class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
@@ -32,7 +35,6 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.setupUi(self)
         self.setFixedSize(468, 327)
         self.setWindowIcon(QtGui.QIcon(":/img/pps.png"))
-        # 注意：不再设置dialog_exsit标志，允许托盘菜单切换代理
 
         # 获取配置管理器
         self._config = ConfigManager()
@@ -46,21 +48,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             self.proxy_pass,
         ) = range(6)
         self.langs = ["zh_CN", "en"]
-        self.f_or_t = [False, True]
-
         self.comboBox_lang.setCurrentIndex(self.langs.index(self._config.get("LANG")))
-        self.checkBox_debug.setChecked(self.f_or_t[self._config.get("DEBUG")])
-        self.checkBox_show_welcome.setChecked(self.f_or_t[self._config.get("SHOW_WELCOME")])
+        self.checkBox_debug.setChecked(bool(self._config.get("DEBUG")))
+        self.checkBox_show_welcome.setChecked(bool(self._config.get("SHOW_WELCOME")))
 
-        self.le_localport.setValidator(QtGui.QIntValidator(0, 65535, self))
+        self.le_localport.setValidator(QtGui.QIntValidator(1, 65535, self))
         self.le_localport.setText(str(self._config.get("LOCAL_PORT")))
 
         # 使用增强的验证器
         self.validator = ProxyValidator(self)
-        self.validator.validation_error.connect(self.show_error)
-
-        # 为批量导入准备验证器
-        self.batch_validator = BatchImportValidator()
 
         self.tableView.setAlternatingRowColors(True)
         self.tableView.setSortingEnabled(True)
@@ -68,7 +64,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.tableView.setEditTriggers(
             QtWidgets.QTableView.DoubleClicked | QtWidgets.QTableView.EditKeyPressed
         )
-        self.tableView.setModel(self.create_model(parent))
+        self.tableView.setModel(self.create_model(self))
         self.data_model = self.tableView.model()
         self.tableView.setCurrentIndex(self.data_model.index(0, 0))
 
@@ -172,6 +168,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         debug = 1 if state == 2 else 0  # Qt.Checked = 2 in signal
         self._config.set("DEBUG", debug)
         self._config.save()
+        console_level = logging.DEBUG if debug else logging.INFO
+        for handler in logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and not isinstance(
+                handler, logging.FileHandler
+            ):
+                handler.setLevel(console_level)
 
     def change_show_welcome(self, state):
         """改变显示欢迎信息设置"""
@@ -214,14 +216,18 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 验证代理信息
         try:
-            self.validator.validate_full_proxy(name, address, port, ptype, user, pwd)
-        except Exception:
+            validated = self.validator.validate_full_proxy(name, address, str(port), ptype, user, pwd)
+        except ValidationError:
+            return False
+
+        name, address, port, ptype, user, pwd = validated
+        if self._proxy_name_exists(model, name):
             return False
 
         row = [
             self._create_editable_item(name),
             self._create_editable_item(address),
-            self._create_editable_item(port),
+            self._create_editable_item(str(port)),
             self._create_editable_item(ptype),
             self._create_editable_item(user),
             self._create_editable_item(pwd),
@@ -231,9 +237,19 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
     def _create_editable_item(self, text):
         """创建可编辑的表格项"""
+        text = str(text)
         item = QStandardItem(text)
         item.setEditable(True)
+        item.setData(text, Qt.ItemDataRole.UserRole)
         return item
+
+    def _proxy_name_exists(self, model, name: str, exclude_row: int | None = None) -> bool:
+        for row_index in range(model.rowCount()):
+            if row_index == exclude_row:
+                continue
+            if model.data(model.index(row_index, self.proxy_name)) == name:
+                return True
+        return False
 
     def create_model(self, parent):
         """创建数据模型"""
@@ -264,18 +280,23 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     def on_data_changed(self, top_left, bottom_right, roles):
         """处理表格数据更改"""
         # 只处理编辑角色的更改
-        if Qt.EditRole not in roles:
+        if roles and Qt.ItemDataRole.EditRole not in roles:
             return
 
         row = top_left.row()
         col = top_left.column()
-        new_value = self.data_model.data(top_left, Qt.EditRole)
+        new_value = self.data_model.data(top_left, Qt.ItemDataRole.EditRole)
 
         # 验证新值
-        if not self._validate_cell_data(row, col, new_value):
+        normalized = self._validate_cell_data(row, col, new_value)
+        if normalized is None:
             # 如果验证失败，恢复原值
             self._revert_cell_change(row, col)
             return
+
+        with QtCore.QSignalBlocker(self.data_model):
+            self.data_model.setData(top_left, normalized, Qt.ItemDataRole.EditRole)
+            self.data_model.setData(top_left, normalized, Qt.ItemDataRole.UserRole)
 
         # 保存更改
         self.save_proxies()
@@ -284,31 +305,34 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
     def _validate_cell_data(self, row, col, value):
         """验证单元格数据"""
         try:
+            value = "" if value is None else str(value)
             if col == self.proxy_name:
-                self.validator.validate_proxy_name(value)
+                normalized = self.validator.validate_proxy_name(value)
+                if self._proxy_name_exists(self.data_model, normalized, exclude_row=row):
+                    raise ValidationError(f"代理名称 {normalized!r} 已存在")
             elif col == self.proxy_address:
-                self.validator.validate_proxy_address(value)
+                normalized = self.validator.validate_proxy_address(value)
             elif col == self.proxy_port:
-                self.validator.validate_proxy_port(str(value))
+                normalized = str(self.validator.validate_proxy_port(value))
             elif col == self.proxy_type:
-                self.validator.validate_proxy_type(value)
+                normalized = self.validator.validate_proxy_type(value)
             elif col == self.proxy_user:
-                self.validator.validate_username(value)
+                normalized = self.validator.validate_username(value)
             elif col == self.proxy_pass:
-                self.validator.validate_password(value)
-            return True
-        except Exception as e:
+                normalized = self.validator.validate_password(value)
+            else:
+                raise ValidationError("未知的代理字段")
+            return normalized
+        except ValidationError as e:
             self.show_error(str(e))
-            return False
+            return None
 
     def _revert_cell_change(self, row, col):
         """恢复单元格更改"""
-        # 重新从配置加载数据
-        proxies = self._config.get_proxies()
-        if row < len(proxies):
-            proxy = proxies[row]
-            original_value = proxy[col] if col < len(proxy) else ""
-            self.data_model.setData(self.data_model.index(row, col), original_value)
+        index = self.data_model.index(row, col)
+        original_value = self.data_model.data(index, Qt.ItemDataRole.UserRole)
+        with QtCore.QSignalBlocker(self.data_model):
+            self.data_model.setData(index, original_value, Qt.ItemDataRole.EditRole)
 
     def show_batch_dialog(self):
         """显示批量操作对话框"""
@@ -322,17 +346,9 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 使用新的批量导入对话框
         dialog = BatchImportDialog(self, initial_content)
-        dialog.import_completed.connect(
-            lambda proxies: self._on_batch_import_completed(proxies, dialog)
-        )
 
         if dialog.exec() == QtWidgets.QDialog.Accepted:
             self._process_batch_import(dialog.get_valid_proxies())
-
-    def _on_batch_import_completed(self, proxies, dialog):
-        """批量导入完成回调"""
-        self._process_batch_import(proxies)
-        dialog.accept()
 
     def _process_batch_import(self, valid_proxies):
         """处理批量导入结果"""
@@ -347,7 +363,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self._config.save_proxies()
 
         # 更新界面
-        self.data_model = self.create_model(self.parentWidget())
+        self.data_model = self.create_model(self)
         self.tableView.setModel(self.data_model)
         self.data_model.dataChanged.connect(self.on_data_changed)
 
@@ -373,6 +389,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 # 保存到配置文件
                 self.save_proxies()
                 self.refresh_menu()
+            else:
+                self.show_error(self.tr("A proxy with this name already exists"))
 
     def modify_proxy(self):
         """修改代理"""
@@ -418,11 +436,21 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
             # 验证并更新代理
             try:
-                self.validator.validate_full_proxy(*proxy_data)
+                validated = self.validator.validate_full_proxy(*proxy_data)
+                proxy_data = [str(value) for value in validated]
+                if self._proxy_name_exists(
+                    self.data_model, proxy_data[self.proxy_name], exclude_row=row
+                ):
+                    raise ValidationError(
+                        f"代理名称 {proxy_data[self.proxy_name]!r} 已存在"
+                    )
 
                 # 更新模型中的数据
-                for col, value in enumerate(proxy_data):
-                    self.data_model.setData(self.data_model.index(row, col), value)
+                with QtCore.QSignalBlocker(self.data_model):
+                    for col, value in enumerate(proxy_data):
+                        model_index = self.data_model.index(row, col)
+                        self.data_model.setData(model_index, value, Qt.ItemDataRole.EditRole)
+                        self.data_model.setData(model_index, value, Qt.ItemDataRole.UserRole)
 
                 # 保存到配置文件
                 self.save_proxies()
@@ -462,6 +490,14 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             # 如果当前代理不在列表中，切换到NoProxy
             if parent.item_text not in parent.proxy_names:
                 parent.switchProxy("NoProxy")
+            else:
+                # 当前代理的地址、端口或认证可能已被编辑；原生监听器需要
+                # 获取新的不可变 Upstream 快照。
+                try:
+                    parent.proxy_manager.start_proxy(parent.item_text)
+                except Exception as exc:
+                    logger.error("Failed to apply updated proxy settings: %s", exc)
+                    self.show_error(str(exc))
         else:
             logger.warning("Parent widget does not have refresh_menu method")
 

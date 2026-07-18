@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+from collections.abc import ItemsView, Iterable, KeysView, Sequence, ValuesView
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +13,6 @@ from .paths import CONFIG_FILE, PROXY_LIST_FILE, initialize_user_config
 from .proxy_list import ProxyEntry, load_proxy_list, save_proxy_list
 
 logger = logging.getLogger("PyProxySwitch")
-SequenceLike = list[Any] | tuple[Any, ...]
 
 
 class ConfigManager:
@@ -77,7 +78,7 @@ class ConfigManager:
                     raise ValueError("The configuration root must be an object")
                 if "FISRT_RUN" in loaded and "FIRST_RUN" not in loaded:
                     loaded["FIRST_RUN"] = loaded.pop("FISRT_RUN")
-                self._config = defaults | loaded
+                self._config = self._normalize_config(defaults | loaded, defaults)
             else:
                 self._config = defaults
         except (OSError, ValueError) as exc:
@@ -105,6 +106,9 @@ class ConfigManager:
         return self._config.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
+        if key == "CMD":
+            self._config.pop(key, None)
+            return
         old_value = self._config.get(key)
         self._config[key] = value
         if key == "LOG_PATH" and old_value != value:
@@ -116,7 +120,8 @@ class ConfigManager:
                 logger.warning("Failed to update log path: %s", exc)
 
     def update(self, values: dict[str, Any]) -> None:
-        self._config.update(values)
+        for key, value in values.items():
+            self.set(key, value)
 
     def reload(self) -> None:
         self.load()
@@ -142,7 +147,7 @@ class ConfigManager:
     def get_proxy_names(self) -> list[str]:
         return list(self._proxy_names)
 
-    def set_proxies(self, proxies: list[SequenceLike]) -> None:
+    def set_proxies(self, proxies: Iterable[Sequence[Any]]) -> None:
         normalized: list[ProxyEntry] = []
         for proxy in proxies:
             if len(proxy) < 3:
@@ -162,6 +167,73 @@ class ConfigManager:
 
     def reset_to_default(self) -> None:
         self._config = self._get_default_config()
+
+    @staticmethod
+    def _normalize_config(values: dict[str, Any], defaults: dict[str, Any]) -> dict[str, Any]:
+        """Repair malformed persisted values that would otherwise crash the UI or listener."""
+
+        normalized = dict(values)
+
+        lang = values.get("LANG")
+        normalized["LANG"] = lang if lang in {"zh_CN", "en"} else defaults["LANG"]
+
+        for key in ("DEBUG", "FIRST_RUN", "SHOW_WELCOME"):
+            value = values.get(key)
+            if isinstance(value, bool):
+                flag = int(value)
+            elif isinstance(value, (str, int, float)):
+                try:
+                    flag = int(value)
+                except (OverflowError, ValueError):
+                    flag = defaults[key]
+            else:
+                flag = defaults[key]
+            normalized[key] = flag if flag in (0, 1) else defaults[key]
+
+        value = values.get("LOCAL_PORT")
+        if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+            try:
+                local_port = int(value)
+            except (OverflowError, ValueError):
+                local_port = defaults["LOCAL_PORT"]
+        else:
+            local_port = defaults["LOCAL_PORT"]
+        normalized["LOCAL_PORT"] = (
+            local_port if 1 <= local_port <= 65535 else defaults["LOCAL_PORT"]
+        )
+
+        value = values.get("CONNECT_TIMEOUT")
+        if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+            try:
+                connect_timeout = float(value)
+            except ValueError:
+                connect_timeout = float(defaults["CONNECT_TIMEOUT"])
+        else:
+            connect_timeout = float(defaults["CONNECT_TIMEOUT"])
+        if not math.isfinite(connect_timeout) or connect_timeout <= 0:
+            connect_timeout = float(defaults["CONNECT_TIMEOUT"])
+        normalized["CONNECT_TIMEOUT"] = (
+            int(connect_timeout) if connect_timeout.is_integer() else connect_timeout
+        )
+
+        local_address = values.get("LOCAL_ADDRESS")
+        normalized["LOCAL_ADDRESS"] = (
+            local_address.strip()
+            if isinstance(local_address, str) and local_address.strip()
+            else defaults["LOCAL_ADDRESS"]
+        )
+
+        for key in ("DEFAULT_ITEM", "LAST_ITEM"):
+            value = values.get(key)
+            normalized[key] = (
+                value.strip()
+                if isinstance(value, str) and value.strip()
+                else defaults[key]
+            )
+
+        log_path = values.get("LOG_PATH")
+        normalized["LOG_PATH"] = log_path if isinstance(log_path, str) else defaults["LOG_PATH"]
+        return normalized
 
     @staticmethod
     def _get_default_config() -> dict[str, Any]:
@@ -187,13 +259,13 @@ class ConfigManager:
     def __contains__(self, key: str) -> bool:
         return key in self._config
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         return self._config.keys()
 
-    def values(self):
+    def values(self) -> ValuesView[Any]:
         return self._config.values()
 
-    def items(self):
+    def items(self) -> ItemsView[str, Any]:
         return self._config.items()
 
     def __repr__(self) -> str:

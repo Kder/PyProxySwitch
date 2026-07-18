@@ -10,7 +10,7 @@
 class ProxyError(Exception):
     """代理操作的基类异常"""
 
-    def __init__(self, user_message: str, log_message: str = None):
+    def __init__(self, user_message: str, log_message: str | None = None) -> None:
         """
         初始化异常
 

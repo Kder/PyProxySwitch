@@ -7,20 +7,24 @@
 """
 
 
-from PySide6 import QtWidgets
-from PySide6.QtCore import Signal
+from collections.abc import Sequence
 
-from pyproxyswitch.proxy_validation import BatchImportValidator, ValidationError
+from PySide6 import QtCore, QtWidgets
+
+from pyproxyswitch.proxy_list import format_proxy
+from pyproxyswitch.proxy_validation import (
+    BatchImportValidator,
+    ValidatedProxy,
+    ValidationError,
+)
 
 
 class BatchImportDialog(QtWidgets.QDialog):
     """批量导入代理对话框"""
 
-    # 信号：导入完成时发出
-    import_completed = Signal(list)  # list[tuple[str, str, str, str, str, str]]
-
-    def __init__(self, parent: QtWidgets.QWidget | None = None,
-                 initial_content: str = ""):
+    def __init__(
+        self, parent: QtWidgets.QWidget | None = None, initial_content: str = ""
+    ) -> None:
         """初始化对话框
 
         Args:
@@ -29,7 +33,7 @@ class BatchImportDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
         self._validator = BatchImportValidator()
-        self._valid_proxies: list[tuple[str, str, str, str, str, str]] = []
+        self._valid_proxies: list[ValidatedProxy] = []
 
         self._setup_ui(initial_content)
 
@@ -136,7 +140,6 @@ class BatchImportDialog(QtWidgets.QDialog):
                 return
 
             self._valid_proxies = valid_proxies
-            self.import_completed.emit(list(valid_proxies))
             self.accept()
 
         except ValidationError as e:
@@ -154,7 +157,7 @@ class BatchImportDialog(QtWidgets.QDialog):
                 QtWidgets.QMessageBox.StandardButton.Ok
             )
 
-    def get_valid_proxies(self) -> list[tuple[str, str, str, str, str, str]]:
+    def get_valid_proxies(self) -> list[ValidatedProxy]:
         """获取验证通过的代理列表"""
         return self._valid_proxies
 
@@ -168,8 +171,8 @@ class BatchImportDialog(QtWidgets.QDialog):
 
     @staticmethod
     def export_proxies_to_file(
-        self,
-        proxies: list[list[str]]
+        parent: QtWidgets.QWidget,
+        proxies: Sequence[Sequence[object]],
     ) -> bool:
         """导出代理到文件
 
@@ -180,10 +183,12 @@ class BatchImportDialog(QtWidgets.QDialog):
             是否成功导出
         """
         file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr("Export Proxies"), # if self else "Export Proxies",
+            parent,
+            QtCore.QCoreApplication.translate("BatchImportDialog", "Export Proxies"),
             "proxies.txt",
-            self.tr("Text Files (*.txt);;All Files (*)")
+            QtCore.QCoreApplication.translate(
+                "BatchImportDialog", "Text Files (*.txt);;All Files (*)"
+            ),
         )
 
         if not file_name:
@@ -194,33 +199,31 @@ class BatchImportDialog(QtWidgets.QDialog):
                 for proxy in proxies:
                     if len(proxy) < 4:
                         continue
-                    name = proxy[0]
-                    address = proxy[1]
-                    port = proxy[2]
-                    ptype = proxy[3] if len(proxy) > 3 else "HTTP"
-                    user = proxy[4] if len(proxy) > 4 else ""
-                    pwd = proxy[5] if len(proxy) > 5 else ""
+                    name = str(proxy[0])
+                    address = str(proxy[1])
+                    port = str(proxy[2])
+                    ptype = str(proxy[3]) if len(proxy) > 3 else "HTTP"
+                    user = str(proxy[4]) if len(proxy) > 4 else ""
+                    pwd = str(proxy[5]) if len(proxy) > 5 else ""
 
-                    line = f"{name} {address}:{port}"
-                    if user or pwd:
-                        line += f" {user}:{pwd}"
-                    if ptype != "HTTP":
-                        line += f" {ptype}"
-                    f.write(line + "\n")
+                    f.write(format_proxy((name, address, port, ptype, user, pwd)) + "\n")
 
-            if self:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    self.tr("Success"),
-                    self.tr("Proxies exported successfully")
-                )
+            QtWidgets.QMessageBox.information(
+                parent,
+                QtCore.QCoreApplication.translate("BatchImportDialog", "Success"),
+                QtCore.QCoreApplication.translate(
+                    "BatchImportDialog", "Proxies exported successfully"
+                ),
+            )
             return True
 
         except Exception as e:
-            if self:
-                QtWidgets.QMessageBox.critical(
-                    self,
-                    self.tr("Error"),
-                    f'{self.tr("Failed to export proxies")}: {str(e)}'
-                )
+            failed_message = QtCore.QCoreApplication.translate(
+                "BatchImportDialog", "Failed to export proxies"
+            )
+            QtWidgets.QMessageBox.critical(
+                parent,
+                QtCore.QCoreApplication.translate("BatchImportDialog", "Error"),
+                f"{failed_message}: {e}",
+            )
             return False

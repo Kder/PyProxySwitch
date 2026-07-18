@@ -17,7 +17,7 @@ def _configured_log_dir() -> Path:
     try:
         from .config import ConfigManager
 
-        custom_log_path = ConfigManager().get('LOG_PATH', '').strip()
+        custom_log_path = str(ConfigManager().get("LOG_PATH", "")).strip()
         return Path(custom_log_path) if custom_log_path else USER_LOG_DIR
     except Exception:
         return USER_LOG_DIR
@@ -59,19 +59,19 @@ class Formatter(logging.Formatter):
         logging.CRITICAL: "%(asctime)s - %(name)s - [CRITICAL] - %(message)s [%(filename)s:%(lineno)d]",
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """根据日志级别选择适当的格式"""
         log_format = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_format, datefmt='%Y-%m-%d %H:%M:%S')
+        formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
         return formatter.format(record)
 
 
 def setup_logger(
-    name: str = 'PyProxySwitch',
+    name: str = "PyProxySwitch",
     log_dir: Path | None = None,
-    log_level: int = logging.INFO,
+    log_level: int | str = logging.INFO,
     max_bytes: int = 5 * 1024 * 1024,  # 5MB
-    backup_count: int = 3
+    backup_count: int = 3,
 ) -> logging.Logger:
     """
     配置日志记录器
@@ -88,11 +88,13 @@ def setup_logger(
     """
     logger = logging.getLogger(name)
 
-    # 避免重复添加处理器，但要更新console_handler的级别
+    # 避免重复添加处理器，但要更新控制台处理器的级别。FileHandler 也是
+    # StreamHandler 的子类，不能把文件日志级别一并改掉。
     if logger.handlers:
-        # 更新现有console_handler的级别
         for handler in logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
+            if isinstance(handler, logging.StreamHandler) and not isinstance(
+                handler, logging.FileHandler
+            ):
                 handler.setLevel(log_level)
         return logger
 
@@ -110,12 +112,12 @@ def setup_logger(
     # 文件处理器（记录所有级别）
     prepared_log_dir = _prepare_log_dir(log_dir or _configured_log_dir())
     if prepared_log_dir is not None:
-        log_file = prepared_log_dir / 'PyProxySwitch.log'
+        log_file = prepared_log_dir / "PyProxySwitch.log"
         file_handler = logging.handlers.RotatingFileHandler(
             log_file,
             maxBytes=max_bytes,
             backupCount=backup_count,
-            encoding='utf-8',
+            encoding="utf-8",
             delay=True,
         )
         file_handler.setLevel(logging.DEBUG)
@@ -132,7 +134,7 @@ def update_log_path(new_log_dir: Path | None = None) -> None:
     Args:
         new_log_dir: 新的日志目录，如果为None则从配置管理器获取
     """
-    logger = logging.getLogger('PyProxySwitch')
+    logger = logging.getLogger("PyProxySwitch")
 
     # 如果已经有文件处理器，移除它们
     for handler in logger.handlers[:]:
@@ -147,13 +149,13 @@ def update_log_path(new_log_dir: Path | None = None) -> None:
 
     # 创建新的文件处理器
     formatter = Formatter()
-    log_file = prepared_log_dir / 'PyProxySwitch.log'
+    log_file = prepared_log_dir / "PyProxySwitch.log"
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
         maxBytes=5 * 1024 * 1024,  # 5MB
         backupCount=3,
-        encoding='utf-8',
-        delay=True  # 延迟文件打开
+        encoding="utf-8",
+        delay=True,  # 延迟文件打开
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
@@ -161,24 +163,25 @@ def update_log_path(new_log_dir: Path | None = None) -> None:
 
 
 # 初始化默认日志记录器（延迟初始化以避免循环导入）
-def _init_logger():
+def _init_logger() -> logging.Logger:
     """初始化日志记录器"""
     try:
         return setup_logger()
     except Exception:
         # 如果setup_logger失败（可能是循环导入），创建基本logger
-        logger = logging.getLogger('PyProxySwitch')
+        logger = logging.getLogger("PyProxySwitch")
         if not logger.handlers:
             handler = logging.StreamHandler()
-            handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+            handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
 
 # 延迟初始化logger
-logger = None
+logger: logging.Logger | None = None
 
-def get_logger():
+
+def get_logger() -> logging.Logger:
     """获取日志记录器（延迟初始化）"""
     global logger
     if logger is None:

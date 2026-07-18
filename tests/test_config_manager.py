@@ -82,3 +82,51 @@ def test_singleton_can_be_reset(tmp_path):
 
     ConfigManager.reset_singleton()
     assert ConfigManager(config_path=config_path, proxy_list_path=proxy_path) is not first
+
+
+def test_malformed_persisted_settings_are_repaired(tmp_path):
+    config = make_config(
+        tmp_path,
+        {
+            "CONNECT_TIMEOUT": float("inf"),
+            "DEBUG": "unexpected",
+            "DEFAULT_ITEM": None,
+            "LANG": "missing-locale",
+            "LAST_ITEM": [],
+            "LOCAL_ADDRESS": "   ",
+            "LOCAL_PORT": 70000,
+            "LOG_PATH": 123,
+            "SHOW_WELCOME": 9,
+        },
+    )
+
+    assert config.get("CONNECT_TIMEOUT") == 15
+    assert config.get("DEBUG") == 0
+    assert config.get("DEFAULT_ITEM") == "NoProxy"
+    assert config.get("LANG") == "zh_CN"
+    assert config.get("LAST_ITEM") == "NoProxy"
+    assert config.get("LOCAL_ADDRESS") == "127.0.0.1"
+    assert config.get("LOCAL_PORT") == 8888
+    assert config.get("LOG_PATH") == ""
+    assert config.get("SHOW_WELCOME") == 0
+
+
+def test_obsolete_backend_selector_cannot_be_persisted(tmp_path):
+    config = make_config(tmp_path)
+
+    config.update({"CMD": "legacy", "LOCAL_PORT": 8123})
+    config.save()
+
+    saved = json.loads((tmp_path / "PPS.conf").read_text(encoding="utf-8"))
+    assert "CMD" not in saved
+    assert saved["LOCAL_PORT"] == 8123
+
+
+def test_update_applies_log_path_side_effect(tmp_path, monkeypatch):
+    config = make_config(tmp_path)
+    updates = []
+    monkeypatch.setattr("pyproxyswitch.logger_config.update_log_path", lambda: updates.append(True))
+
+    config.update({"LOG_PATH": str(tmp_path / "logs")})
+
+    assert updates == [True]

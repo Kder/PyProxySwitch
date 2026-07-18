@@ -54,24 +54,21 @@ class ProxyManager:
             upstream = self._resolve_upstream(proxy_name)
             host, port = self._listener_address()
             with self._lock:
-                if self._server is not None and self._server.is_running:
-                    if self._server.host == host and self._server.port == port:
-                        self._server.set_upstream(upstream)
-                        return
-                    if not self._server.stop(timeout=5):
-                        raise ProxyStartError(
-                            "Failed to reconfigure proxy service",
-                            "Native proxy did not stop after listener address changed",
-                        )
-
-                server = NativeProxyServer(
-                    host=host,
-                    port=port,
-                    upstream=upstream,
-                    connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
+                if (
+                    self._server is not None
+                    and self._server.is_running
+                    and self._server.host == host
+                    and self._server.port == port
+                ):
+                    self._server.set_upstream(upstream)
+                    return
+                self._replace_listener(
+                    host,
+                    port,
+                    upstream,
+                    timeout=5,
+                    user_message="Failed to reconfigure proxy service",
                 )
-                server.start(timeout=5)
-                self._server = server
         except (ConfigError, ProxyStartError):
             raise
         except (OSError, RuntimeError, TimeoutError, TypeError, ValueError) as exc:
@@ -82,37 +79,14 @@ class ProxyManager:
         """Apply a changed local bind address/port while preserving the route."""
         with self._lock:
             upstream = self.current_upstream
-            old_server = self._server
-            old_address = (old_server.host, old_server.port) if old_server is not None else None
-            if old_server is not None and not old_server.stop(timeout=timeout):
-                raise ProxyStartError(
-                    "Failed to restart proxy service", "Native listener did not stop in time"
-                )
-            self._server = None
             host, port = self._listener_address()
-            try:
-                server = NativeProxyServer(
-                    host=host,
-                    port=port,
-                    upstream=upstream,
-                    connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
-                )
-                server.start(timeout=timeout)
-                self._server = server
-            except (OSError, RuntimeError, TimeoutError, TypeError, ValueError) as exc:
-                if old_address is not None:
-                    try:
-                        fallback = NativeProxyServer(
-                            host=old_address[0],
-                            port=old_address[1],
-                            upstream=upstream,
-                            connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
-                        )
-                        fallback.start(timeout=timeout)
-                        self._server = fallback
-                    except Exception:
-                        logger.exception("Failed to restore the previous listener")
-                raise ProxyStartError("Failed to restart proxy service", str(exc)) from exc
+            self._replace_listener(
+                host,
+                port,
+                upstream,
+                timeout=timeout,
+                user_message="Failed to restart proxy service",
+            )
 
     def stop_proxy(self, timeout: int = 5) -> bool:
         """Stop the in-process proxy server."""
@@ -139,6 +113,59 @@ class ProxyManager:
                 f"Invalid local port: {port}", "LOCAL_PORT must be between 1 and 65535"
             )
         return host, port
+
+    def _replace_listener(
+        self,
+        host: str,
+        port: int,
+        upstream: Upstream,
+        *,
+        timeout: int,
+        user_message: str,
+    ) -> None:
+        """Replace a listener and restore its old address when the new bind fails."""
+
+        old_server = self._server
+        old_address = (
+            (old_server.host, old_server.port)
+            if old_server is not None and old_server.is_running
+            else None
+        )
+
+        if old_server is not None:
+            if not old_server.stop(timeout=timeout):
+                raise ProxyStartError(user_message, "Native listener did not stop in time")
+            self._server = None
+
+        server: NativeProxyServer | None = None
+        try:
+            server = self._create_server(host, port, upstream)
+            server.start(timeout=timeout)
+            self._server = server
+            return
+        except (OSError, OverflowError, RuntimeError, TimeoutError, TypeError, ValueError) as exc:
+            if server is not None:
+                try:
+                    server.stop(timeout=timeout)
+                except Exception:
+                    logger.debug("Failed to clean up a partially started listener", exc_info=True)
+
+            if old_address is not None:
+                try:
+                    fallback = self._create_server(old_address[0], old_address[1], upstream)
+                    fallback.start(timeout=timeout)
+                    self._server = fallback
+                except Exception:
+                    logger.exception("Failed to restore the previous listener")
+            raise ProxyStartError(user_message, str(exc)) from exc
+
+    def _create_server(self, host: str, port: int, upstream: Upstream) -> NativeProxyServer:
+        return NativeProxyServer(
+            host=host,
+            port=port,
+            upstream=upstream,
+            connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
+        )
 
     def _resolve_upstream(self, proxy_name: str) -> Upstream:
         if not isinstance(proxy_name, str) or not proxy_name:

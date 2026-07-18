@@ -43,7 +43,7 @@ class ProxyPortDelegate(QtWidgets.QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         '''创建LineEdit'''
         editor = QtWidgets.QLineEdit(parent)
-        editor.setValidator(QtGui.QIntValidator(0, 65535, self))
+        editor.setValidator(QtGui.QIntValidator(1, 65535, self))
 
         return editor
 

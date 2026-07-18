@@ -1,6 +1,6 @@
 import pytest
 
-from pyproxyswitch.errors import ConfigError
+from pyproxyswitch.errors import ConfigError, ProxyStartError
 from pyproxyswitch.proxy_manager import ProxyManager
 
 
@@ -23,6 +23,7 @@ class StubConfig:
 
 class FakeServer:
     instances = []
+    fail_start_ports = set()
 
     def __init__(self, host, port, upstream, connect_timeout):
         self.host = host
@@ -32,12 +33,16 @@ class FakeServer:
         self.connect_timeout = connect_timeout
         self.is_running = False
         self.stop_result = True
+        self.stop_calls = 0
         type(self).instances.append(self)
 
     def start(self, timeout=5):
+        if self.port in type(self).fail_start_ports:
+            raise OSError("bind failed")
         self.is_running = True
 
     def stop(self, timeout=5):
+        self.stop_calls += 1
         if self.stop_result:
             self.is_running = False
         return self.stop_result
@@ -49,6 +54,7 @@ class FakeServer:
 @pytest.fixture
 def fake_server(monkeypatch):
     FakeServer.instances.clear()
+    FakeServer.fail_start_ports.clear()
     monkeypatch.setattr("pyproxyswitch.proxy_manager.NativeProxyServer", FakeServer)
     return FakeServer
 
@@ -117,3 +123,31 @@ def test_stop_proxy_clears_server(fake_server):
 
     assert manager.stop_proxy()
     assert manager.server is None
+
+
+def test_non_running_server_is_cleaned_up_before_replacement(fake_server):
+    manager = ProxyManager(StubConfig())
+    manager.start_proxy("NoProxy")
+    stale = manager.server
+    stale.is_running = False
+
+    manager.start_proxy("NoProxy")
+
+    assert stale.stop_calls == 1
+    assert manager.server is not stale
+    assert manager.server.is_running
+
+
+def test_failed_listener_change_restores_previous_address(fake_server):
+    config = StubConfig()
+    manager = ProxyManager(config)
+    manager.start_proxy("NoProxy")
+    config.settings["LOCAL_PORT"] = 9999
+    fake_server.fail_start_ports.add(9999)
+
+    with pytest.raises(ProxyStartError, match="Failed to restart"):
+        manager.restart_listener()
+
+    assert manager.server is not None
+    assert manager.server.port == 8888
+    assert manager.server.is_running

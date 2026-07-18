@@ -259,6 +259,10 @@ class TestProxyValidatorUsername:
         with pytest.raises(ValidationError):
             proxy_validator.validate_username(long_name)
 
+    def test_username_cannot_contain_serialization_separator(self, proxy_validator):
+        with pytest.raises(ValidationError):
+            proxy_validator.validate_username("user:name")
+
 
 class TestProxyValidatorPassword:
     """密码验证测试"""
@@ -290,6 +294,9 @@ class TestProxyValidatorPassword:
         """测试包含控制字符的密码"""
         with pytest.raises(ValidationError):
             proxy_validator.validate_password("pass\x00word")
+
+        with pytest.raises(ValidationError):
+            proxy_validator.validate_password("pass\nword")
 
 
 class TestProxyValidatorFullProxy:
@@ -498,6 +505,21 @@ class TestBatchImportEdgeCases:
         assert result[4] == "user"
         assert result[5] == ""
 
+    def test_batch_line_accepts_case_insensitive_proxy_type(self, batch_validator):
+        result = batch_validator.validate_batch_line("test 127.0.0.1:1080 socks5", 1)
+
+        assert result[3] == "SOCKS5"
+
+    def test_batch_line_rejects_unknown_proxy_type(self, batch_validator):
+        with pytest.raises(ValidationError, match="受支持的代理类型"):
+            batch_validator.validate_batch_line("test 127.0.0.1:1080 FTP", 1)
+
+    def test_batch_line_rejects_extra_parameters(self, batch_validator):
+        with pytest.raises(ValidationError, match="参数过多"):
+            batch_validator.validate_batch_line(
+                "test 127.0.0.1:1080 user:pass SOCKS5 ignored", 1
+            )
+
     def test_batch_line_with_spaces_in_quotes(self, batch_validator):
         """测试引号中带空格的解析"""
         # shlex 会正确解析引号
@@ -519,6 +541,9 @@ class TestProxyValidationEdgeCases:
         # 测试 [2001:db8::1]:8080 格式
         result = proxy_validator.validate_proxy_address("[2001:db8::1]:8080")
         assert result == "2001:db8::1"
+
+        with pytest.raises(ValidationError):
+            proxy_validator.validate_proxy_address("[::1]:invalid")
 
     def test_ipv6_socket_validation(self, proxy_validator):
         """测试IPv6地址socket验证（覆盖lines 134-145）"""

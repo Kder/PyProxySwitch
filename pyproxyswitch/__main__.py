@@ -20,8 +20,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        default="INFO",
-        help="set the logging level (default: INFO)",
+        default=None,
+        help="override the configured logging level",
     )
     return parser
 

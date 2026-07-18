@@ -37,10 +37,11 @@ __status__ = "Beta"
 __projecturl__ = "http://pyproxyswitch.kder.info"
 
 
+import logging
 import sys
 
 
-def main(log_level=None):
+def main(log_level: int | str | None = None) -> None:
     """应用程序主入口点"""
     logger = None
     # 检查必要的依赖
@@ -51,14 +52,13 @@ def main(log_level=None):
         sys.exit(1)
     try:
         # 导入必要的模块
-        import logging
-
+        from pyproxyswitch.config import ConfigManager
         from pyproxyswitch.gui.main_window import Window
         from pyproxyswitch.logger_config import setup_logger
 
-        # 设置默认日志级别
+        # 命令行未覆盖时使用持久化的调试选项。
         if log_level is None:
-            log_level = logging.INFO
+            log_level = logging.DEBUG if ConfigManager().get("DEBUG", 0) else logging.INFO
 
         root_logger = logging.getLogger("PyProxySwitch")
         # 检查是否已经有logger配置，如果没有才重新配置
@@ -69,16 +69,19 @@ def main(log_level=None):
             logger = root_logger
             # 确保控制台处理器的级别正确
             for handler in logger.handlers:
-                if isinstance(handler, logging.StreamHandler):
+                if isinstance(handler, logging.StreamHandler) and not isinstance(
+                    handler, logging.FileHandler
+                ):
                     handler.setLevel(log_level)
 
         # 设置应用程序
         app = QtWidgets.QApplication(sys.argv)
         app.setApplicationName("PyProxySwitch")
         app.setApplicationVersion(__version__)
+        app.setQuitOnLastWindowClosed(False)
 
         # 创建并显示主窗口
-        window = Window()
+        _window = Window()
 
         # 启动事件循环
         sys.exit(app.exec())
@@ -88,7 +91,7 @@ def main(log_level=None):
         sys.exit(0)
     except Exception as e:
         print(f"Fatal error: {e}")
-        if "logger" in locals():
+        if logger is not None:
             logger.exception("Fatal error occurred")
         sys.exit(1)
 

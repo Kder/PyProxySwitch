@@ -39,6 +39,7 @@ class Window(QtWidgets.QDialog):
         self._load_translator()
         get_logger().debug(f"Config file path: {self._config.get_config_path()}")
         get_logger().debug(f"Proxy list file path: {self._config.get_proxy_list_path()}")
+        self._initialize_tray()
 
     def _load_translator(self) -> None:
         """加载并安装翻译器"""
@@ -46,6 +47,12 @@ class Window(QtWidgets.QDialog):
         stdtranslator_path = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
         translator_path = str(I18N_DIR / f"{lang}.qm")
         get_logger().debug(f"Main Window - loading translator from: {translator_path}")
+
+        app = QtCore.QCoreApplication.instance()
+        if app:
+            app.removeTranslator(self.translator_qt)
+            app.removeTranslator(self.translator)
+
         # 加载新翻译器
         if not self.translator_qt.load(QtCore.QLocale(lang), "qtbase", "_", stdtranslator_path):
             get_logger().warning(
@@ -60,16 +67,12 @@ class Window(QtWidgets.QDialog):
             )
         else:
             get_logger().debug("Translator loaded.")
-        # 确保只有一个翻译器被安装
-        app = QtCore.QCoreApplication.instance()
         if app:
-            # 移除所有现有的翻译器
-            for translator in app.findChildren(QtCore.QTranslator):
-                app.removeTranslator(translator)
-
-            # 安装新的翻译器
             app.installTranslator(self.translator_qt)
             app.installTranslator(self.translator)
+
+    def _initialize_tray(self) -> None:
+        """Create the tray UI and start the configured route exactly once."""
 
         if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
             QtWidgets.QMessageBox.critical(
@@ -88,6 +91,8 @@ class Window(QtWidgets.QDialog):
         self.item_text = self._config.get("LAST_ITEM")
         if self.item_text not in self.proxy_names and self.item_text != "NoProxy":
             self.item_text = self._config.get("DEFAULT_ITEM")
+        if self.item_text not in self.proxy_names and self.item_text != "NoProxy":
+            self.item_text = "NoProxy"
 
         self.proxy_names.append("NoProxy")
 
@@ -105,6 +110,7 @@ class Window(QtWidgets.QDialog):
         if self._config.get("SHOW_WELCOME", 1) == 1:
             self.showWelcome()
             self._config.set("SHOW_WELCOME", 0)
+            self._config.save()
 
         # 启动默认代理（包括NoProxy）
         try:
@@ -187,7 +193,6 @@ class Window(QtWidgets.QDialog):
             # 如果当前代理不在列表中，切换到NoProxy
             if self.item_text not in self.proxy_names:
                 self.switchProxy("NoProxy")
-        # 注意：不再需要重置dialog_exsit标志
 
     @Slot()
     def about(self) -> None:
@@ -252,12 +257,10 @@ class Window(QtWidgets.QDialog):
     def reload_translator(self) -> None:
         """重新加载翻译器（供外部调用）"""
         self._load_translator()
+        self.refresh_menu()
 
     def on_language_changed(self, new_lang: str) -> None:
         """语言更改事件处理"""
-        # 清理现有的托盘图标
-        self.cleanup_tray_icon()
-
         # 保存新语言设置
         self._config.set("LANG", new_lang)
         self._config.save()
@@ -270,9 +273,3 @@ class Window(QtWidgets.QDialog):
 
         # 强制处理事件以确保翻译立即生效
         QtWidgets.QApplication.processEvents()
-
-        # 重新创建托盘图标并更新提示（使用翻译后的文本）
-        if not hasattr(self, "trayIcon") or self.trayIcon is None:
-            self.trayIcon = QtWidgets.QSystemTrayIcon(self)
-            self.trayIcon.setIcon(self.icon)
-        self.trayIcon.setToolTip(f"{self.item_text} - PyProxySwitch")

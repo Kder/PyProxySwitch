@@ -14,6 +14,14 @@ def reset_config_singleton():
     ConfigManager.reset_singleton()
 
 
+@pytest.fixture(scope="session")
+def qapp():
+    from PySide6 import QtWidgets
+
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    yield app
+
+
 @pytest.fixture
 def proxy_validator():
     from pyproxyswitch.proxy_validation import ProxyValidator

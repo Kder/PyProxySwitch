@@ -15,6 +15,7 @@ import base64
 import contextlib
 import ipaddress
 import logging
+import math
 import socket
 import struct
 import threading
@@ -92,6 +93,10 @@ class NativeProxyServer:
         self.port = int(port)
         self.connect_timeout = float(connect_timeout)
         self.handshake_timeout = float(handshake_timeout)
+        if not math.isfinite(self.connect_timeout) or self.connect_timeout <= 0:
+            raise ValueError("connect_timeout must be a positive finite number")
+        if not math.isfinite(self.handshake_timeout) or self.handshake_timeout <= 0:
+            raise ValueError("handshake_timeout must be a positive finite number")
         self._upstream = upstream or Upstream.direct()
 
         self._state_lock = threading.RLock()
@@ -156,10 +161,10 @@ class NativeProxyServer:
         if not self._ready.wait(timeout):
             self.stop(timeout=timeout)
             raise TimeoutError("Timed out while starting the native proxy")
-        if self._startup_error is not None:
-            error = self._startup_error
+        startup_error = self._get_startup_error()
+        if startup_error is not None:
             self.stop(timeout=timeout)
-            raise RuntimeError(f"Cannot start native proxy: {error}") from error
+            raise RuntimeError(f"Cannot start native proxy: {startup_error}") from startup_error
         logger.info("Native proxy listening on %s:%s", self.host, self.bound_port)
 
     def stop(self, timeout: float = 5.0) -> bool:
@@ -190,7 +195,8 @@ class NativeProxyServer:
         try:
             asyncio.run(self._run_server())
         except BaseException as exc:
-            self._startup_error = exc
+            with self._state_lock:
+                self._startup_error = exc
             logger.exception("Native proxy event loop failed")
         finally:
             self._ready.set()
@@ -207,7 +213,7 @@ class NativeProxyServer:
                 limit=_HEADER_LIMIT,
                 start_serving=True,
             )
-            sockets = self._server.sockets or []
+            sockets: tuple[socket.socket, ...] | list[socket.socket] = self._server.sockets or []
             if not sockets:
                 raise RuntimeError("Listener did not expose a bound socket")
             self._bound_port = int(sockets[0].getsockname()[1])
@@ -215,7 +221,8 @@ class NativeProxyServer:
             await self._stop_event.wait()
         except BaseException as exc:
             if not self._ready.is_set():
-                self._startup_error = exc
+                with self._state_lock:
+                    self._startup_error = exc
                 self._ready.set()
             else:
                 raise
@@ -281,13 +288,18 @@ class NativeProxyServer:
         if method.upper() == "CONNECT":
             try:
                 host, port = self._parse_authority(target, 443)
-                remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
+                tunnel_reader, tunnel_writer = await self._open_tunnel(host, port, upstream)
             except (OSError, asyncio.TimeoutError, ProxyProtocolError, ValueError) as exc:
                 await self._send_http_error(client_writer, 502, "Bad Gateway")
                 raise ProxyProtocolError(f"CONNECT {target} failed: {exc}") from exc
-            client_writer.write(f"{version} 200 Connection Established\r\n\r\n".encode("ascii"))
-            await client_writer.drain()
-            await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+            try:
+                client_writer.write(
+                    f"{version} 200 Connection Established\r\n\r\n".encode("ascii")
+                )
+                await client_writer.drain()
+                await self._relay(client_reader, client_writer, tunnel_reader, tunnel_writer)
+            finally:
+                await self._close_writer(tunnel_writer)
             return
 
         remote_writer: asyncio.StreamWriter | None = None
@@ -303,6 +315,7 @@ class NativeProxyServer:
                 remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
                 outgoing_target = path
 
+            assert remote_writer is not None
             outgoing = self._build_http_request(
                 method,
                 outgoing_target,
@@ -345,8 +358,13 @@ class NativeProxyServer:
             await self._send_socks5_reply(client_writer, 7)
             return
         try:
-            host = await self._read_socks_address(client_reader, address_type)
-            port = struct.unpack(">H", await client_reader.readexactly(2))[0]
+            host = await self._timed(
+                self._read_socks_address(client_reader, address_type), self.handshake_timeout
+            )
+            raw_port = await self._timed(
+                client_reader.readexactly(2), self.handshake_timeout
+            )
+            port = struct.unpack(">H", raw_port)[0]
             remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
         except asyncio.TimeoutError:
             await self._send_socks5_reply(client_writer, 6)
@@ -355,8 +373,13 @@ class NativeProxyServer:
             await self._send_socks5_reply(client_writer, 5)
             return
 
-        await self._send_socks5_reply(client_writer, 0, remote_writer.get_extra_info("sockname"))
-        await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+        try:
+            await self._send_socks5_reply(
+                client_writer, 0, remote_writer.get_extra_info("sockname")
+            )
+            await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+        finally:
+            await self._close_writer(remote_writer)
 
     async def _handle_socks4(
         self,
@@ -365,15 +388,20 @@ class NativeProxyServer:
         upstream: Upstream,
     ) -> None:
         command = (await self._timed(client_reader.readexactly(1), self.handshake_timeout))[0]
-        port = struct.unpack(">H", await client_reader.readexactly(2))[0]
-        raw_address = await client_reader.readexactly(4)
-        await self._read_cstring(client_reader)  # Client user ID is intentionally not required.
+        raw_port = await self._timed(client_reader.readexactly(2), self.handshake_timeout)
+        port = struct.unpack(">H", raw_port)[0]
+        raw_address = await self._timed(client_reader.readexactly(4), self.handshake_timeout)
+        await self._timed(
+            self._read_cstring(client_reader), self.handshake_timeout
+        )  # Client user ID is intentionally not required.
         if command != 1:
             client_writer.write(b"\x00\x5b\x00\x00\x00\x00\x00\x00")
             await client_writer.drain()
             return
         if raw_address[:3] == b"\x00\x00\x00" and raw_address[3] != 0:
-            host = (await self._read_cstring(client_reader)).decode("idna")
+            host = (
+                await self._timed(self._read_cstring(client_reader), self.handshake_timeout)
+            ).decode("idna")
         else:
             host = socket.inet_ntoa(raw_address)
         try:
@@ -384,9 +412,12 @@ class NativeProxyServer:
             return
 
         reply_port, reply_ip = self._socks4_bound_address(remote_writer)
-        client_writer.write(b"\x00\x5a" + struct.pack(">H", reply_port) + reply_ip)
-        await client_writer.drain()
-        await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+        try:
+            client_writer.write(b"\x00\x5a" + struct.pack(">H", reply_port) + reply_ip)
+            await client_writer.drain()
+            await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+        finally:
+            await self._close_writer(remote_writer)
 
     async def _open_tunnel(
         self, target_host: str, target_port: int, upstream: Upstream
@@ -532,10 +563,12 @@ class NativeProxyServer:
             done, _ = await asyncio.wait(
                 (client_to_remote, remote_to_client), return_when=asyncio.FIRST_COMPLETED
             )
-            first = next(iter(done))
-            error = first.exception()
-            if error is not None:
-                raise error
+            for completed in done:
+                if completed.cancelled():
+                    raise asyncio.CancelledError
+                error = completed.exception()
+                if error is not None:
+                    raise error
             if remote_to_client in done:
                 client_to_remote.cancel()
             else:
@@ -569,7 +602,7 @@ class NativeProxyServer:
         text = raw_header.decode("latin-1")
         lines = text.split("\r\n")
         parts = lines[0].split(None, 2)
-        if len(parts) != 3 or not parts[2].startswith("HTTP/"):
+        if len(parts) != 3 or parts[2] not in {"HTTP/1.0", "HTTP/1.1"}:
             raise ProxyProtocolError("Invalid HTTP request line")
         headers: list[tuple[str, str]] = []
         for line in lines[1:]:
@@ -578,7 +611,10 @@ class NativeProxyServer:
             if line[:1] in " \t" or ":" not in line:
                 raise ProxyProtocolError("Invalid HTTP header")
             name, value = line.split(":", 1)
-            headers.append((name.strip(), value.strip()))
+            name = name.strip()
+            if not name:
+                raise ProxyProtocolError("Invalid HTTP header name")
+            headers.append((name, value.strip()))
         return (parts[0], parts[1], parts[2]), headers
 
     def _http_destination(
@@ -600,10 +636,10 @@ class NativeProxyServer:
             )
             return host, port, path, absolute_url
 
-        host_header = next((value for name, value in headers if name.lower() == "host"), "")
-        if not host_header:
+        host_headers = [value for name, value in headers if name.lower() == "host"]
+        if len(host_headers) != 1 or not host_headers[0]:
             raise ProxyProtocolError("HTTP Host header is required")
-        host, port = self._parse_authority(host_header, 80)
+        host, port = self._parse_authority(host_headers[0], 80)
         path = target if target.startswith(("/", "*")) else f"/{target}"
         authority = self._format_authority(host, port, omit_default=80)
         return host, port, path, f"http://{authority}{path}"
@@ -657,6 +693,7 @@ class NativeProxyServer:
             host, port = authority, default_port
         else:
             host, port = authority, default_port
+        host = host.strip()
         if not host or not 1 <= port <= 65535:
             raise ValueError("Invalid host or port")
         return host, port
@@ -703,7 +740,7 @@ class NativeProxyServer:
         sockname: tuple[object, ...] | None = None,
     ) -> None:
         host = str(sockname[0]) if sockname else "0.0.0.0"
-        port = int(sockname[1]) if sockname else 0
+        port = int(str(sockname[1])) if sockname else 0
         try:
             address = self._encode_socks5_address(host)
         except ProxyProtocolError:
@@ -761,6 +798,10 @@ class NativeProxyServer:
     @staticmethod
     async def _timed(awaitable: Awaitable[_T], timeout: float) -> _T:
         return await asyncio.wait_for(awaitable, timeout=timeout)
+
+    def _get_startup_error(self) -> BaseException | None:
+        with self._state_lock:
+            return self._startup_error
 
 
 __all__ = ["NativeProxyServer", "ProxyProtocolError", "Upstream"]

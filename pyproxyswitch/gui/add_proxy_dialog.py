@@ -16,7 +16,8 @@ from pyproxyswitch.resources.add_proxy_ui import Ui_Dialog_AddProxy
 
 class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
     '''"添加代理"对话框'''
-    def __init__(self, parent=None):
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         '''初始化UI'''
         super().__init__(parent)
         self.setupUi(self)
@@ -38,13 +39,24 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 address = self.le_address.text().strip()
                 port = self.le_port.text().strip()
                 proxy_type = self.comboBox_type.currentText()
-                username = self.le_username.text().strip()
-                password = self.le_password.text().strip()
+                username = self.le_username.text()
+                password = self.le_password.text()
 
                 # 执行完整验证
-                self.validator.validate_full_proxy(
+                validated = self.validator.validate_full_proxy(
                     name, address, port, proxy_type, username, password
                 )
+
+                # 保存验证器产生的规范化值，避免空格、IPv6 方括号等重新进入配置。
+                validated_name, validated_address, validated_port, validated_type, user, pwd = (
+                    validated
+                )
+                self.le_proxy_name.setText(validated_name)
+                self.le_address.setText(validated_address)
+                self.le_port.setText(str(validated_port))
+                self.comboBox_type.setCurrentText(validated_type)
+                self.le_username.setText(user)
+                self.le_password.setText(pwd)
 
                 # 验证通过
                 super().done(retcode)
@@ -59,12 +71,3 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 )
         else:
             super().done(retcode)
-
-    def show_error(self, message: str):
-        '''显示验证错误信息'''
-        QtWidgets.QMessageBox.warning(
-            self,
-            self.tr('Validation Error'),
-            message,
-            QtWidgets.QMessageBox.StandardButton.Ok
-        )
