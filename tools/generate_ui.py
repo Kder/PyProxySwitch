@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,10 @@ UI_MODULES = (
     ("add_proxy.ui", "add_proxy_ui.py"),
     ("pps_conf.ui", "pps_conf_ui.py"),
 )
+UIC_VERSION_PATTERN = re.compile(
+    r"^## Created by: Qt User Interface Compiler version .+$", re.MULTILINE
+)
+STABLE_GENERATOR_HEADER = "## Created by: Qt User Interface Compiler"
 
 
 def find_pyside6_uic() -> str:
@@ -40,6 +45,13 @@ def find_pyside6_uic() -> str:
     )
 
 
+def normalize_generated_module(content: bytes) -> bytes:
+    """Remove platform and tool-version noise from generated Python modules."""
+
+    text = content.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    return UIC_VERSION_PATTERN.sub(STABLE_GENERATOR_HEADER, text).encode("utf-8")
+
+
 def generate_ui_modules(*, check: bool = False) -> bool:
     """Generate all UI modules, or check whether tracked modules are current."""
 
@@ -57,8 +69,13 @@ def generate_ui_modules(*, check: bool = False) -> bool:
                 cwd=RESOURCE_DIR,
                 check=True,
             )
+            generated_bytes = normalize_generated_module(generated.read_bytes())
+            generated.write_bytes(generated_bytes)
 
-            if destination.exists() and generated.read_bytes() == destination.read_bytes():
+            if (
+                destination.exists()
+                and generated_bytes == normalize_generated_module(destination.read_bytes())
+            ):
                 continue
 
             if check:

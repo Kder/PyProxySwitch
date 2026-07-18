@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'pps_conf.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.2
+## Created by: Qt User Interface Compiler
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
