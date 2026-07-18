@@ -474,8 +474,12 @@ def test_tunnel_preserves_remote_half_close() -> None:
             f"CONNECT 127.0.0.1:{destination_port} HTTP/1.1\r\n"
             f"Host: 127.0.0.1:{destination_port}\r\n\r\n".encode()
         )
-        assert b"200 Connection Established" in _recv_until(client, b"\r\n\r\n")
-        assert _recv_exact(client, 5) == b"ready"
+        response = _recv_until(client, b"\r\n\r\n")
+        headers, separator, buffered = response.partition(b"\r\n\r\n")
+        assert separator
+        assert b"200 Connection Established" in headers
+        ready = buffered + _recv_exact(client, 5 - len(buffered))
+        assert ready == b"ready"
         assert client.recv(1) == b""
 
         client.sendall(b"after-remote-eof")
