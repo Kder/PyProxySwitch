@@ -295,6 +295,17 @@ class ProxyValidator(QObject):
             validated_username = self.validate_username(username)
             validated_password = self.validate_password(password)
 
+            if validated_type == "SOCKS5" and (validated_username or validated_password):
+                if not validated_username or not validated_password:
+                    raise ValidationError("SOCKS5认证必须同时提供用户名和密码")
+                try:
+                    encoded_username = validated_username.encode("utf-8")
+                    encoded_password = validated_password.encode("utf-8")
+                except UnicodeEncodeError:
+                    raise ValidationError("SOCKS5认证信息包含无效的Unicode字符") from None
+                if len(encoded_username) > 255 or len(encoded_password) > 255:
+                    raise ValidationError("SOCKS5用户名和密码的UTF-8编码不能超过255字节")
+
             return (
                 validated_name,
                 validated_address,
@@ -344,18 +355,16 @@ class BatchImportValidator:
         try:
             line_items = shlex.split(stripped)
         except ValueError as exc:
-            raise ValidationError(f"{line}: 引号或转义字符不完整") from exc
+            raise ValidationError("引号或转义字符不完整") from exc
         if len(line_items) < 2:
-            raise ValidationError(
-                f"{line}: 格式错误，至少需要代理名称和地址"
-            )
+            raise ValidationError("格式错误，至少需要代理名称和地址")
         if len(line_items) > 4:
-            raise ValidationError(f"{line}: 参数过多")
+            raise ValidationError("参数过多")
 
         # 解析地址和端口
         if ":" not in line_items[1]:
             # 为了与旧行为兼容，抛出IndexError
-            raise IndexError(f"{line}: 地址格式错误，必须包含端口（格式：地址:端口）")
+            raise IndexError("地址格式错误，必须包含端口（格式：地址:端口）")
         username = ""
         password = ""
         proxy_type = "HTTP"
@@ -368,7 +377,7 @@ class BatchImportValidator:
                 address = line_items[1][1:split_pos]
                 port = line_items[1][split_pos + 2 :]
             else:
-                raise ValidationError(f"{line}: IPv6地址格式错误")
+                raise ValidationError("IPv6地址格式错误")
         else:
             # 普通格式或IPv6不带端口
             address, port = line_items[1].rsplit(":", 1)
@@ -386,15 +395,15 @@ class BatchImportValidator:
                 username, separator, password = line_items[2].partition(":")
                 if not separator:
                     raise ValidationError(
-                        f"{line}: 认证信息必须使用用户名:密码格式，或指定受支持的代理类型"
+                        "认证信息必须使用用户名:密码格式，或指定受支持的代理类型"
                     )
         elif len(line_items) == 4:
             username, separator, password = line_items[2].partition(":")
             if not separator:
-                raise ValidationError(f"{line}: 认证信息必须使用用户名:密码格式")
+                raise ValidationError("认证信息必须使用用户名:密码格式")
             proxy_type = line_items[3].upper()
             if proxy_type not in valid_types:
-                raise ValidationError(f"{line}: 不支持的代理类型 {line_items[3]}")
+                raise ValidationError(f"不支持的代理类型 {line_items[3]}")
 
         return (
             line_items[0],
@@ -417,9 +426,8 @@ class BatchImportValidator:
         """
         try:
             proxy_tuple = self.parse_proxy_line(line)
-        except IndexError as e:
-            # 将IndexError转换为ValidationError以保持一致性
-            raise ValidationError(str(e)) from e
+        except (IndexError, ValidationError) as e:
+            raise ValidationError(f"第{line_number}行: {e}") from e
 
         if not proxy_tuple:
             return None
@@ -433,11 +441,14 @@ class BatchImportValidator:
         except ValidationError as e:
             raise ValidationError(f"第{line_number}行: {str(e)}") from e
 
-    def validate_batch_content(self, content: str) -> list[ValidatedProxy]:
+    def validate_batch_content(
+        self, content: str, *, strict: bool = False
+    ) -> list[ValidatedProxy]:
         """验证批量导入内容
 
         Args:
             content: 批量导入的内容
+            strict: 为True时，任意无效行都会使整个批次失败
 
         Returns:
             List[Tuple]: 验证通过的代理列表
@@ -449,6 +460,7 @@ class BatchImportValidator:
         proxy_names: set[str] = set()
         lines = content.split("\n")
         valid_lines = 0
+        errors: list[str] = []
 
         for i, line in enumerate(lines, 1):
             try:
@@ -461,7 +473,11 @@ class BatchImportValidator:
                     valid_lines += 1
             except (ValidationError, IndexError) as e:
                 # 继续验证其他行，但记录错误
+                errors.append(str(e))
                 logger.warning("%s", e)
+
+        if strict and errors:
+            raise ValidationError("批量代理配置包含错误：\n" + "\n".join(errors))
 
         if valid_lines == 0:
             raise ValidationError("没有找到有效的代理配置")

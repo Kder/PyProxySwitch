@@ -81,6 +81,76 @@ def test_batch_dialog_result_is_processed_once(qapp, tmp_path, monkeypatch) -> N
     assert len(calls) == 1
 
 
+def test_batch_dialog_rejects_partial_invalid_content(qapp, monkeypatch) -> None:
+    dialog = BatchImportDialog(
+        initial_content=(
+            "valid_proxy localhost:8080\n"
+            "invalid_proxy localhost:8081 user:secret SOCKS5 unexpected\n"
+        )
+    )
+    warnings = []
+    monkeypatch.setattr(QtWidgets.QMessageBox, "warning", lambda *args: warnings.append(args[2]))
+
+    dialog._on_accept()
+
+    assert dialog.result() != QtWidgets.QDialog.DialogCode.Accepted
+    assert dialog.get_valid_proxies() == []
+    assert warnings and "第2行" in warnings[0]
+
+
+def test_tray_double_click_opens_configuration() -> None:
+    calls = []
+
+    class FakeWindow:
+        def config(self):
+            calls.append(True)
+
+    main_window.Window.on_activated(
+        FakeWindow(), QtWidgets.QSystemTrayIcon.ActivationReason.DoubleClick
+    )
+
+    assert calls == [True]
+
+
+def test_configuration_dialog_is_reused_during_nested_activation(monkeypatch) -> None:
+    events = []
+
+    class Host:
+        _config_dialog = None
+
+        def config(self):
+            return main_window.Window.config(self)
+
+    class FakeDialog:
+        def __init__(self, parent):
+            self.parent = parent
+            events.append("created")
+
+        def exec(self):
+            self.parent.config()
+            return QtWidgets.QDialog.DialogCode.Rejected
+
+        def show(self):
+            events.append("shown")
+
+        def raise_(self):
+            events.append("raised")
+
+        def activateWindow(self):
+            events.append("activated")
+
+        def deleteLater(self):
+            events.append("deleted")
+
+    monkeypatch.setattr("pyproxyswitch.gui.config_dialog.Config_Dialog", FakeDialog)
+    host = Host()
+
+    host.config()
+
+    assert events == ["created", "shown", "raised", "activated", "deleted"]
+    assert host._config_dialog is None
+
+
 def test_export_uses_round_trip_safe_proxy_format(qapp, tmp_path, monkeypatch) -> None:
     destination = tmp_path / "exported.txt"
     parent = QtWidgets.QWidget()
@@ -233,3 +303,22 @@ def test_failed_proxy_save_restores_table_and_config(qapp, tmp_path, monkeypatch
         == "localhost"
     )
     assert errors
+
+
+def test_inline_edit_cannot_persist_incomplete_socks5_credentials(
+    qapp, tmp_path, monkeypatch
+) -> None:
+    config = _make_config(
+        tmp_path,
+        [("socks", "localhost", "1080", "SOCKS5", "", "")],
+    )
+    dialog = Config_Dialog()
+    errors = []
+    monkeypatch.setattr(dialog, "show_error", errors.append)
+
+    username_index = dialog.data_model.index(0, dialog.proxy_user)
+    dialog.data_model.setData(username_index, "alice", QtCore.Qt.ItemDataRole.EditRole)
+
+    assert config.get_proxies()[0][4:] == ("", "")
+    assert dialog.data_model.data(dialog.data_model.index(0, dialog.proxy_user)) == ""
+    assert errors and "同时提供" in errors[0]

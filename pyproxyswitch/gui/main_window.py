@@ -32,6 +32,7 @@ class Window(QtWidgets.QDialog):
         self.proxy_manager = ProxyManager(self._config)
 
         self.trayIcon = None  # 初始化托盘图标引用
+        self._config_dialog = None
         self.proxy_service_available = False
 
         # 初始化翻译器
@@ -189,8 +190,11 @@ class Window(QtWidgets.QDialog):
     @Slot()
     def on_activated(self, reason: QtWidgets.QSystemTrayIcon.ActivationReason) -> None:
         """托盘图标点击事件"""
-        if reason == QtWidgets.QSystemTrayIcon.Trigger:
-            # 左键点击 - 显示配置对话框
+        if reason in (
+            QtWidgets.QSystemTrayIcon.Trigger,
+            QtWidgets.QSystemTrayIcon.DoubleClick,
+        ):
+            # 左键单击或双击 - 显示配置对话框
             self.config()
         elif reason == QtWidgets.QSystemTrayIcon.Context:
             # 右键点击 - 显示上下文菜单（自动处理）
@@ -201,8 +205,19 @@ class Window(QtWidgets.QDialog):
         """显示配置对话框"""
         from .config_dialog import Config_Dialog
 
+        if self._config_dialog is not None:
+            self._config_dialog.show()
+            self._config_dialog.raise_()
+            self._config_dialog.activateWindow()
+            return
+
         dialog = Config_Dialog(self)
-        ret = dialog.exec()
+        self._config_dialog = dialog
+        try:
+            ret = dialog.exec()
+        finally:
+            self._config_dialog = None
+            dialog.deleteLater()
 
         if ret == QtWidgets.QDialog.Accepted:
             # 重新加载代理列表

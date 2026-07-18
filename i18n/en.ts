@@ -231,7 +231,7 @@ socks_proxy 203.0.113.5:1080 SOCKS5
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/config_dialog.py" line="400"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="590"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="597"/>
         <source>Failed to save proxy list</source>
         <translation>Failed to save proxy list</translation>
     </message>
@@ -402,71 +402,71 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 <context>
     <name>Window</name>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="81"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="82"/>
         <source>System Tray</source>
         <translation>System Tray</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="83"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="84"/>
         <source>I&apos;ve not detected any system tray on this system.
 PyProxySwitch cannot start.</source>
         <translation>I&apos;ve not detected any system tray on this system.
 PyProxySwitch cannot start.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="104"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="105"/>
         <source>Proxy service starting</source>
         <translation>Proxy service starting</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="128"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="129"/>
         <source>Failed to start proxy service: {error}</source>
         <translation>Failed to start proxy service: {error}</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="140"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="141"/>
         <source>Proxy service unavailable</source>
         <translation>Proxy service unavailable</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="176"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="177"/>
         <source>Config</source>
         <translation>Config</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="179"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="180"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="184"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="185"/>
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="223"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="238"/>
         <source>About PyProxySwitch</source>
         <translation>About PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="226"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="241"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="127"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="244"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="254"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="128"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="259"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="269"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="255"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="270"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>Proxy switched, but the selection could not be saved.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="283"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="298"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>I&apos;m here, welcome to PyProxySwitch!</translation>
     </message>

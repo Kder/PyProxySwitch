@@ -579,8 +579,15 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             user = self.data_model.data(self.data_model.index(row, self.proxy_user))
             pwd = self.data_model.data(self.data_model.index(row, self.proxy_pass))
 
-            proxy = [name, address, port, ptype, user, pwd]  # IMPORTANT!
-            proxies.append(proxy)
+            try:
+                validated = self.validator.validate_full_proxy(
+                    name, address, str(port), ptype, user, pwd
+                )
+            except ValidationError as exc:
+                self._reload_proxy_model()
+                self.show_error(str(exc))
+                return False
+            proxies.append([str(value) for value in validated])
 
         old_proxies = self._config.get_proxies()
         self._config.set_proxies(proxies)

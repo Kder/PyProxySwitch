@@ -212,7 +212,7 @@ class ConfigManager:
         if isinstance(value, (str, int, float)) and not isinstance(value, bool):
             try:
                 connect_timeout = float(value)
-            except ValueError:
+            except (OverflowError, ValueError):
                 connect_timeout = float(defaults["CONNECT_TIMEOUT"])
         else:
             connect_timeout = float(defaults["CONNECT_TIMEOUT"])

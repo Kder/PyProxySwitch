@@ -31,6 +31,9 @@ _HEADER_LIMIT = 64 * 1024
 _WRITE_HIGH_WATER = 2 * 1024 * 1024
 _WRITE_LOW_WATER = 512 * 1024
 _SUPPORTED_TYPES = frozenset({"DIRECT", "HTTP", "SOCKS4", "SOCKS5"})
+_HTTP_TOKEN_CHARS = frozenset(
+    "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+)
 _T = TypeVar("_T")
 
 
@@ -63,6 +66,16 @@ class Upstream:
         if not 1 <= int(self.port) <= 65535:
             raise ValueError(f"Invalid upstream proxy port: {self.port}")
         object.__setattr__(self, "port", int(self.port))
+        if proxy_type == "SOCKS5" and (self.username or self.password):
+            if not self.username or not self.password:
+                raise ValueError("SOCKS5 authentication requires both username and password")
+            try:
+                username = self.username.encode("utf-8")
+                password = self.password.encode("utf-8")
+            except UnicodeEncodeError:
+                raise ValueError("SOCKS5 credentials contain invalid Unicode") from None
+            if len(username) > 255 or len(password) > 255:
+                raise ValueError("SOCKS5 credentials cannot exceed 255 UTF-8 bytes")
 
     @classmethod
     def direct(cls) -> Upstream:
@@ -304,7 +317,13 @@ class NativeProxyServer:
                     f"{version} 200 Connection Established\r\n\r\n".encode("ascii")
                 )
                 await client_writer.drain()
-                await self._relay(client_reader, client_writer, tunnel_reader, tunnel_writer)
+                await self._relay(
+                    client_reader,
+                    client_writer,
+                    tunnel_reader,
+                    tunnel_writer,
+                    preserve_half_closes=True,
+                )
             finally:
                 await self._close_writer(tunnel_writer)
             return
@@ -312,6 +331,7 @@ class NativeProxyServer:
         remote_writer: asyncio.StreamWriter | None = None
         try:
             host, port, path, absolute_url = self._http_destination(target, headers)
+            headers = self._replace_host_header(headers, host, port)
             if upstream.proxy_type == "HTTP":
                 remote_reader, remote_writer = await self._timed(
                     self._open_endpoint(upstream.host, upstream.port),
@@ -339,7 +359,13 @@ class NativeProxyServer:
             raise ProxyProtocolError(f"HTTP {target} failed: {exc}") from exc
 
         assert remote_writer is not None
-        await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+        await self._relay(
+            client_reader,
+            client_writer,
+            remote_reader,
+            remote_writer,
+            preserve_half_closes=self._is_http_upgrade(headers),
+        )
 
     async def _handle_socks5(
         self,
@@ -364,6 +390,9 @@ class NativeProxyServer:
         if command != 1:
             await self._send_socks5_reply(client_writer, 7)
             return
+        if address_type not in {1, 3, 4}:
+            await self._send_socks5_reply(client_writer, 8)
+            return
         try:
             host = await self._timed(
                 self._read_socks_address(client_reader, address_type), self.handshake_timeout
@@ -384,7 +413,13 @@ class NativeProxyServer:
             await self._send_socks5_reply(
                 client_writer, 0, remote_writer.get_extra_info("sockname")
             )
-            await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+            await self._relay(
+                client_reader,
+                client_writer,
+                remote_reader,
+                remote_writer,
+                preserve_half_closes=True,
+            )
         finally:
             await self._close_writer(remote_writer)
 
@@ -394,24 +429,28 @@ class NativeProxyServer:
         client_writer: asyncio.StreamWriter,
         upstream: Upstream,
     ) -> None:
-        command = (await self._timed(client_reader.readexactly(1), self.handshake_timeout))[0]
-        raw_port = await self._timed(client_reader.readexactly(2), self.handshake_timeout)
-        port = struct.unpack(">H", raw_port)[0]
-        raw_address = await self._timed(client_reader.readexactly(4), self.handshake_timeout)
-        await self._timed(
-            self._read_cstring(client_reader), self.handshake_timeout
-        )  # Client user ID is intentionally not required.
-        if command != 1:
-            client_writer.write(b"\x00\x5b\x00\x00\x00\x00\x00\x00")
-            await client_writer.drain()
-            return
-        if raw_address[:3] == b"\x00\x00\x00" and raw_address[3] != 0:
-            host = (
-                await self._timed(self._read_cstring(client_reader), self.handshake_timeout)
-            ).decode("idna")
-        else:
-            host = socket.inet_ntoa(raw_address)
         try:
+            command = (
+                await self._timed(client_reader.readexactly(1), self.handshake_timeout)
+            )[0]
+            raw_port = await self._timed(client_reader.readexactly(2), self.handshake_timeout)
+            port = struct.unpack(">H", raw_port)[0]
+            raw_address = await self._timed(
+                client_reader.readexactly(4), self.handshake_timeout
+            )
+            await self._timed(
+                self._read_cstring(client_reader), self.handshake_timeout
+            )  # Client user ID is intentionally not required.
+            if command != 1:
+                raise ProxyProtocolError("Unsupported SOCKS4 command")
+            if raw_address[:3] == b"\x00\x00\x00" and raw_address[3] != 0:
+                host = (
+                    await self._timed(self._read_cstring(client_reader), self.handshake_timeout)
+                ).decode("idna")
+                if not host:
+                    raise ProxyProtocolError("SOCKS4a destination cannot be empty")
+            else:
+                host = socket.inet_ntoa(raw_address)
             remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
         except (OSError, asyncio.TimeoutError, ProxyProtocolError, ValueError):
             client_writer.write(b"\x00\x5b\x00\x00\x00\x00\x00\x00")
@@ -422,7 +461,13 @@ class NativeProxyServer:
         try:
             client_writer.write(b"\x00\x5a" + struct.pack(">H", reply_port) + reply_ip)
             await client_writer.drain()
-            await self._relay(client_reader, client_writer, remote_reader, remote_writer)
+            await self._relay(
+                client_reader,
+                client_writer,
+                remote_reader,
+                remote_writer,
+                preserve_half_closes=True,
+            )
         finally:
             await self._close_writer(remote_writer)
 
@@ -501,11 +546,16 @@ class NativeProxyServer:
         version, method = await reader.readexactly(2)
         if version != 5 or method == 0xFF:
             raise ProxyProtocolError("SOCKS5 upstream has no acceptable auth method")
+        if method not in methods:
+            raise ProxyProtocolError("SOCKS5 upstream selected an authentication method not offered")
         if method == 2:
-            username = upstream.username.encode("utf-8")
-            password = upstream.password.encode("utf-8")
-            if len(username) > 255 or len(password) > 255:
-                raise ProxyProtocolError("SOCKS5 credentials are too long")
+            try:
+                username = upstream.username.encode("utf-8")
+                password = upstream.password.encode("utf-8")
+            except UnicodeEncodeError:
+                raise ProxyProtocolError("SOCKS5 credentials contain invalid Unicode") from None
+            if not 1 <= len(username) <= 255 or not 1 <= len(password) <= 255:
+                raise ProxyProtocolError("SOCKS5 credentials must contain 1 to 255 bytes")
             writer.write(
                 b"\x01" + bytes((len(username),)) + username + bytes((len(password),)) + password
             )
@@ -563,6 +613,8 @@ class NativeProxyServer:
         client_writer: asyncio.StreamWriter,
         remote_reader: asyncio.StreamReader,
         remote_writer: asyncio.StreamWriter,
+        *,
+        preserve_half_closes: bool = False,
     ) -> None:
         client_to_remote = asyncio.create_task(self._pipe(client_reader, remote_writer))
         remote_to_client = asyncio.create_task(self._pipe(remote_reader, client_writer))
@@ -576,7 +628,12 @@ class NativeProxyServer:
                 error = completed.exception()
                 if error is not None:
                     raise error
-            if remote_to_client in done:
+            if preserve_half_closes:
+                if client_to_remote not in done:
+                    await client_to_remote
+                if remote_to_client not in done:
+                    await remote_to_client
+            elif remote_to_client in done:
                 client_to_remote.cancel()
             else:
                 # A client may half-close after uploading a request body.  Keep
@@ -618,10 +675,12 @@ class NativeProxyServer:
             if line[:1] in " \t" or ":" not in line:
                 raise ProxyProtocolError("Invalid HTTP header")
             name, value = line.split(":", 1)
-            name = name.strip()
-            if not name:
+            if not name or not set(name) <= _HTTP_TOKEN_CHARS:
                 raise ProxyProtocolError("Invalid HTTP header name")
-            headers.append((name, value.strip()))
+            value = value.strip()
+            if any((ord(char) < 32 and char != "\t") or ord(char) == 127 for char in value):
+                raise ProxyProtocolError("Invalid HTTP header value")
+            headers.append((name, value))
         return (parts[0], parts[1], parts[2]), headers
 
     def _http_destination(
@@ -663,9 +722,7 @@ class NativeProxyServer:
         for name, value in headers:
             if name.lower() == "connection":
                 connection_tokens.update(token.strip().lower() for token in value.split(","))
-        is_upgrade = "upgrade" in connection_tokens and any(
-            name.lower() == "upgrade" and value.strip() for name, value in headers
-        )
+        is_upgrade = self._is_http_upgrade(headers)
         removed = {
             "connection",
             "proxy-connection",
@@ -691,6 +748,37 @@ class NativeProxyServer:
             output.append("Connection: close")
         return ("\r\n".join(output) + "\r\n\r\n").encode("latin-1")
 
+    @classmethod
+    def _replace_host_header(
+        cls, headers: list[tuple[str, str]], host: str, port: int
+    ) -> list[tuple[str, str]]:
+        """Replace every client-supplied Host field with the routed authority."""
+
+        authority = cls._format_authority(host, port, omit_default=80)
+        output: list[tuple[str, str]] = []
+        host_added = False
+        for name, value in headers:
+            if name.lower() != "host":
+                output.append((name, value))
+            elif not host_added:
+                output.append(("Host", authority))
+                host_added = True
+        if not host_added:
+            output.insert(0, ("Host", authority))
+        return output
+
+    @staticmethod
+    def _is_http_upgrade(headers: list[tuple[str, str]]) -> bool:
+        connection_tokens = {
+            token.strip().lower()
+            for name, value in headers
+            if name.lower() == "connection"
+            for token in value.split(",")
+        }
+        return "upgrade" in connection_tokens and any(
+            name.lower() == "upgrade" and value.strip() for name, value in headers
+        )
+
     @staticmethod
     def _parse_authority(authority: str, default_port: int) -> tuple[str, int]:
         authority = authority.strip()
@@ -711,7 +799,11 @@ class NativeProxyServer:
         else:
             host, port = authority, default_port
         host = host.strip()
-        if not host or not 1 <= port <= 65535:
+        if (
+            not host
+            or any(ord(char) <= 32 or ord(char) == 127 for char in host)
+            or not 1 <= port <= 65535
+        ):
             raise ValueError("Invalid host or port")
         return host, port
 

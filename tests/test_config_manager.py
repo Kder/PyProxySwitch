@@ -111,6 +111,12 @@ def test_malformed_persisted_settings_are_repaired(tmp_path):
     assert config.get("SHOW_WELCOME") == 0
 
 
+def test_oversized_connect_timeout_is_repaired(tmp_path):
+    config = make_config(tmp_path, {"CONNECT_TIMEOUT": 10**4000})
+
+    assert config.get("CONNECT_TIMEOUT") == 15
+
+
 def test_obsolete_backend_selector_cannot_be_persisted(tmp_path):
     config = make_config(tmp_path)
 

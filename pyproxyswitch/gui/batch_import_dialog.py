@@ -97,7 +97,7 @@ class BatchImportDialog(QtWidgets.QDialog):
 
         try:
             valid_proxies = self._validator.validate_batch_content(
-                self._txt_editor.toPlainText()
+                self._txt_editor.toPlainText(), strict=True
             )
 
             # 显示预览信息
@@ -127,7 +127,7 @@ class BatchImportDialog(QtWidgets.QDialog):
         """确认按钮点击处理"""
         try:
             valid_proxies = self._validator.validate_batch_content(
-                self._txt_editor.toPlainText()
+                self._txt_editor.toPlainText(), strict=True
             )
 
             if not valid_proxies:

@@ -6,6 +6,8 @@ PyProxySwitch 代理验证模块测试
 测试 ProxyValidator 和 BatchImportValidator 的功能。
 """
 
+import logging
+
 import pytest
 
 from pyproxyswitch.proxy_validation import ValidationError
@@ -322,6 +324,22 @@ class TestProxyValidatorFullProxy:
         )
         assert result == ("auth_socks", "10.0.0.1", 1080, "SOCKS5", "user", "pass")
 
+    @pytest.mark.parametrize(
+        ("username", "password"),
+        [("", "password"), ("username", "")],
+    )
+    def test_socks5_auth_requires_both_fields(self, proxy_validator, username, password):
+        with pytest.raises(ValidationError, match="同时提供"):
+            proxy_validator.validate_full_proxy(
+                "auth_socks", "10.0.0.1", "1080", "SOCKS5", username, password
+            )
+
+    def test_socks5_auth_limits_utf8_byte_length(self, proxy_validator):
+        with pytest.raises(ValidationError, match="255字节"):
+            proxy_validator.validate_full_proxy(
+                "auth_socks", "10.0.0.1", "1080", "SOCKS5", "user", "😀" * 100
+            )
+
     def test_full_proxy_valid_socks4(self, proxy_validator):
         """测试有效的 SOCKS4 代理"""
         result = proxy_validator.validate_full_proxy(
@@ -449,6 +467,23 @@ another_valid 10.0.0.1:3128
         # 跳过无效行继续处理，记录警告
         result = batch_validator.validate_batch_content(content)
         assert len(result) >= 2
+
+    def test_strict_batch_content_rejects_any_invalid_line_without_logging_secrets(
+        self, batch_validator, caplog
+    ):
+        content = (
+            "valid_proxy 192.168.1.1:8080\n"
+            "secret_proxy proxy.example:8080 user:supersecret SOCKS5 unexpected\n"
+        )
+
+        with (
+            caplog.at_level(logging.WARNING, logger="PyProxySwitch"),
+            pytest.raises(ValidationError, match="第2行"),
+        ):
+            batch_validator.validate_batch_content(content, strict=True)
+
+        assert "supersecret" not in caplog.text
+        assert "第2行" in caplog.text
 
     def test_validate_batch_content_with_quoted_strings(self, batch_validator):
         """测试带引号的字符串"""

@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import http.server
+import queue
 import socket
 import socketserver
 import struct
@@ -9,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from pyproxyswitch.native_proxy import NativeProxyServer, Upstream
+from pyproxyswitch.native_proxy import NativeProxyServer, ProxyProtocolError, Upstream
 
 
 def _recv_exact(sock: socket.socket, size: int) -> bytes:
@@ -68,6 +69,18 @@ class _UpgradeEchoHandler(socketserver.BaseRequestHandler):
         )
         while data := self.request.recv(65536):
             self.request.sendall(data)
+
+
+class _RemoteHalfCloseHandler(socketserver.BaseRequestHandler):
+    received: queue.Queue[bytes] = queue.Queue()
+
+    def handle(self) -> None:
+        self.request.sendall(b"ready")
+        self.request.shutdown(socket.SHUT_WR)
+        chunks = bytearray()
+        while data := self.request.recv(65536):
+            chunks.extend(data)
+        type(self).received.put(bytes(chunks))
 
 
 @contextlib.contextmanager
@@ -240,6 +253,28 @@ def test_socks4a_connect_tunnel() -> None:
         assert _recv_exact(client, len(b"socks4a-echo")) == b"socks4a-echo"
 
 
+def test_socks4a_invalid_domain_returns_failure_reply() -> None:
+    with (
+        _running_proxy() as proxy,
+        socket.create_connection(("127.0.0.1", proxy.bound_port), timeout=2) as client,
+    ):
+        client.sendall(b"\x04\x01\x00\x50\x00\x00\x00\x01user\x00\xff\x00")
+
+        assert _recv_exact(client, 8)[:2] == b"\x00\x5b"
+
+
+def test_socks5_unsupported_address_type_returns_specific_reply() -> None:
+    with (
+        _running_proxy() as proxy,
+        socket.create_connection(("127.0.0.1", proxy.bound_port), timeout=2) as client,
+    ):
+        client.sendall(b"\x05\x01\x00")
+        assert _recv_exact(client, 2) == b"\x05\x00"
+        client.sendall(b"\x05\x01\x00\x09")
+
+        assert _recv_exact(client, 2) == b"\x05\x08"
+
+
 def test_socks5_destination_read_obeys_handshake_timeout() -> None:
     with (
         _running_proxy(handshake_timeout=0.05) as proxy,
@@ -337,6 +372,79 @@ def test_http_upgrade_switches_to_bidirectional_relay() -> None:
 
         client.sendall(b"upgrade-echo")
         assert _recv_exact(client, len(b"upgrade-echo")) == b"upgrade-echo"
+
+
+def test_tunnel_preserves_remote_half_close() -> None:
+    while not _RemoteHalfCloseHandler.received.empty():
+        _RemoteHalfCloseHandler.received.get_nowait()
+
+    with (
+        _running_tcp_server(_RemoteHalfCloseHandler) as (_, destination_port),
+        _running_proxy() as proxy,
+        socket.create_connection(("127.0.0.1", proxy.bound_port), timeout=2) as client,
+    ):
+        client.sendall(
+            f"CONNECT 127.0.0.1:{destination_port} HTTP/1.1\r\n"
+            f"Host: 127.0.0.1:{destination_port}\r\n\r\n".encode()
+        )
+        assert b"200 Connection Established" in _recv_until(client, b"\r\n\r\n")
+        assert _recv_exact(client, 5) == b"ready"
+        assert client.recv(1) == b""
+
+        client.sendall(b"after-remote-eof")
+        client.shutdown(socket.SHUT_WR)
+        assert _RemoteHalfCloseHandler.received.get(timeout=2) == b"after-remote-eof"
+
+
+def test_absolute_http_target_replaces_mismatched_host_header() -> None:
+    server = NativeProxyServer()
+    headers = [("Host", "wrong.example")]
+    host, port, path, _ = server._http_destination(
+        "http://right.example/resource", headers
+    )
+    headers = server._replace_host_header(headers, host, port)
+
+    request = server._build_http_request("GET", path, "HTTP/1.1", headers, None)
+
+    assert b"Host: right.example\r\n" in request
+    assert b"wrong.example" not in request
+
+
+def test_socks5_upstream_rejects_auth_method_that_was_not_offered() -> None:
+    class RecordingWriter:
+        def __init__(self) -> None:
+            self.data = bytearray()
+
+        def write(self, data: bytes) -> None:
+            self.data.extend(data)
+
+        async def drain(self) -> None:
+            pass
+
+    async def run_test() -> None:
+        server = NativeProxyServer()
+        reader = asyncio.StreamReader()
+        reader.feed_data(b"\x05\x02")
+        reader.feed_eof()
+        writer = RecordingWriter()
+
+        with pytest.raises(ProxyProtocolError, match="not offered"):
+            await server._socks5_connect(
+                reader, writer, "example.com", 443, Upstream("upstream", "SOCKS5", "proxy", 1080)
+            )
+        assert writer.data == b"\x05\x01\x00"
+
+    asyncio.run(run_test())
+
+
+def test_socks5_upstream_rejects_incomplete_credentials() -> None:
+    with pytest.raises(ValueError, match="both username and password"):
+        Upstream("upstream", "SOCKS5", "proxy", 1080, "", "password")
+
+
+def test_socks5_upstream_rejects_oversized_utf8_credentials() -> None:
+    with pytest.raises(ValueError, match="255 UTF-8 bytes"):
+        Upstream("upstream", "SOCKS5", "proxy", 1080, "user", "😀" * 100)
 
 
 def test_connect_closes_remote_when_client_drops_during_success_reply() -> None:
