@@ -274,12 +274,15 @@ def test_gui_entry_point_keeps_tray_app_alive(monkeypatch) -> None:
     root_logger = logging.getLogger("PyProxySwitch")
     previous_handlers = root_logger.handlers[:]
     root_logger.handlers = [logging.NullHandler()]
-    monkeypatch.setattr(QtWidgets, "QApplication", FakeApplication)
-    monkeypatch.setattr(main_window, "Window", lambda: object())
-    monkeypatch.setattr("pyproxyswitch.config.ConfigManager", FakeConfig)
     try:
-        with pytest.raises(SystemExit, match="0"):
-            application.main()
+        # Restore QApplication before pytest-qt processes events after the test call.
+        # Leaving the fake class installed until fixture teardown breaks that hook.
+        with monkeypatch.context() as scoped_monkeypatch:
+            scoped_monkeypatch.setattr(QtWidgets, "QApplication", FakeApplication)
+            scoped_monkeypatch.setattr(main_window, "Window", lambda: object())
+            scoped_monkeypatch.setattr("pyproxyswitch.config.ConfigManager", FakeConfig)
+            with pytest.raises(SystemExit, match="0"):
+                application.main()
     finally:
         root_logger.handlers = previous_handlers
 
