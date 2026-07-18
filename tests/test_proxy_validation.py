@@ -255,6 +255,11 @@ class TestProxyValidatorUsername:
             with pytest.raises(ValidationError):
                 proxy_validator.validate_username(f"user{char}name")
 
+    @pytest.mark.parametrize("control", ["\x00", "\t", "\x7f"])
+    def test_invalid_username_control_chars(self, proxy_validator, control):
+        with pytest.raises(ValidationError, match="控制字符"):
+            proxy_validator.validate_username(f"user{control}name")
+
     def test_invalid_username_too_long(self, proxy_validator):
         """测试过长用户名"""
         long_name = "a" * 51

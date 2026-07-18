@@ -131,6 +131,11 @@ class ProxyManager:
             if old_server is not None and old_server.is_running
             else None
         )
+        old_upstream = (
+            old_server.upstream
+            if old_server is not None and old_address is not None
+            else upstream
+        )
 
         if old_server is not None:
             if not old_server.stop(timeout=timeout):
@@ -152,7 +157,7 @@ class ProxyManager:
 
             if old_address is not None:
                 try:
-                    fallback = self._create_server(old_address[0], old_address[1], upstream)
+                    fallback = self._create_server(old_address[0], old_address[1], old_upstream)
                     fallback.start(timeout=timeout)
                     self._server = fallback
                 except Exception:

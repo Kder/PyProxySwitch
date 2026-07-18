@@ -232,6 +232,9 @@ class ProxyValidator(QObject):
         if len(username) > 50:
             raise ValidationError("用户名长度不能超过50个字符")
 
+        if any(ord(char) < 32 or ord(char) == 127 for char in username):
+            raise ValidationError("用户名包含非法控制字符")
+
         # 检查是否包含危险字符
         dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`", ":", "\n", "\r"]
         for char in dangerous_chars:

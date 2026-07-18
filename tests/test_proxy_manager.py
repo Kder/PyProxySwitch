@@ -151,3 +151,24 @@ def test_failed_listener_change_restores_previous_address(fake_server):
     assert manager.server is not None
     assert manager.server.port == 8888
     assert manager.server.is_running
+
+
+def test_failed_listener_change_restores_previous_upstream(fake_server):
+    config = StubConfig(
+        proxies=[
+            ("one", "one.example", "8080", "HTTP", "", ""),
+            ("two", "two.example", "1080", "SOCKS5", "", ""),
+        ]
+    )
+    manager = ProxyManager(config)
+    manager.start_proxy("one")
+    config.settings["LOCAL_PORT"] = 9999
+    fake_server.fail_start_ports.add(9999)
+
+    with pytest.raises(ProxyStartError, match="Failed to reconfigure"):
+        manager.start_proxy("two")
+
+    assert manager.server is not None
+    assert manager.server.port == 8888
+    assert manager.server.upstream.name == "one"
+    assert manager.server.is_running
