@@ -382,6 +382,18 @@ def test_stop_closes_active_client_before_waiting_for_server() -> None:
         assert server._client_tasks
 
         stopped = server.stop(timeout=2)
+        if not stopped:
+            dumped = threading.Event()
+
+            def dump_tasks() -> None:
+                for task in tuple(server._client_tasks):
+                    print(f"\nPending client task: {task!r}")
+                    task.print_stack()
+                dumped.set()
+
+            assert server._loop is not None
+            server._loop.call_soon_threadsafe(dump_tasks)
+            dumped.wait(timeout=1)
     finally:
         client.close()
         if not stopped:
