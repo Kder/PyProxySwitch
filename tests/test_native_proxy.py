@@ -367,6 +367,13 @@ def test_start_timeout_cannot_create_a_late_listener() -> None:
     assert server.stop()
 
 
+def dump_client_tasks(server: NativeProxyServer, dumped: threading.Event) -> None:
+    for task in tuple(server._client_tasks):
+        print(f"\nPending client task: {task!r}")
+        task.print_stack()
+    dumped.set()
+
+
 def test_stop_closes_active_client_before_waiting_for_server() -> None:
     server = NativeProxyServer(host="127.0.0.1", port=0, handshake_timeout=60)
     server.start()
@@ -384,15 +391,8 @@ def test_stop_closes_active_client_before_waiting_for_server() -> None:
         stopped = server.stop(timeout=2)
         if not stopped:
             dumped = threading.Event()
-
-            def dump_tasks() -> None:
-                for task in tuple(server._client_tasks):
-                    print(f"\nPending client task: {task!r}")
-                    task.print_stack()
-                dumped.set()
-
             assert server._loop is not None
-            server._loop.call_soon_threadsafe(dump_tasks)
+            server._loop.call_soon_threadsafe(dump_client_tasks, server, dumped)
             dumped.wait(timeout=1)
     finally:
         client.close()
