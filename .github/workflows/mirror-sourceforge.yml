@@ -1,0 +1,69 @@
+name: Mirror to SourceForge
+
+on:
+  push:
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sourceforge-mirror
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SourceForge SSH
+        env:
+          SF_SSH_KEY: ${{ secrets.SOURCEFORGE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          install -m 700 -d ~/.ssh
+
+          printf '%s\n' "$SF_SSH_KEY" |
+            tr -d '\r' > ~/.ssh/id_ed25519
+
+          chmod 600 ~/.ssh/id_ed25519
+
+          # Download and verify the current SourceForge ED25519 host key.
+          ssh-keyscan -T 10 -t ed25519 git.code.sf.net \
+            > /tmp/sourceforge-known-hosts
+
+          fingerprint="$(
+            ssh-keygen -lf /tmp/sourceforge-known-hosts -E sha256 |
+              awk '{print $2}' |
+              sort -u
+          )"
+
+          test "$fingerprint" = \
+            "SHA256:vDwNztsrZFViJXWpUTSKGo8cF6n79iKAURNiK68n/yE"
+
+          cat /tmp/sourceforge-known-hosts >> ~/.ssh/known_hosts
+
+          cat > ~/.ssh/config <<'EOF'
+          Host git.code.sf.net
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+          EOF
+
+          chmod 600 ~/.ssh/config
+
+      - name: Mirror branches and tags
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SF_REPO: ssh://kder@git.code.sf.net/p/pyproxyswitch/code
+        run: |
+          set -euo pipefail
+
+          git clone --bare \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            mirror.git
+
+          git -C mirror.git push --prune "$SF_REPO" \
+            'refs/heads/*:refs/heads/*' \
+            'refs/tags/*:refs/tags/*'
