@@ -314,7 +314,7 @@ class NativeProxyServer:
             try:
                 host, port = self._parse_authority(target, 443)
                 tunnel_reader, tunnel_writer = await self._open_tunnel(host, port, upstream)
-            except (OSError, asyncio.TimeoutError, ProxyProtocolError, ValueError) as exc:
+            except (OSError, ProxyProtocolError, ValueError) as exc:
                 await self._send_http_error(client_writer, 502, "Bad Gateway")
                 raise ProxyProtocolError(f"CONNECT {target} failed: {exc}") from exc
             try:
@@ -357,7 +357,7 @@ class NativeProxyServer:
             )
             remote_writer.write(outgoing)
             await remote_writer.drain()
-        except (OSError, asyncio.TimeoutError, ProxyProtocolError, ValueError) as exc:
+        except (OSError, ProxyProtocolError, ValueError) as exc:
             if remote_writer is not None:
                 await self._close_writer(remote_writer)
             await self._send_http_error(client_writer, 502, "Bad Gateway")
@@ -407,7 +407,7 @@ class NativeProxyServer:
             )
             port = struct.unpack(">H", raw_port)[0]
             remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             await self._send_socks5_reply(client_writer, 6)
             return
         except (OSError, ProxyProtocolError, ValueError):
@@ -457,7 +457,7 @@ class NativeProxyServer:
             else:
                 host = socket.inet_ntoa(raw_address)
             remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
-        except (OSError, asyncio.TimeoutError, ProxyProtocolError, ValueError):
+        except (OSError, ProxyProtocolError, ValueError):
             client_writer.write(b"\x00\x5b\x00\x00\x00\x00\x00\x00")
             await client_writer.drain()
             return
