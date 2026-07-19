@@ -3,12 +3,13 @@
 .ruff_cache/
 .vscode/
 .mypy_cache/
-utils/
 __pycache__/
 */__pycache__/
+utils/
 htmlcov/
 dist
 PyProxySwitch.build/
+nonexistent_test_dir/
 AGENTS.md
 CLAUDE.md
 compilation-report.xml
@@ -16,9 +17,8 @@ coverage.xml
 .coverage
 *.pyc
 *.log
+logs/*
 *.zip
 *.7z
 *.egg-info/
 *.egg
-logs/*
-nonexistent_test_dir/
