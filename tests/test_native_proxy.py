@@ -367,11 +367,11 @@ def test_start_timeout_cannot_create_a_late_listener() -> None:
     assert server.stop()
 
 
-def dump_client_tasks(server: NativeProxyServer, dumped: threading.Event) -> None:
-    for task in tuple(server._client_tasks):
-        print(f"\nPending client task: {task!r}")
-        task.print_stack()
-    dumped.set()
+#def dump_client_tasks(server: NativeProxyServer, dumped: threading.Event) -> None:
+#    for task in tuple(server._client_tasks):
+#        print(f"\nPending client task: {task!r}")
+#        task.print_stack()
+#    dumped.set()
 
 
 def test_stop_closes_active_client_before_waiting_for_server() -> None:
@@ -380,20 +380,27 @@ def test_stop_closes_active_client_before_waiting_for_server() -> None:
     client = socket.create_connection(("127.0.0.1", server.bound_port), timeout=2)
     stopped = False
     try:
-        client.sendall(b"\x05")
-        wait_step = threading.Event()
-        for _ in range(100):
-            if server._client_tasks:
-                break
-            wait_step.wait(0.01)
-        assert server._client_tasks
+        #client.sendall(b"\x05")
+        #wait_step = threading.Event()
+        #for _ in range(100):
+        #    if server._client_tasks:
+        #        break
+        #    wait_step.wait(0.01)
+        #assert server._client_tasks
 
+        # SOCKS5: 版本 5、一个认证方式、无认证。
+        client.sendall(b"\x05\x01\x00")
+
+        # 收到此响应后，可以确定服务端已完成方法协商。
+        assert client.recv(2) == b"\x05\x00"
+
+        # 服务端此时正在等待后续 4 字节请求头。
         stopped = server.stop(timeout=2)
-        if not stopped:
-            dumped = threading.Event()
-            assert server._loop is not None
-            server._loop.call_soon_threadsafe(dump_client_tasks, server, dumped)
-            dumped.wait(timeout=1)
+        #if not stopped:
+        #    dumped = threading.Event()
+        #    assert server._loop is not None
+        #    server._loop.call_soon_threadsafe(dump_client_tasks, server, dumped)
+        #    dumped.wait(timeout=1)
     finally:
         client.close()
         if not stopped:
