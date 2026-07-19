@@ -25,7 +25,7 @@ Wheel installations store `PPS.conf` and `proxy.txt` in the current user's
 configuration directory, and logs in the current user's log directory. On
 Windows these are under the user's AppData folders, not site-packages.
 
-Requirements: Python 3.10+, PySide6 and platformdirs. The proxy protocol core
+Requirements: Python 3.11+, PySide6 and platformdirs. The proxy protocol core
 itself uses only the Python standard library.
 
 After changing a Qt Designer file under pyproxyswitch/resources, run

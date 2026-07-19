@@ -12,7 +12,7 @@ authors = [
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["proxy", "network", "tool"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -21,7 +21,6 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -108,7 +107,7 @@ version = {attr = "pyproxyswitch._version.__version__"}
 
 [tool.black]
 line-length = 100
-target-version = ["py310"]
+target-version = ["py311"]
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -130,7 +129,7 @@ exclude = '''
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 extend-exclude = [
     "pyproxyswitch/resources/*_ui.py",
     "pyproxyswitch/resources/pps_qrc.py",
@@ -159,7 +158,7 @@ ignore = [
 known-first-party = ["pyproxyswitch"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
