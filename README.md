@@ -94,6 +94,24 @@ pipx uninstall PyProxySwitch
 
 运行 `python tools/generate_i18n.py update` 从 Python 和 `.ui` 文件更新 Qt `.ts` 翻译源，完成翻译后运行 `python tools/generate_i18n.py compile` 生成应用使用的 `.qm` 文件；省略子命令会依次执行这两个阶段。提交前可运行 `python tools/generate_i18n.py --check` 检查所有翻译产物。两个生成脚本都会自动使用当前 Python 环境中的 PySide6 工具，支持 Windows、Linux 和 macOS。
 
+## 发布到 PyPI
+
+`.github/workflows/publish.yml` 会在推送 `v*` 标签时构建 sdist 和 wheel，校验标签与 `pyproxyswitch/_version.py` 中的版本一致，再通过 OIDC 可信发布上传 PyPI。仓库无需保存 API token。
+
+首次发布前，需在 PyPI 的 Trusted Publishers 设置中添加 pending publisher：
+
+- Owner：`Kder`
+- Repository：`PyProxySwitch`
+- Workflow：`publish.yml`
+- Environment：`pypi`
+
+并在 GitHub 仓库 Settings → Environments 中创建 `pypi` 环境。此后更新版本号并运行：
+
+```shell
+git tag v4.0.2
+git push origin v4.0.2
+```
+
 # 系统要求
 
 * 源代码版本：Python 3.11+ 和 PySide6

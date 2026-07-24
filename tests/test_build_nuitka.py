@@ -98,3 +98,8 @@ def test_dry_run_does_not_create_output_or_require_nuitka(
     output = capsys.readouterr().out
     assert "Nuitka portable build" in output
     assert "--standalone" in output
+
+
+def test_clean_rejects_repository_root(build_nuitka):
+    with pytest.raises(SystemExit, match="refusing to clean unsafe"):
+        build_nuitka.clean_output_directory(build_nuitka.REPO_ROOT)

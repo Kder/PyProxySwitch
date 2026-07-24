@@ -100,6 +100,21 @@ application. Running the script without an action performs both stages, and
 file. Both generators use the PySide6 tools from the active Python environment
 and work on Windows, Linux and macOS.
 
+Publishing to PyPI
+==================
+
+`.github/workflows/publish.yml` builds the sdist and wheel for `v*` tags,
+verifies that the tag matches `pyproxyswitch/_version.py`, and publishes to
+PyPI through OIDC trusted publishing. No API token is stored in the repository.
+
+Before the first release, add a pending publisher in PyPI's Trusted Publishers
+settings with owner `Kder`, repository `PyProxySwitch`, workflow
+`publish.yml`, and environment `pypi`. Create the matching `pypi` environment
+under the GitHub repository's Settings > Environments page. Releases then use:
+
+    git tag v4.0.2
+    git push origin v4.0.2
+
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info
 Last Update: 2026-07-18

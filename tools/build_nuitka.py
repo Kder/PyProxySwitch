@@ -191,6 +191,17 @@ def create_portable_zip(staging: Path) -> Path:
     return result
 
 
+def clean_output_directory(output_dir: Path) -> None:
+    """Remove a build output directory after rejecting unsafe broad targets."""
+
+    resolved = output_dir.resolve()
+    repo_root = REPO_ROOT.resolve()
+    protected = {Path(resolved.anchor), repo_root, repo_root.parent, Path.home().resolve()}
+    if resolved in protected or repo_root.is_relative_to(resolved):
+        raise SystemExit(f"error: refusing to clean unsafe output directory: {resolved}")
+    shutil.rmtree(resolved)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--onefile", action="store_true", help="build a single executable")
@@ -226,7 +237,7 @@ def main(argv: list[str] | None = None) -> None:
     validate_build_environment()
     output_dir = Path(args.output_dir).resolve()
     if args.clean and output_dir.exists():
-        shutil.rmtree(output_dir)
+        clean_output_directory(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     subprocess.run(command, cwd=REPO_ROOT, check=True)
