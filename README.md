@@ -16,6 +16,52 @@ PyProxySwitch（PPS）是一个跨平台的上游代理切换程序。4.0 起，
 
 切换上游只原子替换内存中的路由快照，不重启监听套接字或事件循环。已建立连接继续使用切换前的上游，新连接立即使用新上游。
 
+# 安装
+
+```shell
+pip install PyProxySwitch
+```
+
+推荐使用 `pipx` 在隔离环境中安装，同时让命令全局可用：
+
+```shell
+pipx install PyProxySwitch
+```
+
+也可以直接从仓库安装：
+
+```shell
+pip install git+https://github.com/Kder/PyProxySwitch.git
+```
+
+安装后可直接运行 `pyproxyswitch`（图形界面）或 `pyproxyswitch-cli`。
+
+# 卸载
+
+```shell
+pip uninstall PyProxySwitch
+# 使用 pipx 安装时：
+pipx uninstall PyProxySwitch
+```
+
+卸载只移除程序本体与命令入口。按 Python 应用的通行惯例，用户数据会被保留；如需彻底删除，请手动移除以下目录：
+
+- Windows 配置：`%APPDATA%\Kder\PyProxySwitch`（`PPS.conf`、`proxy.txt`）
+- Windows 日志：`%LOCALAPPDATA%\Kder\PyProxySwitch`（或 `PPS.conf` 中 `LOG_PATH` 指定的目录）
+- Linux：`~/.config/PyProxySwitch` 与 `~/.local/state/PyProxySwitch/log`
+- macOS：`~/Library/Application Support/PyProxySwitch` 与 `~/Library/Logs/PyProxySwitch`
+
+使用 `pip`（而非 `pipx`）安装时，依赖包 PySide6、platformdirs 也会保留，不需要时请另行卸载。
+
+# 绿色版（便携模式）
+
+绿色版的配置与日志保存在程序自身目录，不向系统用户目录写入应用数据，“卸载”只需删除程序文件夹。
+
+- **Nuitka 打包版：**运行 `python tools/build_nuitka.py` 生成便携 zip；Windows 下默认为单目录 exe 版，解压即用。包内的 `portable.ini` 标记使配置写入程序目录下的 `config/`、日志写入 `logs/`。删除 `portable.ini` 即恢复使用系统用户目录。
+- **环境变量方式：**任意运行方式（源码、pip、exe）下，将 `PYPROXYSWITCH_HOME` 指向便携目录（例如 U 盘中的文件夹），`PPS.conf`、`proxy.txt` 与 `logs/` 均保存在该目录下。
+
+路径优先级为：`PYPROXYSWITCH_HOME` > `portable.ini`（仅打包后的可执行文件生效）> 系统用户目录。
+
 # 用法
 
 - 解压后运行 `python PyProxySwitch.py`（源代码版本）或者 PyProxySwitch.exe（Windows 可执行文件版本），然后把浏览器或其他应用的 HTTP 或 SOCKS 代理设置为 `127.0.0.1:8888`。右击系统托盘图标即可热切换上游。

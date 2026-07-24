@@ -17,6 +17,66 @@ Changing the selected upstream atomically replaces an in-memory route. The
 listening socket and event loop remain running; existing connections retain
 their original route and new connections immediately use the new route.
 
+Installation
+============
+
+Install from PyPI:
+
+    pip install PyProxySwitch
+
+For an isolated environment with globally available commands, pipx is
+recommended:
+
+    pipx install PyProxySwitch
+
+You can also install directly from the repository:
+
+    pip install git+https://github.com/Kder/PyProxySwitch.git
+
+After installation, run `pyproxyswitch` for the GUI or `pyproxyswitch-cli`
+for the command-line interface.
+
+Uninstallation
+==============
+
+    pip uninstall PyProxySwitch
+    # If installed with pipx:
+    pipx uninstall PyProxySwitch
+
+Uninstallation removes the application and its command entry points. Following
+normal Python application conventions, user data is retained. For a complete
+cleanup, remove these directories manually:
+
+* Windows configuration: `%APPDATA%\Kder\PyProxySwitch` (`PPS.conf` and
+  `proxy.txt`)
+* Windows logs: `%LOCALAPPDATA%\Kder\PyProxySwitch` (or the directory selected
+  by `LOG_PATH` in `PPS.conf`)
+* Linux: `~/.config/PyProxySwitch` and
+  `~/.local/state/PyProxySwitch/log`
+* macOS: `~/Library/Application Support/PyProxySwitch` and
+  `~/Library/Logs/PyProxySwitch`
+
+When installed with pip rather than pipx, dependencies such as PySide6 and
+platformdirs are also retained; uninstall them separately if no longer needed.
+
+Portable mode
+=============
+
+Portable mode keeps configuration and logs inside the application directory
+and does not write application data to per-user system directories. To
+uninstall it, delete the application folder.
+
+* Nuitka build: run `python tools/build_nuitka.py` to produce a portable zip.
+  On Windows the default is a one-directory executable build. The included
+  `portable.ini` marker stores configuration in `config/` and logs in `logs/`
+  next to the executable. Delete `portable.ini` to restore per-user storage.
+* Environment override: for source, pip, or executable runs, set
+  `PYPROXYSWITCH_HOME` to the portable directory. `PPS.conf`, `proxy.txt`, and
+  `logs/` will all be stored there.
+
+The precedence is `PYPROXYSWITCH_HOME`, then `portable.ini` for frozen
+executables, then the operating system's per-user directories.
+
 Run `python PyProxySwitch.py`, point an application's HTTP or SOCKS proxy to
 127.0.0.1:8888, then choose an upstream from the system tray. The default bind
 address is loopback-only for safety.
