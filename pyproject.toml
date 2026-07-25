@@ -79,8 +79,8 @@ ignore_errors = true
 
 [project.urls]
 Homepage = "http://pyproxyswitch.kder.info"
-Repository = "https://github.com/kderlin/PyProxySwitch"
-"Bug Reports" = "https://github.com/kderlin/PyProxySwitch/issues"
+Repository = "https://github.com/kder/PyProxySwitch"
+"Bug Reports" = "https://github.com/kder/PyProxySwitch/issues"
 
 [project.gui-scripts]
 pyproxyswitch = "pyproxyswitch.main:main"
