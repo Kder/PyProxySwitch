@@ -121,8 +121,8 @@ PyInstaller 等冻结程序生效。冻结检测兼容 `sys.frozen` 与 Nuitka �
 
 ## 4. 验证记录
 
-所有 Python 命令均使用项目指定解释器
-`D:\apps\python312\python.exe`。
+本节记录初始改造时使用 Python 3.12 完成的验证；当前项目的 Python
+3.14 uv 验证见第 7 节。
 
 ### 4.1 全量自动测试
 
@@ -221,3 +221,55 @@ D:\apps\python312\python.exe tools\build_nuitka.py --clean
 构建脚本重新生成的忽略产物。迁移后重新执行真实 Nuitka 构建并启动
 `release/` 中的 exe，配置、代理列表和日志仍正确创建在绿色版目录中，
 zip CRC 检查通过，共 447 项。
+
+## 7. uv 系统 Python 3.14 复测
+
+项目 `.python-version` 当前固定为 `3.14`。执行：
+
+```text
+uv python find --system --no-managed-python --no-python-downloads \
+  --resolve-links 3.14
+```
+
+uv `0.11.21` 定位到系统解释器：
+
+```text
+C:\Users\216\AppData\Local\Programs\Python\Python314\python.exe
+```
+
+该解释器版本为 Python `3.14.0`。使用它作为 uv 项目环境的基础解释器，
+`.venv` 中的 `sys._base_executable` 已核对为上述路径。依赖使用以下命令
+按现有锁文件同步，没有改写锁文件：
+
+```text
+uv sync --frozen --python <系统 Python 3.14 路径> --extra dev
+```
+
+首次 Python 3.14 全量测试发现一个 Windows Proactor 关闭竞态：
+对端先关闭套接字时，CPython 3.14 的连接丢失回调可能抛出
+`WinError 10022`，使 transport 未从 `asyncio.Server` 脱离，
+`Server.wait_closed()` 因此无法返回。修复在所有客户端任务完成后对
+server 关闭等待设置上限，并在超时时中止残留 transport，避免代理线程
+停止超时。新增了永不脱离 transport 的回归测试，原失败场景另连续重复
+执行 20 次，全部通过。
+
+最终 Python 3.14 验证结果：
+
+| 检查 | 结果 |
+|---|---|
+| 完整 pytest + coverage | `204 passed`，总覆盖率 `75.28%` |
+| 原失败 SOCKS5 场景重复 20 次 | 全部通过 |
+| `ruff check .` | 通过 |
+| `mypy pyproxyswitch --ignore-missing-imports` | 24 个源文件通过 |
+| UI / i18n 生成一致性 | 通过 |
+| sdist / wheel 构建 | 通过，`dist/` 仍仅含 `.whl`、`.tar.gz` |
+| Nuitka `--dry-run` | 通过 |
+
+另使用 uv 的 Python 3.14 基础环境和 Nuitka `4.1.3` 完成真实 Windows
+standalone 构建。Nuitka 将 Python 3.14 标记为实验性支持，但构建成功；
+启动生成的绿色版后 `config/PPS.conf`、`config/proxy.txt` 和日志均正确
+创建，portable zip CRC 检查通过，共 444 项。
+
+根目录 `AGENTS.md` 已更新并纳入 Git 跟踪，后续 Python 命令要求先用 uv
+定位非 uv 托管的系统 Python 3.14，再通过 `uv run --python
+<resolved-path>` 执行；旧的固定 Python 3.12 路径约定已移除。

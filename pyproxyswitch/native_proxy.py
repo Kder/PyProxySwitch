@@ -31,6 +31,7 @@ _HEADER_LIMIT = 64 * 1024
 _WRITE_HIGH_WATER = 2 * 1024 * 1024
 _WRITE_LOW_WATER = 512 * 1024
 _WRITER_CLOSE_TIMEOUT = 0.25
+_SERVER_CLOSE_TIMEOUT = 0.5
 _SUPPORTED_TYPES = frozenset({"DIRECT", "HTTP", "SOCKS4", "SOCKS5"})
 _HTTP_TOKEN_CHARS = frozenset(
     "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -259,7 +260,7 @@ class NativeProxyServer:
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
             if server is not None:
-                await server.wait_closed()
+                await self._wait_for_server_closed(server)
 
     async def _handle_client(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -916,6 +917,26 @@ class NativeProxyServer:
             raise
         except Exception:
             NativeProxyServer._abort_writer(writer)
+
+    @staticmethod
+    async def _wait_for_server_closed(server: asyncio.AbstractServer) -> None:
+        """Bound shutdown when a platform transport fails to detach cleanly.
+
+        CPython 3.14's Windows Proactor transport can raise ``WSAEINVAL`` while
+        closing a peer-disconnected socket. The failed callback then leaves the
+        transport attached to ``Server`` and ``wait_closed()`` never returns.
+        Client handler tasks have already been cancelled and awaited here, so a
+        bounded wait followed by transport abortion safely lets the event loop
+        finish instead of hanging the proxy thread.
+        """
+
+        try:
+            await asyncio.wait_for(server.wait_closed(), timeout=_SERVER_CLOSE_TIMEOUT)
+        except TimeoutError:
+            abort_clients = getattr(server, "abort_clients", None)
+            if callable(abort_clients):
+                abort_clients()
+            logger.debug("Timed out waiting for proxy transports to detach during shutdown")
 
     @staticmethod
     def _abort_writer(writer: asyncio.StreamWriter) -> None:

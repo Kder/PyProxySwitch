@@ -13,7 +13,6 @@ dist/
 release/
 PyProxySwitch.build/
 nonexistent_test_dir/
-AGENTS.md
 CLAUDE.md
 compilation-report.xml
 coverage.xml

@@ -439,6 +439,27 @@ def test_close_writer_aborts_a_stalled_transport() -> None:
     assert writer.transport.aborted
 
 
+def test_server_close_wait_is_bounded_when_transport_never_detaches() -> None:
+    class StalledServer:
+        def __init__(self) -> None:
+            self.aborted = False
+
+        async def wait_closed(self) -> None:
+            await asyncio.Event().wait()
+
+        def abort_clients(self) -> None:
+            self.aborted = True
+
+    server = StalledServer()
+
+    async def run_test() -> None:
+        await asyncio.wait_for(NativeProxyServer._wait_for_server_closed(server), timeout=1)
+
+    asyncio.run(run_test())
+
+    assert server.aborted
+
+
 def test_http_upgrade_headers_are_forwarded() -> None:
     server = NativeProxyServer()
 
