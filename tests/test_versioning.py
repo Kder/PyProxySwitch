@@ -36,6 +36,9 @@ def test_publish_workflow_is_tag_only_and_checks_artifact_metadata() -> None:
     assert "Verify tag matches distribution metadata" in workflow
     assert 'expected "${GITHUB_REF_NAME#v}"' in workflow
     assert "tools/verify_release_artifacts.py" in workflow
+    assert "tools/sync_release_docs.py" in workflow
+    assert '--expected-version "${GITHUB_REF_NAME#v}"' in workflow
+    assert "submodules: true" in workflow
 
 
 def test_release_procedure_is_kept_out_of_user_readmes() -> None:
@@ -51,3 +54,6 @@ def test_release_procedure_is_kept_out_of_user_readmes() -> None:
     assert "Git tag 是正式版本的唯一来源" in release_guide
     assert ".github/workflows/publish.yml" in release_guide
     assert "include RELEASING.md" in manifest
+    assert "include CHANGELOG.md" in manifest
+    assert "include releases.toml" in manifest
+    assert "prune htdocs" in manifest

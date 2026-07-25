@@ -11,6 +11,10 @@ on:
       - 'PyProxySwitch.py'
       - 'i18n/**'
       - 'tools/**'
+      - 'releases.toml'
+      - 'CHANGELOG.md'
+      - 'htdocs'
+      - '.gitmodules'
       - '.github/workflows/**'
   pull_request:
     branches: [master, develop]
@@ -22,6 +26,10 @@ on:
       - 'PyProxySwitch.py'
       - 'i18n/**'
       - 'tools/**'
+      - 'releases.toml'
+      - 'CHANGELOG.md'
+      - 'htdocs'
+      - '.gitmodules'
       - '.github/workflows/**'
 
 jobs:
@@ -30,11 +38,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Verify generated release documentation
+        run: |
+          python tools/sync_release_docs.py --check
+
+      - name: Validate website
+        run: |
+          python htdocs/tools/validate_site.py
 
       - name: Install Linux packages
         if: runner.os == 'Linux'

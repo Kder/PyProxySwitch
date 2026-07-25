@@ -6,7 +6,6 @@
 __pycache__/
 */__pycache__/
 utils/
-htdocs/
 htmlcov/
 build/
 dist/

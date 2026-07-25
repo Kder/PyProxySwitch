@@ -123,6 +123,7 @@ exclude = '''
   | buck-out
   | build
   | dist
+  | htdocs
   | utils
   | __pycache__
 )/
@@ -132,6 +133,7 @@ exclude = '''
 line-length = 100
 target-version = "py311"
 extend-exclude = [
+    "htdocs",
     "pyproxyswitch/resources/*_ui.py",
     "pyproxyswitch/resources/pps_qrc.py",
 ]

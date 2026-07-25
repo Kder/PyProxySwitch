@@ -105,5 +105,5 @@ and work on Windows, Linux and macOS.
 
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info
-Last Update: 2026-07-18
+Changelog: CHANGELOG.md
 License: Apache License, Version 2.0

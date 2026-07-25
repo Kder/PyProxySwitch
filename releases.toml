@@ -1,0 +1,296 @@
+# Canonical release metadata for generated changelogs and website pages.
+# Keep releases newest-first. Dates are explicit TOML local dates; never derive
+# them from the day on which the generator happens to run.
+
+[[release]]
+version = "4.0.2"
+date = 2026-07-25
+summary_zh = "完善版本和发布自动化。"
+summary_en = "Improve version and release automation."
+changes_zh = [
+    "以 Git tag 作为唯一版本源，由 setuptools-scm 自动生成运行时版本。",
+    "发布工作流在上传 PyPI 前校验 wheel 与 sdist 的版本元数据。",
+    "规范 Nuitka 输出目录，dist 仅保留 wheel 和 sdist。",
+    "修复 Python 3.14 下 Windows Proactor 关闭竞态。",
+]
+changes_en = [
+    "Use Git tags as the sole version source and generate the runtime version with setuptools-scm.",
+    "Validate wheel and sdist version metadata before publishing to PyPI.",
+    "Standardize Nuitka output directories and reserve dist for wheels and sdists.",
+    "Fix a Windows Proactor shutdown race on Python 3.14.",
+]
+
+[[release]]
+version = "4.0.1"
+date = 2026-07-18
+summary_zh = "清理旧代理后端和二进制遗留，将配置与日志迁移到正确的用户目录，并补强代理生命周期边界。"
+summary_en = "Remove legacy proxy backends and binaries, move configuration and logs to per-user directories, and harden proxy lifecycle boundaries."
+changes_zh = [
+    "清理旧版第三方二进制、后端配置生成器和过时测试。",
+    "统一将 PPS.conf 与 proxy.txt 放入当前用户配置目录，日志使用当前用户日志目录。",
+    "补强协议解析、认证校验、原子持久化、监听回退和连接半关闭处理。",
+    "增加跨平台 UI 与翻译生成工具及 Python 3.11–3.14 CI。",
+]
+changes_en = [
+    "Remove legacy third-party binaries, backend configuration generators, and obsolete tests.",
+    "Store PPS.conf and proxy.txt in the current user's configuration directory and logs in the user log directory.",
+    "Harden protocol parsing, authentication, atomic persistence, listener fallback, and half-close handling.",
+    "Add cross-platform UI and translation generators and Python 3.11–3.14 CI.",
+]
+
+[[release]]
+version = "4.0.0"
+date = 2026-07-17
+summary_zh = "使用 Python 标准库重写本地 HTTP/SOCKS 代理核心，实现无需重启监听器的上游热切换。"
+summary_en = "Rewrite the local HTTP/SOCKS proxy core with the Python standard library and add upstream hot switching without listener restarts."
+changes_zh = [
+    "一个端口自动识别 HTTP、SOCKS4/SOCKS4a 与 SOCKS5 客户端。",
+    "支持 HTTP、SOCKS4、SOCKS5 上游及 NoProxy 直连。",
+    "支持 HTTP Basic 与 SOCKS5 用户名/密码认证。",
+    "移除运行时对 3proxy、polipo 与 IP Relay 的依赖。",
+]
+changes_en = [
+    "Detect HTTP, SOCKS4/SOCKS4a, and SOCKS5 clients on one local port.",
+    "Support HTTP, SOCKS4, SOCKS5, and direct NoProxy upstream routing.",
+    "Support HTTP Basic and SOCKS5 username/password authentication.",
+    "Remove runtime dependencies on 3proxy, polipo, and IP Relay.",
+]
+
+[[release]]
+version = "3.9.0"
+summary_zh = "重构用户界面，改进配置管理、日志、自定义路径和命令行参数支持。"
+summary_en = "Refactor the user interface and improve configuration, logging, custom paths, and command-line arguments."
+
+[[release]]
+version = "3.8.0"
+date = 2026-03-17
+summary_zh = "重构代码，改进进程处理、异常处理和日志功能。"
+summary_en = "Refactor the codebase and improve process handling, exception handling, and logging."
+
+[[release]]
+version = "3.7"
+date = 2026-03-09
+summary_zh = "图形界面迁移至 PySide6。"
+summary_en = "Migrate the graphical interface to PySide6."
+
+[[release]]
+version = "3.6"
+date = 2026-03-08
+summary_zh = "新增严格的代理参数验证，推进现代 Qt 迁移，重构配置并移除过时构建脚本。"
+summary_en = "Add strict proxy validation, advance the modern Qt migration, refactor configuration, and remove obsolete build scripts."
+
+[[release]]
+version = "3.5.2"
+date = 2011-03-26
+summary_zh = "修复 Windows 启动时找不到模块、Python 3.2 输入兼容和路径处理问题。"
+summary_en = "Fix missing modules on Windows startup, Python 3.2 input compatibility, and path handling."
+
+[[release]]
+version = "3.5.1"
+summary_zh = "移除 Windows 版 3proxy，完善中文路径支持并修复 IP Relay 启动问题。"
+summary_en = "Remove 3proxy from Windows builds, improve non-ASCII path support, and fix IP Relay startup."
+
+[[release]]
+version = "3.5"
+date = 2011-03-02
+summary_zh = "增加图形化批量代理管理，改用 tableView，并重构异常处理和界面布局。"
+summary_en = "Add graphical bulk proxy management, switch to tableView, and refactor exception handling and layout."
+
+[[release]]
+version = "3.4.0"
+date = 2011-02-25
+summary_zh = "改进配置结构，直接使用 proxy.txt，增加输入验证并修复重复配置对话框。"
+summary_en = "Revise the configuration format, use proxy.txt directly, add input validation, and prevent duplicate configuration dialogs."
+
+[[release]]
+version = "3.3.2"
+date = 2011-02-24
+summary_zh = "修复托盘右键菜单，更新 README，并优化菜单刷新时机。"
+summary_en = "Fix the tray context menu, update the README, and optimize menu refresh timing."
+
+[[release]]
+version = "3.3.1"
+summary_zh = "更新配置文件结构，增加 PPS.conf 示例并完善中文支持。"
+summary_en = "Update the configuration structure, add a PPS.conf example, and improve Chinese support."
+
+[[release]]
+version = "3.3.0"
+date = 2011-02-21
+summary_zh = "重构代码并移除大部分不必要的全局变量。"
+summary_en = "Refactor the code and remove most unnecessary global variables."
+
+[[release]]
+version = "3.2.1"
+date = 2011-02-20
+summary_zh = "改用 JSON 配置，合并 GUI 配置代码并完善国际化。"
+summary_en = "Adopt JSON configuration, merge GUI configuration code, and improve internationalization."
+
+[[release]]
+version = "3.1.2"
+date = 2011-02-19
+summary_zh = "增加图形界面配置工具，完善国际化并改进架构。"
+summary_en = "Add a graphical configuration tool, improve internationalization, and refine the architecture."
+
+[[release]]
+version = "2.1.1"
+summary_zh = "改进批量添加代理流程，移除过时批处理脚本并重构配置工具。"
+summary_en = "Improve bulk proxy entry, remove obsolete batch scripts, and refactor the configuration tool."
+
+[[release]]
+version = "2.1.0"
+summary_zh = "增加 Python 2.7 支持，同时兼容 Python 3.1 与 PyQt 4.7。"
+summary_en = "Add Python 2.7 support alongside Python 3.1 and PyQt 4.7 compatibility."
+
+[[release]]
+version = "2.0"
+summary_zh = "里程碑版本：迁移至 Python 3.x 和 PyQt。"
+summary_en = "Milestone release: migrate to Python 3.x and PyQt."
+
+[[release]]
+version = "1.1.1"
+date = 2010-08-07
+summary_zh = "调整 Windows 目录结构，修复中文路径启动问题并改用 cx_Freeze。"
+summary_en = "Revise the Windows layout, fix non-ASCII path startup, and switch to cx_Freeze."
+
+[[release]]
+version = "1.1.0"
+date = 2010-08-05
+summary_zh = "更新 polipo 并修复启动时未自动运行的问题。"
+summary_en = "Update polipo and fix failure to start it automatically."
+
+[[release]]
+version = "1.0.9"
+date = 2010-04-15
+summary_zh = "从 Windows 包移除 3proxy，并将 polipo 设为默认后端。"
+summary_en = "Remove 3proxy from Windows packages and make polipo the default backend."
+
+[[release]]
+version = "1.0.8"
+summary_zh = "统一文件编码为 UTF-8，增强中文支持。"
+summary_en = "Convert files to UTF-8 and improve Chinese support."
+
+[[release]]
+version = "1.0.7"
+summary_zh = "支持需要认证的代理。"
+summary_en = "Add support for authenticated proxies."
+
+[[release]]
+version = "1.0.6"
+summary_zh = "修复 IP Relay 模式无法启动的问题。"
+summary_en = "Fix startup in IP Relay mode."
+
+[[release]]
+version = "1.0.5"
+summary_zh = "修复 Linux 平台问题。"
+summary_en = "Fix Linux platform issues."
+
+[[release]]
+version = "1.0.3"
+date = 2009-10-15
+summary_zh = "改进启动方式、隐藏控制台窗口并精简代码。"
+summary_en = "Improve startup, hide the console window, and simplify the code."
+
+[[release]]
+version = "1.0.2"
+date = 2009-10-06
+summary_zh = "改进 Windows 控制台隐藏并修复 3proxy 配置错误。"
+summary_en = "Improve Windows console hiding and fix a 3proxy configuration error."
+
+[[release]]
+version = "1.0.1"
+date = 2009-09-26
+summary_zh = "代理名称支持中文。"
+summary_en = "Allow Chinese proxy names."
+
+[[release]]
+version = "1.0"
+date = 2009-09-25
+summary_zh = "里程碑版本：在 Windows 上实现批量添加和删除代理。"
+summary_en = "Milestone release: add bulk proxy creation and deletion on Windows."
+
+[[release]]
+version = "0.9.9.9"
+date = 2009-09-24
+summary_zh = "修复多项问题并改进程序目录结构。"
+summary_en = "Fix several bugs and improve the application directory layout."
+
+[[release]]
+version = "0.9.9.8"
+date = 2009-09-23
+summary_zh = "新增命令行代理配置工具。"
+summary_en = "Add a command-line proxy configuration tool."
+
+[[release]]
+version = "0.9.9.7"
+date = 2009-09-22
+summary_zh = "修复 Windows 版读取配置文件的问题。"
+summary_en = "Fix configuration file loading on Windows."
+
+[[release]]
+version = "0.9.9.6"
+date = 2009-09-20
+summary_zh = "初步实现中英文界面切换。"
+summary_en = "Add initial Chinese and English interface switching."
+
+[[release]]
+version = "0.9.9.5"
+date = 2009-09-16
+summary_zh = "修复 py2exe 构建问题并进行多项小改进。"
+summary_en = "Fix py2exe build issues and make several minor improvements."
+
+[[release]]
+version = "0.9.9.3"
+date = 2009-09-12
+summary_zh = "重构代码并加入 polipo Linux 二进制。"
+summary_en = "Refactor the code and add the polipo Linux binary."
+
+[[release]]
+version = "0.9.9.1"
+summary_zh = "增加 polipo 支持。"
+summary_en = "Add polipo support."
+
+[[release]]
+version = "0.9.9"
+summary_zh = "修复问题并提高 Arch Linux、Slackware 和 Windows XP 兼容性。"
+summary_en = "Fix bugs and improve compatibility with Arch Linux, Slackware, and Windows XP."
+
+[[release]]
+version = "0.9.8"
+summary_zh = "修复 Linux Python 2.6 之前版本的兼容问题。"
+summary_en = "Fix compatibility issues on Linux with Python versions before 2.6."
+
+[[release]]
+version = "0.9.7"
+summary_zh = "使用 Python 文件作为可扩展配置格式。"
+summary_en = "Use Python files as an extensible configuration format."
+
+[[release]]
+version = "0.9.6"
+summary_zh = "改进配置文件结构及其读写逻辑。"
+summary_en = "Improve the configuration structure and read/write logic."
+
+[[release]]
+version = "0.9.5"
+summary_zh = "更名为 PyProxySwitch，并同时支持 3proxy 和 IP Relay。"
+summary_en = "Rename the project to PyProxySwitch and support both 3proxy and IP Relay."
+
+[[release]]
+version = "0.9.3"
+summary_zh = "重构并增加平台相关代码。"
+summary_en = "Refactor and add platform-specific code."
+
+[[release]]
+version = "0.9.2"
+summary_zh = "支持读取配置、添加代理和自动保存设置。"
+summary_en = "Support loading configuration, adding proxies, and saving settings automatically."
+
+[[release]]
+version = "0.9.1"
+summary_zh = "改进数据结构并精简代码。"
+summary_en = "Improve data structures and simplify the code."
+
+[[release]]
+version = "0.9.0"
+date = 2009-08-20
+summary_zh = "解决 CreatePopupMenu 问题。"
+summary_en = "Fix the CreatePopupMenu issue."

@@ -22,11 +22,18 @@
 
 ## 发布检查
 
-1. 从 `master` 的干净工作区开始，拉取远端最新提交。
-2. 确认变更记录和文档已经更新。
-3. 按 `AGENTS.md` 的要求，通过 uv 定位的系统 Python 3.14 同步锁定依赖。
-4. 运行完整测试、Ruff、mypy、UI 生成检查和翻译生成检查。
-5. 确认准备发布的提交已经推送且 GitHub Tests 工作流通过。
+1. 从 `master` 的干净工作区开始，拉取远端和 `htdocs` submodule 的最新提交。
+2. 在 `releases.toml` 顶部添加新版本、明确的发布日期、中英文摘要和变更项。
+3. 按 `AGENTS.md` 的要求，通过 uv 定位的系统 Python 3.14 同步发布文档：
+
+   ```powershell
+   uv run --python <系统 Python 3.14 路径> python tools/sync_release_docs.py --write
+   uv run --python <系统 Python 3.14 路径> python tools/sync_release_docs.py --check --expected-version X.Y.Z
+   ```
+
+4. 运行完整测试、Ruff、mypy、UI 生成检查、翻译生成检查和网站校验。
+5. 先提交并推送 `htdocs`，再在主仓库提交更新后的 submodule 指针和其他改动。
+6. 确认准备发布的提交已经推送且 GitHub Tests 工作流通过。
 
 ## 创建版本
 
@@ -41,6 +48,10 @@ git push origin vX.Y.Z
 ```
 
 `.github/workflows/publish.yml` 仅由 `v[0-9]*` 标签触发。工作流获取完整 Git 历史，构建 wheel 和 sdist，并在 OIDC 上传 PyPI 前校验两个制品的版本元数据都与标签一致。
+
+发布工作流还会要求标签版本等于 `releases.toml` 的首个版本，并检查
+`CHANGELOG.md` 和网站生成文件没有过期。发布日期只读取
+`releases.toml`，不会使用工作流运行当天。
 
 ## 发布失败
 

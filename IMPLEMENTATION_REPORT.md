@@ -261,7 +261,7 @@ server 关闭等待设置上限，并在超时时中止残留 transport，避免
 
 | 检查 | 结果 |
 |---|---|
-| 完整 pytest + coverage | `209 passed`，总覆盖率 `75.36%` |
+| 完整 pytest + coverage | `215 passed`，总覆盖率 `75.36%` |
 | 原失败 SOCKS5 场景重复 20 次 | 全部通过 |
 | `ruff check .` | 通过 |
 | `mypy pyproxyswitch --ignore-missing-imports` | 24 个源文件通过 |
@@ -303,3 +303,29 @@ standalone 构建。Nuitka 将 Python 3.14 标记为实验性支持，但构建�
 本次只完成版本与发布自动化，没有创建或推送正式版本标签，也没有触发
 PyPI 发布。正式发布应在干净、已验证的提交上创建签名且不可复用的
 `vX.Y.Z` 标签，然后单独推送该标签。
+
+## 9. 发布记录与网站文档自动化
+
+新增 `releases.toml` 作为发布文档的单一数据源，按新到旧记录版本号、
+明确的发布日期、中英文摘要和中英文变更项。历史 README 记录已迁入该
+文件，README 本身只保留稳定的 `CHANGELOG.md` 入口，不再维护容易过期的
+“最近更新”字段或重复的完整版本历史。
+
+`tools/sync_release_docs.py` 仅使用 Python 标准库，支持：
+
+- `--write`：确定性生成根目录 `CHANGELOG.md`、网站 `changelog.html`、
+  `news.html`、首页版本日期及其他明确标记的当前版本字段；
+- `--check`：逐文件比较预期内容并输出 unified diff，文件过期时返回非零；
+- `--expected-version`：要求数据源首个版本与准备发布的版本或标签一致；
+- 校验版本唯一性、新到旧顺序、最新版本发布日期以及中英文变更项配对。
+
+`htdocs` 作为带独立 remote 的 submodule 继续单独维护历史。发布文档更新
+时先提交并推送网站仓库，再由主仓库提交新的 submodule 指针。Tests 和
+PyPI 发布工作流均以 `submodules: true` 检出网站；前者持续检查生成内容
+与网站链接，后者额外要求 tag、`releases.toml` 和发行包元数据三者一致。
+
+系统 Python 3.14 验证包括 215 项完整测试、Ruff、mypy、UI/i18n 生成检查、
+发布文档幂等检查和 43 个 HTML 页面的本地链接检查。临时 sdist/wheel
+构建确认 `CHANGELOG.md`、`releases.toml` 和生成器进入 sdist；网站
+submodule 通过 `MANIFEST.in` 明确排除，不会扩大 Python 发行包。本次没有
+创建 `v4.0.3` 标签，当前数据源最新正式版本仍为 `4.0.2`。
