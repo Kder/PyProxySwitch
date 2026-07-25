@@ -127,7 +127,10 @@ def validate_build_environment() -> None:
     """Fail early when a required platform build tool is clearly unavailable."""
 
     if importlib.util.find_spec("nuitka") is None:
-        raise SystemExit("error: Nuitka is not installed. Run: pip install nuitka")
+        raise SystemExit(
+            "error: Nuitka is not installed. Run: "
+            "uv run --group build python tools/build_nuitka.py"
+        )
 
     if sys.platform == "darwin" and shutil.which("clang") is None:
         raise SystemExit("error: clang not found; install the Xcode command line tools")

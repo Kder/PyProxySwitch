@@ -66,7 +66,9 @@ Portable mode keeps configuration and logs inside the application directory
 and does not write application data to per-user system directories. To
 uninstall it, delete the application folder.
 
-* Nuitka build: run `python tools/build_nuitka.py` to produce a portable zip.
+* Nuitka build: run
+  `uv run --group build python tools/build_nuitka.py`; uv installs Nuitka
+  from the project's `build` dependency group and produces a portable zip.
   On Windows the default is a one-directory executable build. Nuitka
   intermediates are written to `build/nuitka/`, while distributable folders
   and zips are written to `release/`; `dist/` remains reserved for Python

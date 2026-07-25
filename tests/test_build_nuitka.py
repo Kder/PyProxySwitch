@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import sys
+import tomllib
 import zipfile
 from pathlib import Path
 
@@ -43,6 +44,17 @@ def test_load_version_matches_package(build_nuitka):
     from pyproxyswitch._version import __version__
 
     assert __version__ == build_nuitka.load_version()
+
+
+def test_nuitka_is_declared_in_uv_build_dependency_group():
+    config = tomllib.loads(
+        (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+    )
+
+    assert any(
+        requirement.lower().startswith("nuitka")
+        for requirement in config["dependency-groups"]["build"]
+    )
 
 
 @pytest.mark.parametrize(
