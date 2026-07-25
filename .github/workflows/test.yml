@@ -32,6 +32,9 @@ on:
       - '.gitmodules'
       - '.github/workflows/**'
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint
