@@ -3,6 +3,26 @@
 
 本文件由 `releases.toml` 自动生成。This file is generated from `releases.toml`.
 
+## 4.0.3 — 2026-07-25
+
+### 中文
+
+完善网站子模块、发布文档和 Windows 可执行版国际化。
+
+- 将 htdocs 配置为独立网站子模块，并同步最新中英文使用文档。
+- 以 releases.toml 自动生成 CHANGELOG 和网站更新内容，并在 CI 中校验发布标签。
+- 修正项目仓库与问题反馈链接，将维护者发布流程移至 RELEASING.md。
+- 修复 Nuitka 的 Qt 翻译目录，使 exe 标准按钮正确显示中文。
+
+### English
+
+Improve the website submodule, release documentation, and Windows executable localization.
+
+- Configure htdocs as an independent website submodule and synchronize the latest Chinese and English usage documentation.
+- Generate the changelog and website updates from releases.toml and validate release tags in CI.
+- Correct the repository and issue tracker links and move the maintainer release workflow to RELEASING.md.
+- Fix Nuitka's Qt translation directory so standard buttons are localized in the executable.
+
 ## 4.0.2 — 2026-07-25
 
 ### 中文
