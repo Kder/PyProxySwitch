@@ -92,7 +92,11 @@ def build_command(args: argparse.Namespace, version: str) -> list[str]:
 
     translations = qt_translations_dir()
     if translations is not None:
-        command.append(f"--include-data-dir={translations}=PySide6/Qt/translations")
+        # Nuitka patches QLibraryInfo.TranslationsPath to
+        # ``<bundle>/PySide6/translations``. Keep Qt's catalogs at that exact
+        # runtime path so QTranslator can find qtbase_zh_CN.qm and translate
+        # standard buttons such as OK, Cancel and Close.
+        command.append(f"--include-data-dir={translations}=PySide6/translations")
 
     if args.onefile:
         command.append("--onefile")

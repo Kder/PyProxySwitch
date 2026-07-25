@@ -71,6 +71,19 @@ def test_build_command_contains_portable_runtime_data(build_nuitka, monkeypatch,
     assert str(build_nuitka.MAIN_SCRIPT) == command[-1]
 
 
+def test_build_command_places_qt_catalogs_at_runtime_translation_path(
+    build_nuitka, monkeypatch, tmp_path
+):
+    translations = tmp_path / "qt-translations"
+    translations.mkdir()
+    monkeypatch.setattr(build_nuitka, "qt_translations_dir", lambda: translations)
+
+    command = build_nuitka.build_command(_args(tmp_path / "output"), "4.0.1")
+
+    assert f"--include-data-dir={translations}=PySide6/translations" in command
+    assert not any("=PySide6/Qt/translations" in item for item in command)
+
+
 def test_default_directories_keep_python_dist_clean(build_nuitka):
     args = build_nuitka.parse_args([])
 
