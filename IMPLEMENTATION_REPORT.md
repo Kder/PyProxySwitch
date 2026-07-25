@@ -34,7 +34,7 @@
 - 发布任务使用 `pypi` environment 和 OIDC `id-token: write`；
 - 使用 `pypa/gh-action-pypi-publish@release/v1`，仓库无需保存 PyPI API token。
 
-README 已记录首次发布前的外部一次性配置：
+维护者文档 `RELEASING.md` 已记录首次发布前的外部一次性配置：
 
 - PyPI pending publisher：owner `Kder`、repository `PyProxySwitch`、
   workflow `publish.yml`、environment `pypi`；

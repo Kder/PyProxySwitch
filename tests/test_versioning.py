@@ -36,3 +36,18 @@ def test_publish_workflow_is_tag_only_and_checks_artifact_metadata() -> None:
     assert "Verify tag matches distribution metadata" in workflow
     assert 'expected "${GITHUB_REF_NAME#v}"' in workflow
     assert "tools/verify_release_artifacts.py" in workflow
+
+
+def test_release_procedure_is_kept_out_of_user_readmes() -> None:
+    chinese_readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    english_readme = (REPO_ROOT / "README_EN.txt").read_text(encoding="utf-8")
+    release_guide = (REPO_ROOT / "RELEASING.md").read_text(encoding="utf-8")
+    manifest = (REPO_ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+
+    assert "## 发布到 PyPI" not in chinese_readme
+    assert "Publishing to PyPI" not in english_readme
+    assert "Trusted Publishers" not in chinese_readme
+    assert "Trusted Publishers" not in english_readme
+    assert "Git tag 是正式版本的唯一来源" in release_guide
+    assert ".github/workflows/publish.yml" in release_guide
+    assert "include RELEASING.md" in manifest
