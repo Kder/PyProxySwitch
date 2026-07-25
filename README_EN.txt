@@ -106,17 +106,30 @@ and work on Windows, Linux and macOS.
 Publishing to PyPI
 ==================
 
-`.github/workflows/publish.yml` builds the sdist and wheel for `v*` tags,
-verifies that the tag matches `pyproxyswitch/_version.py`, and publishes to
-PyPI through OIDC trusted publishing. No API token is stored in the repository.
+Git tags are the sole authoritative version source. During a build,
+setuptools-scm derives the version from the tag and Git history and generates
+`pyproxyswitch/_version.py`; do not edit or commit that generated file. A build
+exactly at tag `v4.0.2` has version `4.0.2`, while later commits receive a
+PEP 440 development version.
+
+`.github/workflows/publish.yml` builds only for `v[0-9]*` tags. It reads the
+version metadata from both the sdist and wheel, verifies both against the tag,
+and publishes to PyPI through OIDC trusted publishing. No API token is stored
+in the repository.
 
 Before the first release, add a pending publisher in PyPI's Trusted Publishers
 settings with owner `Kder`, repository `PyProxySwitch`, workflow
 `publish.yml`, and environment `pypi`. Create the matching `pypi` environment
-under the GitHub repository's Settings > Environments page. Releases then use:
+under the GitHub repository's Settings > Environments page. After preparing
+and testing the release commit, create a signed annotated tag:
 
-    git tag v4.0.2
+    git switch master
+    git pull --ff-only
+    git tag -s v4.0.2 -m "PyProxySwitch 4.0.2"
     git push origin v4.0.2
+
+Never move or reuse a published tag. A fix after a failed release must use a
+new version.
 
 Author: Kder <kderlin (#) gmail dot com>
 Project Website: http://pyproxyswitch.kder.info

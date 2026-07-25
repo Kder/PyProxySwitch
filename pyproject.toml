@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.0", "wheel"]
+requires = ["setuptools>=77.0.0", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -95,8 +95,8 @@ include-package-data = true
 where = ["."]
 include = ["pyproxyswitch*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "pyproxyswitch._version.__version__"}
+[tool.setuptools_scm]
+version_file = "pyproxyswitch/_version.py"
 
 [tool.setuptools.package-data]
 "pyproxyswitch.data" = [

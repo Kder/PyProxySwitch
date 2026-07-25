@@ -17,7 +17,8 @@
 4. 新增可真实生成 Windows 绿色版目录和 zip 的 Nuitka 构建脚本；
 5. 新增便携路径与构建工具测试，并完成全量回归；
 6. 将 Nuitka 构建脚本纳入 sdist；
-7. 使用 Git 分阶段提交并推送到 `origin/master`。
+7. 使用 Git 分阶段提交并推送到 `origin/master`；
+8. 以 Git 标签作为唯一版本源，自动生成运行时版本模块。
 
 ## 2. 需求与实现对照
 
@@ -25,8 +26,10 @@
 
 文件：`.github/workflows/publish.yml`
 
-- `v*` 标签和手工触发均可启动构建；
-- 标签发布时校验标签版本与 `pyproxyswitch/_version.py` 一致；
+- 仅推送 `v[0-9]*` 标签时启动正式发布，取消可能绕过版本语义的手工触发；
+- `setuptools-scm` 从完整 Git 历史和标签推导版本，并在构建时生成
+  `pyproxyswitch/_version.py`；
+- 标签发布时读取 wheel 与 sdist 的包元数据，分别校验其版本与标签一致；
 - 构建 sdist 和 wheel 并通过 Actions artifact 在任务间传递；
 - 发布任务使用 `pypi` environment 和 OIDC `id-token: write`；
 - 使用 `pypa/gh-action-pypi-publish@release/v1`，仓库无需保存 PyPI API token。
@@ -36,7 +39,7 @@ README 已记录首次发布前的外部一次性配置：
 - PyPI pending publisher：owner `Kder`、repository `PyProxySwitch`、
   workflow `publish.yml`、environment `pypi`；
 - GitHub 仓库创建 `pypi` environment；
-- 发版标签必须与包版本一致。
+- 发版标签是正式版本的唯一来源。
 
 本次没有创建新版本标签或上传 PyPI；该动作属于正式发版，不是仓库改造验证的一部分。
 
@@ -206,7 +209,7 @@ D:\apps\python312\python.exe tools\build_nuitka.py --clean
 - Nuitka 中间目录保留在本地 `build/nuitka/`；
 - Windows 绿色版目录和 zip 保留在本地 `release/`，可用于复核；
 - 正式 PyPI 上传需要仓库所有者完成一次性 Trusted Publisher /
-  GitHub Environment 设置，并在准备发版时更新版本后推送匹配标签。
+  GitHub Environment 设置，并在准备发版时为待发布提交创建并推送签名标签。
 
 ## 6. 后续目录规范化
 
@@ -238,8 +241,9 @@ C:\Users\216\AppData\Local\Programs\Python\Python314\python.exe
 ```
 
 该解释器版本为 Python `3.14.0`。使用它作为 uv 项目环境的基础解释器，
-`.venv` 中的 `sys._base_executable` 已核对为上述路径。依赖使用以下命令
-按现有锁文件同步，没有改写锁文件：
+`.venv` 中的 `sys._base_executable` 已核对为上述路径。版本自动化新增
+`setuptools-scm` 构建依赖后重新生成并提交 `uv.lock`，随后使用以下命令
+按锁文件同步：
 
 ```text
 uv sync --frozen --python <系统 Python 3.14 路径> --extra dev
@@ -257,7 +261,7 @@ server 关闭等待设置上限，并在超时时中止残留 transport，避免
 
 | 检查 | 结果 |
 |---|---|
-| 完整 pytest + coverage | `204 passed`，总覆盖率 `75.28%` |
+| 完整 pytest + coverage | `209 passed`，总覆盖率 `75.36%` |
 | 原失败 SOCKS5 场景重复 20 次 | 全部通过 |
 | `ruff check .` | 通过 |
 | `mypy pyproxyswitch --ignore-missing-imports` | 24 个源文件通过 |
@@ -273,3 +277,29 @@ standalone 构建。Nuitka 将 Python 3.14 标记为实验性支持，但构建�
 根目录 `AGENTS.md` 已更新并纳入 Git 跟踪，后续 Python 命令要求先用 uv
 定位非 uv 托管的系统 Python 3.14，再通过 `uv run --python
 <resolved-path>` 执行；旧的固定 Python 3.12 路径约定已移除。
+
+## 8. Git 标签与运行时版本自动联动
+
+项目版本模型已迁移为 Git 标签单一事实来源：
+
+- `pyproject.toml` 使用动态版本和 `setuptools-scm`；
+- `pyproxyswitch/_version.py` 由构建后端生成，已从 Git 索引移除并加入
+  `.gitignore`，不再人工修改；
+- 位于精确标签的提交使用标签版本，例如 `v4.0.2` 生成 `4.0.2`；
+- 普通提交自动生成 PEP 440 开发版本，包含距最近标签的提交数与提交标识；
+- 应用运行时版本、wheel/sdist 元数据和 Nuitka 文件版本均消费同一生成值。
+
+发布工作流使用 `fetch-depth: 0` 获取完整标签历史，只允许标签触发。新增
+`tools/verify_release_artifacts.py`，在上传 PyPI 前直接读取 wheel 的
+`METADATA` 和 sdist 的顶层 `PKG-INFO`，要求二者都与标签去除 `v` 后的
+版本完全一致。对应自动化测试覆盖项目配置、工作流约束、运行时包元数据
+一致性以及 wheel/sdist 校验器的成功和失败路径。
+
+在 uv 定位的系统 Python 3.14 下，临时构建实际生成了 wheel 与 sdist；
+两个制品的版本和当前 Git 派生开发版本完全一致，sdist 同时包含生成的
+`_version.py` 与制品校验工具。临时制品已在验证后清理，项目 `dist/`
+未写入非发行包文件。
+
+本次只完成版本与发布自动化，没有创建或推送正式版本标签，也没有触发
+PyPI 发布。正式发布应在干净、已验证的提交上创建签名且不可复用的
+`vX.Y.Z` 标签，然后单独推送该标签。

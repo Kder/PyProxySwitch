@@ -96,7 +96,9 @@ pipx uninstall PyProxySwitch
 
 ## 发布到 PyPI
 
-`.github/workflows/publish.yml` 会在推送 `v*` 标签时构建 sdist 和 wheel，校验标签与 `pyproxyswitch/_version.py` 中的版本一致，再通过 OIDC 可信发布上传 PyPI。仓库无需保存 API token。
+Git tag 是项目版本的唯一权威来源。`setuptools-scm` 在构建时根据 tag 和 Git 历史生成 `pyproxyswitch/_version.py`；不要手工修改或提交该生成文件。精确位于 `v4.0.2` 标签上的制品版本为 `4.0.2`，标签之后的普通提交会得到符合 PEP 440 的开发版本。
+
+`.github/workflows/publish.yml` 只在推送 `v[0-9]*` 标签时构建 sdist 和 wheel，分别读取两个制品的版本元数据并与 tag 校验，再通过 OIDC 可信发布上传 PyPI。仓库无需保存 API token。
 
 首次发布前，需在 PyPI 的 Trusted Publishers 设置中添加 pending publisher：
 
@@ -105,12 +107,16 @@ pipx uninstall PyProxySwitch
 - Workflow：`publish.yml`
 - Environment：`pypi`
 
-并在 GitHub 仓库 Settings → Environments 中创建 `pypi` 环境。此后更新版本号并运行：
+并在 GitHub 仓库 Settings → Environments 中创建 `pypi` 环境。准备好发布提交、确认测试通过后，创建签名的 annotated tag：
 
 ```shell
-git tag v4.0.2
+git switch master
+git pull --ff-only
+git tag -s v4.0.2 -m "PyProxySwitch 4.0.2"
 git push origin v4.0.2
 ```
+
+已发布的 tag 不应移动或复用；发布失败后的修复应使用新版本号。
 
 # 系统要求
 
