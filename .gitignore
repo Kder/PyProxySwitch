@@ -13,6 +13,7 @@ release/
 PyProxySwitch.build/
 nonexistent_test_dir/
 CLAUDE.md
+IMPLEMENTATION_REPORT.md
 compilation-report.xml
 coverage.xml
 .coverage

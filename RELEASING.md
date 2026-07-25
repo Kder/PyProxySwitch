@@ -24,28 +24,32 @@
 
 1. 从 `master` 的干净工作区开始，拉取远端和 `htdocs` submodule 的最新提交。
 2. 在 `releases.toml` 顶部添加新版本、明确的发布日期、中英文摘要和变更项。
-3. 按 `AGENTS.md` 的要求，通过 uv 定位的系统 Python 3.14 同步发布文档：
+3. 按 `AGENTS.md` 的要求，通过 uv 定位的系统 Python 3.14 运行发布准备：
 
    ```powershell
-   uv run --python <系统 Python 3.14 路径> python tools/sync_release_docs.py --write
-   uv run --python <系统 Python 3.14 路径> python tools/sync_release_docs.py --check --expected-version X.Y.Z
+   uv run --python <系统 Python 3.14 路径> --extra dev python tools/release.py prepare X.Y.Z
    ```
 
-4. 运行完整测试、Ruff、mypy、UI 生成检查、翻译生成检查和网站校验。
+   `prepare` 会生成并检查发布文档，验证网站、UI 和翻译生成结果，运行
+   Ruff、mypy 和完整测试，并在 `build/release-check/` 构建和验证 wheel
+   与 sdist。发布日期只读取 `releases.toml`。
+
+4. 查看命令输出的主仓库和 `htdocs` 差异。
 5. 先提交并推送 `htdocs`，再在主仓库提交更新后的 submodule 指针和其他改动。
 6. 确认准备发布的提交已经推送且 GitHub Tests 工作流通过。
 
 ## 创建版本
 
-为已经验证的提交创建签名 annotated tag，并单独推送该标签：
+通过发布命令复核工作区、submodule、远端 `master`、发布文档和 GitHub
+Tests，然后创建并推送签名 annotated tag：
 
-```shell
-git switch master
-git pull --ff-only
-git status --short
-git tag -s vX.Y.Z -m "PyProxySwitch X.Y.Z"
-git push origin vX.Y.Z
+```powershell
+uv run --python <系统 Python 3.14 路径> python tools/release.py publish X.Y.Z
 ```
+
+本机需要已登录的 GitHub CLI（`gh auth status`）和可用的 Git 签名密钥。
+`publish` 不会提交或推送分支内容；如果工作区不干净、`HEAD` 不等于
+`origin/master`、对应 Tests 未成功或标签已存在，它会拒绝发布。
 
 `.github/workflows/publish.yml` 仅由 `v[0-9]*` 标签触发。工作流获取完整 Git 历史，构建 wheel 和 sdist，并在 OIDC 上传 PyPI 前校验两个制品的版本元数据都与标签一致。
 
