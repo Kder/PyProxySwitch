@@ -64,6 +64,8 @@ jobs:
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             mirror.git
 
-          git -C mirror.git push "$SF_REPO" \
+          # SourceForge is a mirror target: propagate corrected and deleted
+          # GitHub tags instead of leaving stale tag objects behind.
+          git -C mirror.git push --prune "$SF_REPO" \
             'refs/heads/master:refs/heads/github-mirror' \
-            'refs/tags/*:refs/tags/*'
+            '+refs/tags/*:refs/tags/*'
