@@ -1,0 +1,4 @@
+[submodule "htdocs"]
+	path = htdocs
+	url = https://github.com/Kder/PyProxySwitch-website.git
+	branch = master
