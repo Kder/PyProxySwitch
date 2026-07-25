@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Build a portable PyProxySwitch executable with Nuitka.
 
-The default is a standalone, one-directory build. The staged application
+The default is a standalone, one-directory build. Nuitka intermediates are
+written to ``build/nuitka`` and distributable artifacts to ``release`` so
+``dist`` remains reserved for Python sdists and wheels. The staged application
 contains ``portable.ini`` so configuration is written to ``config/`` and logs
 to ``logs/`` next to the executable. A versioned portable zip is created unless
 ``--no-zip`` is supplied.
@@ -23,6 +25,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MAIN_SCRIPT = REPO_ROOT / "PyProxySwitch.py"
 ICON_FILE = REPO_ROOT / "img" / "PyProxySwitch.ico"
 DATA_SRC = REPO_ROOT / "pyproxyswitch" / "data"
+DEFAULT_BUILD_DIR = REPO_ROOT / "build" / "nuitka"
+DEFAULT_RELEASE_DIR = REPO_ROOT / "release"
 EXE_NAME = "PyProxySwitch.exe" if sys.platform == "win32" else "PyProxySwitch"
 
 
@@ -145,7 +149,9 @@ def stage_portable_build(args: argparse.Namespace, version: str) -> Path:
     """Copy build output into a versioned portable staging directory."""
 
     output_dir = Path(args.output_dir).resolve()
-    staging = output_dir / f"PyProxySwitch-{version}-{platform_tag()}-portable"
+    release_dir = Path(args.release_dir).resolve()
+    staging = release_dir / f"PyProxySwitch-{version}-{platform_tag()}-portable"
+    release_dir.mkdir(parents=True, exist_ok=True)
 
     if args.onefile:
         executable = output_dir / EXE_NAME
@@ -216,8 +222,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-dir",
-        default=str(REPO_ROOT / "dist" / "nuitka"),
-        help="Nuitka output directory (default: dist/nuitka)",
+        default=str(DEFAULT_BUILD_DIR),
+        help="Nuitka intermediate directory (default: build/nuitka)",
+    )
+    parser.add_argument(
+        "--release-dir",
+        default=str(DEFAULT_RELEASE_DIR),
+        help="portable folder and zip directory (default: release)",
     )
     parser.add_argument("--clean", action="store_true", help="remove the output directory first")
     parser.add_argument("--dry-run", action="store_true", help="print the command and exit")

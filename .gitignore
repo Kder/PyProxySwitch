@@ -8,7 +8,9 @@ __pycache__/
 utils/
 htdocs/
 htmlcov/
-dist
+build/
+dist/
+release/
 PyProxySwitch.build/
 nonexistent_test_dir/
 AGENTS.md

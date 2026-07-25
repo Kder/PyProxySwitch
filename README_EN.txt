@@ -67,9 +67,12 @@ and does not write application data to per-user system directories. To
 uninstall it, delete the application folder.
 
 * Nuitka build: run `python tools/build_nuitka.py` to produce a portable zip.
-  On Windows the default is a one-directory executable build. The included
-  `portable.ini` marker stores configuration in `config/` and logs in `logs/`
-  next to the executable. Delete `portable.ini` to restore per-user storage.
+  On Windows the default is a one-directory executable build. Nuitka
+  intermediates are written to `build/nuitka/`, while distributable folders
+  and zips are written to `release/`; `dist/` remains reserved for Python
+  sdists and wheels. The included `portable.ini` marker stores configuration
+  in `config/` and logs in `logs/` next to the executable. Delete
+  `portable.ini` to restore per-user storage.
 * Environment override: for source, pip, or executable runs, set
   `PYPROXYSWITCH_HOME` to the portable directory. `PPS.conf`, `proxy.txt`, and
   `logs/` will all be stored there.

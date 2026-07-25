@@ -74,8 +74,11 @@ PyInstaller 等冻结程序生效。冻结检测兼容 `sys.frozen` 与 Nuitka �
 文件：`tools/build_nuitka.py`
 
 - 默认生成 standalone 单目录版；
+- Nuitka 中间产物写入 `build/nuitka/`；
+- 可分发目录和 zip 写入 `release/`；
+- `dist/` 仅保留 Python wheel 和 sdist；
 - 支持 `--onefile`、`--no-zip`、`--lto`、`--debug`、`--jobs`、
-  `--output-dir`、`--clean`、`--dry-run`；
+  `--output-dir`、`--release-dir`、`--clean`、`--dry-run`；
 - 注入 Windows 图标、公司名、产品名、文件版本和产品版本；
 - 打包默认配置、代理列表、应用翻译和 Qt 基础翻译；
 - 自动植入 `portable.ini`；
@@ -102,6 +105,7 @@ PyInstaller 等冻结程序生效。冻结检测兼容 `sys.frozen` 与 Nuitka �
 
 - 版本读取与 Windows 文件版本转换；
 - Nuitka 命令包含 standalone、PySide6 和运行时数据；
+- 默认构建和发布路径不会占用 `dist/`；
 - 单目录 staging、`portable.ini`、文档和 zip 内容；
 - `--dry-run` 不创建目录、不要求本机已安装 Nuitka；
 - `--clean` 拒绝仓库根目录等危险目标。
@@ -131,7 +135,7 @@ D:\apps\python312\python.exe -m pytest --cov=pyproxyswitch \
 
 结果：
 
-- `202 passed`；
+- `203 passed`；
 - 总覆盖率 `74.84%`；
 - `pyproxyswitch/paths.py` 语句与分支覆盖率 `100%`；
 - 生成 `coverage.xml` 和 `htmlcov/`。
@@ -176,11 +180,11 @@ D:\apps\python312\python.exe tools\build_nuitka.py --clean
 - Nuitka `4.0.5`；
 - MSVC `14.3`；
 - 成功生成
-  `dist/nuitka/PyProxySwitch.dist/PyProxySwitch.exe`；
+  `build/nuitka/PyProxySwitch.dist/PyProxySwitch.exe`；
 - 成功生成
-  `dist/nuitka/PyProxySwitch-4.0.1-windows-x64-portable/`；
+  `release/PyProxySwitch-4.0.1-windows-x64-portable/`；
 - 成功生成
-  `dist/nuitka/PyProxySwitch-4.0.1-windows-x64-portable.zip`；
+  `release/PyProxySwitch-4.0.1-windows-x64-portable.zip`；
 - zip CRC 检查通过，共 447 项，包含顶层目录、exe 和 `portable.ini`。
 
 随后短暂启动 staging 目录中的冻结程序并等待初始化，观测到：
@@ -196,7 +200,24 @@ D:\apps\python312\python.exe tools\build_nuitka.py --clean
 ## 5. 产物与版本控制说明
 
 - 源码改动和本报告均由 Git 跟踪；
-- `dist/`、覆盖率文件等构建产物按现有 `.gitignore` 保持不入库；
-- Windows 绿色版目录和 zip 保留在本地 `dist/nuitka/`，可用于复核；
+- `build/`、`dist/`、`release/`、覆盖率文件等构建产物按现有
+  `.gitignore` 保持不入库；
+- `dist/` 当前仅包含 `.whl` 和 `.tar.gz`；
+- Nuitka 中间目录保留在本地 `build/nuitka/`；
+- Windows 绿色版目录和 zip 保留在本地 `release/`，可用于复核；
 - 正式 PyPI 上传需要仓库所有者完成一次性 Trusted Publisher /
   GitHub Environment 设置，并在准备发版时更新版本后推送匹配标签。
+
+## 6. 后续目录规范化
+
+根据 Python 社区对 `dist/` 的常见约定，后续调整将 Nuitka 产物从
+`dist/nuitka/` 迁出：
+
+- 编译中间目录：`build/nuitka/`；
+- 最终绿色版目录和 zip：`release/`；
+- Python 发行包：`dist/*.whl`、`dist/*.tar.gz`。
+
+旧的 `dist/nuitka/` 和 `dist/PyProxySwitch.build/` 已删除；二者均为可由
+构建脚本重新生成的忽略产物。迁移后重新执行真实 Nuitka 构建并启动
+`release/` 中的 exe，配置、代理列表和日志仍正确创建在绿色版目录中，
+zip CRC 检查通过，共 447 项。

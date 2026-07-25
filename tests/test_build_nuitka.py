@@ -22,9 +22,15 @@ def build_nuitka():
     return module
 
 
-def _args(output_dir: Path, *, onefile: bool = False) -> argparse.Namespace:
+def _args(
+    output_dir: Path,
+    *,
+    onefile: bool = False,
+    release_dir: Path | None = None,
+) -> argparse.Namespace:
     return argparse.Namespace(
         output_dir=str(output_dir),
+        release_dir=str(release_dir or output_dir.parent / "release"),
         onefile=onefile,
         no_zip=False,
         lto=False,
@@ -65,17 +71,29 @@ def test_build_command_contains_portable_runtime_data(build_nuitka, monkeypatch,
     assert str(build_nuitka.MAIN_SCRIPT) == command[-1]
 
 
+def test_default_directories_keep_python_dist_clean(build_nuitka):
+    args = build_nuitka.parse_args([])
+
+    assert Path(args.output_dir) == build_nuitka.REPO_ROOT / "build" / "nuitka"
+    assert Path(args.release_dir) == build_nuitka.REPO_ROOT / "release"
+
+
 def test_stage_and_zip_one_directory_build(build_nuitka, monkeypatch, tmp_path):
-    output_dir = tmp_path / "nuitka"
+    output_dir = tmp_path / "build" / "nuitka"
+    release_dir = tmp_path / "release"
     dist_dir = output_dir / "PyProxySwitch.dist"
     dist_dir.mkdir(parents=True)
     executable_name = "PyProxySwitch.exe" if sys.platform == "win32" else "PyProxySwitch"
     (dist_dir / executable_name).write_bytes(b"fake executable")
     monkeypatch.setattr(build_nuitka, "REPO_ROOT", Path(__file__).parents[1])
 
-    staging = build_nuitka.stage_portable_build(_args(output_dir), "4.0.1")
+    staging = build_nuitka.stage_portable_build(
+        _args(output_dir, release_dir=release_dir),
+        "4.0.1",
+    )
     archive = build_nuitka.create_portable_zip(staging)
 
+    assert staging.parent == release_dir
     assert (staging / "portable.ini").is_file()
     assert (staging / executable_name).read_bytes() == b"fake executable"
     assert (staging / "README.md").is_file()
@@ -89,12 +107,22 @@ def test_stage_and_zip_one_directory_build(build_nuitka, monkeypatch, tmp_path):
 def test_dry_run_does_not_create_output_or_require_nuitka(
     build_nuitka, monkeypatch, tmp_path, capsys
 ):
-    output_dir = tmp_path / "dry-run"
+    output_dir = tmp_path / "build" / "nuitka"
+    release_dir = tmp_path / "release"
     monkeypatch.setattr(build_nuitka, "validate_build_environment", pytest.fail)
 
-    build_nuitka.main(["--dry-run", "--output-dir", str(output_dir)])
+    build_nuitka.main(
+        [
+            "--dry-run",
+            "--output-dir",
+            str(output_dir),
+            "--release-dir",
+            str(release_dir),
+        ]
+    )
 
     assert not output_dir.exists()
+    assert not release_dir.exists()
     output = capsys.readouterr().out
     assert "Nuitka portable build" in output
     assert "--standalone" in output
