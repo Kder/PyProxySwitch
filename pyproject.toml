@@ -97,6 +97,7 @@ include = ["pyproxyswitch*"]
 
 [tool.setuptools_scm]
 version_file = "pyproxyswitch/_version.py"
+local_scheme = "no-local-version"
 
 [tool.setuptools.package-data]
 "pyproxyswitch.data" = [
