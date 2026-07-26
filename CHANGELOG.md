@@ -3,6 +3,28 @@
 
 本文件由 `releases.toml` 自动生成。This file is generated from `releases.toml`.
 
+## 4.0.4 — 2026-07-27
+
+### 中文
+
+强化原生代理协议处理和双语错误体系，并完善安全、可复现的发布自动化。
+
+- 严格校验 HTTP 请求与响应报文边界、分块编码、协议升级和 CONNECT 隧道，并补强超时、连接上限、目标策略与关闭流程。
+- 为代理校验与运行时错误引入稳定错误码和结构化参数，在 GUI 与 CLI 边界统一中英文展示。
+- 修复代理认证编辑和监听器重新配置的边界情况，并使 Nuitka 构建版本直接来源于 Git。
+- 自动编排发布准备与发布操作，校验制品和 GitHub Tests，并支持签名标签的安全重试与一致复用。
+- 新增标签触发的 GitHub Release 制品流程，收紧 CI 与 SourceForge 镜像配置，整理 Nuitka 构建依赖和维护文档。
+
+### English
+
+Harden native proxy protocol handling and bilingual errors while completing safe, reproducible release automation.
+
+- Strictly validate HTTP request and response framing, chunked bodies, protocol upgrades, and CONNECT tunnels, and harden timeouts, connection limits, destination policy, and shutdown.
+- Introduce stable error codes and structured parameters for validation and runtime proxy failures, with consistent bilingual rendering at the GUI and CLI boundaries.
+- Fix edge cases in proxy authentication editing and listener reconfiguration, and derive Nuitka build versions directly from Git.
+- Automate release preparation and publishing, validate artifacts and GitHub Tests, and support safe retries and consistent reuse of signed tags.
+- Add tag-triggered GitHub Release artifacts, tighten CI and SourceForge mirroring, and organize Nuitka build dependencies and maintainer documentation.
+
 ## 4.0.3 — 2026-07-25
 
 ### 中文

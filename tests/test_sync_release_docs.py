@@ -26,8 +26,8 @@ def release_docs():
 def test_canonical_release_data_is_bilingual_and_newest_first(release_docs) -> None:
     releases = release_docs.load_releases(REPO_ROOT / "releases.toml")
 
-    assert releases[0].version == "4.0.3"
-    assert releases[0].date.isoformat() == "2026-07-25"
+    assert releases[0].version == "4.0.4"
+    assert releases[0].date.isoformat() == "2026-07-27"
     assert releases[0].summary_zh
     assert releases[0].summary_en
     assert releases[0].changes_zh
@@ -38,9 +38,9 @@ def test_canonical_release_data_is_bilingual_and_newest_first(release_docs) -> N
 def test_expected_release_version_must_match_latest_entry(release_docs) -> None:
     releases = release_docs.load_releases(REPO_ROOT / "releases.toml")
 
-    release_docs.validate_expected_version(releases, "v4.0.3")
+    release_docs.validate_expected_version(releases, "v4.0.4")
     with pytest.raises(ValueError, match="does not match expected release"):
-        release_docs.validate_expected_version(releases, "4.0.4")
+        release_docs.validate_expected_version(releases, "4.0.5")
 
 
 def test_changelog_rendering_is_deterministic_and_bilingual(release_docs) -> None:
@@ -50,7 +50,7 @@ def test_changelog_rendering_is_deterministic_and_bilingual(release_docs) -> Non
     second = release_docs.render_changelog(releases)
 
     assert first == second
-    assert "## 4.0.2 — 2026-07-25" in first
+    assert "## 4.0.4 — 2026-07-27" in first
     assert "### 中文" in first
     assert "### English" in first
     assert "## 0.9.0 — 2009-08-20" in first
