@@ -13,23 +13,19 @@ import socket
 from PySide6.QtCore import QObject, QRegularExpression, Signal
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 
+from pyproxyswitch.errors import ErrorCode, ValidationError
+
 logger = logging.getLogger("PyProxySwitch")
 
 ParsedProxy = tuple[str, str, str, str, str, str]
 ValidatedProxy = tuple[str, str, int, str, str, str]
 
 
-class ValidationError(Exception):
-    """验证错误异常"""
-
-    pass
-
-
 class ProxyValidator(QObject):
     """代理参数验证器"""
 
     # 信号：验证失败时发出
-    validation_error = Signal(str)
+    validation_error = Signal(object)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -75,21 +71,28 @@ class ProxyValidator(QObject):
         name = name.strip()
 
         if not name:
-            raise ValidationError("代理名称不能为空")
+            raise ValidationError(ErrorCode.VALIDATION_NAME_REQUIRED)
 
         if len(name) > 50:
-            raise ValidationError("代理名称长度不能超过50个字符")
+            raise ValidationError(
+                ErrorCode.VALIDATION_NAME_TOO_LONG,
+                params={"max_length": 50},
+            )
 
         # 使用正则表达式直接验证
         if not re.fullmatch(r"[a-zA-Z0-9\u4e00-\u9fa5_\-]{1,50}", name):
             raise ValidationError(
-                "代理名称只能包含字母、数字、中文、下划线和连字符，长度1-50"
+                ErrorCode.VALIDATION_NAME_INVALID,
+                params={"max_length": 50},
             )
 
         # 检查保留名称
         reserved_names = {"NoProxy", "Default", "System", "None"}
         if name in reserved_names:
-            raise ValidationError(f"'{name}'是保留名称，不能使用")
+            raise ValidationError(
+                ErrorCode.VALIDATION_NAME_RESERVED,
+                params={"name": name},
+            )
 
         return name
 
@@ -108,18 +111,21 @@ class ProxyValidator(QObject):
         address = address.strip().lower()
 
         if not address:
-            raise ValidationError("代理地址不能为空")
+            raise ValidationError(ErrorCode.VALIDATION_ADDRESS_REQUIRED)
 
         # 地址和端口使用独立字段。拒绝内嵌端口，避免两个端口不一致时
         # 静默采用另一个值。
         if (address.startswith("[") and "]:" in address) or address.count(":") == 1:
-            raise ValidationError("代理地址不能包含端口号，请使用独立的端口字段")
+            raise ValidationError(ErrorCode.VALIDATION_ADDRESS_EMBEDDED_PORT)
 
         # 首先检查是否包含危险字符（适用于所有地址格式）
         dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`"]
         for char in dangerous_chars:
             if char in address:
-                raise ValidationError(f"域名包含危险字符: {char}")
+                raise ValidationError(
+                    ErrorCode.VALIDATION_ADDRESS_DANGEROUS_CHARACTER,
+                    params={"character": char},
+                )
 
         # 处理IPv6地址（可能包含方括号）
         if address.startswith("[") and address.endswith("]"):
@@ -129,7 +135,9 @@ class ProxyValidator(QObject):
                 socket.inet_pton(socket.AF_INET6, ipv6_inner)
                 address = ipv6_inner  # 去掉方括号
             except (OSError, UnicodeError):
-                raise ValidationError("无效的IPv6地址格式") from None
+                raise ValidationError(
+                    ErrorCode.VALIDATION_ADDRESS_INVALID_IPV6
+                ) from None
         elif ":" in address:
             # 可能是IPv6地址
             try:
@@ -141,23 +149,30 @@ class ProxyValidator(QObject):
                 if not self.ipv4_pattern.match(
                     address
                 ) and not self.domain_pattern.match(address):
-                    raise ValidationError("无效的IP地址或域名格式") from None
+                    raise ValidationError(
+                        ErrorCode.VALIDATION_ADDRESS_INVALID
+                    ) from None
         # 检查是否为纯数字+点号格式（IP类地址）
         elif address.replace(".", "").isdigit() and "." in address:
             # 这是IP类地址，必须符合IPv4格式
             if not self.ipv4_pattern.match(address):
-                raise ValidationError("无效的IP地址格式")
+                raise ValidationError(ErrorCode.VALIDATION_ADDRESS_INVALID_IPV4)
             # 额外检查每个八位组
             parts = address.split(".")
             for part in parts:
                 if int(part) > 255:
-                    raise ValidationError("IPv4地址包含无效数值")
+                    raise ValidationError(
+                        ErrorCode.VALIDATION_ADDRESS_INVALID_IPV4_VALUE
+                    )
         elif self.domain_pattern.match(address):
             # 验证域名
             if len(address) > 253:
-                raise ValidationError("域名长度不能超过253个字符")
+                raise ValidationError(
+                    ErrorCode.VALIDATION_ADDRESS_DOMAIN_TOO_LONG,
+                    params={"max_length": 253},
+                )
         else:
-            raise ValidationError("无效的IP地址或域名格式")
+            raise ValidationError(ErrorCode.VALIDATION_ADDRESS_INVALID)
 
         return address
 
@@ -176,18 +191,24 @@ class ProxyValidator(QObject):
         port = port.strip()
 
         if not port:
-            raise ValidationError("端口号不能为空")
+            raise ValidationError(ErrorCode.VALIDATION_PORT_REQUIRED)
 
         if not port.isascii() or not port.isdigit():
-            raise ValidationError("端口号必须是数字")
+            raise ValidationError(ErrorCode.VALIDATION_PORT_NUMERIC)
 
         if len(port) > 5:
-            raise ValidationError("端口号必须在1-65535之间")
+            raise ValidationError(
+                ErrorCode.VALIDATION_PORT_RANGE,
+                params={"minimum": 1, "maximum": 65535},
+            )
 
         port_num = int(port)
 
         if port_num < 1 or port_num > 65535:
-            raise ValidationError("端口号必须在1-65535之间")
+            raise ValidationError(
+                ErrorCode.VALIDATION_PORT_RANGE,
+                params={"minimum": 1, "maximum": 65535},
+            )
 
         return port_num
 
@@ -208,7 +229,10 @@ class ProxyValidator(QObject):
         valid_types = ["HTTP", "SOCKS4", "SOCKS5"]
 
         if proxy_type not in valid_types:
-            raise ValidationError(f"代理类型必须是以下之一: {', '.join(valid_types)}")
+            raise ValidationError(
+                ErrorCode.VALIDATION_PROXY_TYPE_UNSUPPORTED,
+                params={"types": ", ".join(valid_types)},
+            )
 
         return proxy_type
 
@@ -230,16 +254,24 @@ class ProxyValidator(QObject):
             return ""  # 用户名可以为空
 
         if len(username) > 50:
-            raise ValidationError("用户名长度不能超过50个字符")
+            raise ValidationError(
+                ErrorCode.VALIDATION_USERNAME_TOO_LONG,
+                params={"max_length": 50},
+            )
 
         if any(ord(char) < 32 or ord(char) == 127 for char in username):
-            raise ValidationError("用户名包含非法控制字符")
+            raise ValidationError(
+                ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER
+            )
 
         # 检查是否包含危险字符
         dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`", ":", "\n", "\r"]
         for char in dangerous_chars:
             if char in username:
-                raise ValidationError(f"用户名包含危险字符: {char}")
+                raise ValidationError(
+                    ErrorCode.VALIDATION_USERNAME_DANGEROUS_CHARACTER,
+                    params={"character": char},
+                )
 
         return username
 
@@ -259,11 +291,16 @@ class ProxyValidator(QObject):
             return ""  # 密码可以为空
 
         if len(password) > 100:
-            raise ValidationError("密码长度不能超过100个字符")
+            raise ValidationError(
+                ErrorCode.VALIDATION_PASSWORD_TOO_LONG,
+                params={"max_length": 100},
+            )
 
         # 检查是否包含控制字符
         if any(ord(char) < 32 or ord(char) == 127 for char in password):
-            raise ValidationError("密码包含非法控制字符")
+            raise ValidationError(
+                ErrorCode.VALIDATION_PASSWORD_CONTROL_CHARACTER
+            )
 
         return password
 
@@ -303,14 +340,21 @@ class ProxyValidator(QObject):
 
             if validated_type == "SOCKS5" and (validated_username or validated_password):
                 if not validated_username or not validated_password:
-                    raise ValidationError("SOCKS5认证必须同时提供用户名和密码")
+                    raise ValidationError(
+                        ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_PAIR
+                    )
                 try:
                     encoded_username = validated_username.encode("utf-8")
                     encoded_password = validated_password.encode("utf-8")
                 except UnicodeEncodeError:
-                    raise ValidationError("SOCKS5认证信息包含无效的Unicode字符") from None
+                    raise ValidationError(
+                        ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_UNICODE
+                    ) from None
                 if len(encoded_username) > 255 or len(encoded_password) > 255:
-                    raise ValidationError("SOCKS5用户名和密码的UTF-8编码不能超过255字节")
+                    raise ValidationError(
+                        ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG,
+                        params={"max_bytes": 255},
+                    )
 
             return (
                 validated_name,
@@ -322,7 +366,7 @@ class ProxyValidator(QObject):
             )
 
         except ValidationError as e:
-            self.validation_error.emit(str(e))
+            self.validation_error.emit(e)
             raise
 
     def get_name_validator(self) -> QRegularExpressionValidator:
@@ -361,16 +405,17 @@ class BatchImportValidator:
         try:
             line_items = shlex.split(stripped)
         except ValueError as exc:
-            raise ValidationError("引号或转义字符不完整") from exc
+            raise ValidationError(ErrorCode.VALIDATION_BATCH_QUOTE) from exc
         if len(line_items) < 2:
-            raise ValidationError("格式错误，至少需要代理名称和地址")
+            raise ValidationError(ErrorCode.VALIDATION_BATCH_FORMAT)
         if len(line_items) > 4:
-            raise ValidationError("参数过多")
+            raise ValidationError(ErrorCode.VALIDATION_BATCH_TOO_MANY_FIELDS)
 
         # 解析地址和端口
         if ":" not in line_items[1]:
-            # 为了与旧行为兼容，抛出IndexError
-            raise IndexError("地址格式错误，必须包含端口（格式：地址:端口）")
+            raise ValidationError(
+                ErrorCode.VALIDATION_BATCH_ADDRESS_PORT_REQUIRED
+            )
         username = ""
         password = ""
         proxy_type = "HTTP"
@@ -383,7 +428,7 @@ class BatchImportValidator:
                 address = line_items[1][1:split_pos]
                 port = line_items[1][split_pos + 2 :]
             else:
-                raise ValidationError("IPv6地址格式错误")
+                raise ValidationError(ErrorCode.VALIDATION_BATCH_INVALID_IPV6)
         else:
             # 普通格式或IPv6不带端口
             address, port = line_items[1].rsplit(":", 1)
@@ -401,15 +446,18 @@ class BatchImportValidator:
                 username, separator, password = line_items[2].partition(":")
                 if not separator:
                     raise ValidationError(
-                        "认证信息必须使用用户名:密码格式，或指定受支持的代理类型"
+                        ErrorCode.VALIDATION_BATCH_AUTH_OR_TYPE
                     )
         elif len(line_items) == 4:
             username, separator, password = line_items[2].partition(":")
             if not separator:
-                raise ValidationError("认证信息必须使用用户名:密码格式")
+                raise ValidationError(ErrorCode.VALIDATION_BATCH_AUTH_FORMAT)
             proxy_type = line_items[3].upper()
             if proxy_type not in valid_types:
-                raise ValidationError(f"不支持的代理类型 {line_items[3]}")
+                raise ValidationError(
+                    ErrorCode.VALIDATION_BATCH_PROXY_TYPE_UNSUPPORTED,
+                    params={"proxy_type": line_items[3]},
+                )
 
         return (
             line_items[0],
@@ -432,8 +480,8 @@ class BatchImportValidator:
         """
         try:
             proxy_tuple = self.parse_proxy_line(line)
-        except (IndexError, ValidationError) as e:
-            raise ValidationError(f"第{line_number}行: {e}") from e
+        except ValidationError as e:
+            raise e.with_line(line_number) from e
 
         if not proxy_tuple:
             return None
@@ -445,7 +493,7 @@ class BatchImportValidator:
                 name, address, port, proxy_type, username, password
             )
         except ValidationError as e:
-            raise ValidationError(f"第{line_number}行: {str(e)}") from e
+            raise e.with_line(line_number) from e
 
     def validate_batch_content(
         self, content: str, *, strict: bool = False
@@ -466,26 +514,33 @@ class BatchImportValidator:
         proxy_names: set[str] = set()
         lines = content.split("\n")
         valid_lines = 0
-        errors: list[str] = []
+        errors: list[ValidationError] = []
 
         for i, line in enumerate(lines, 1):
             try:
                 result = self.validate_batch_line(line, i)
                 if result:
                     if result[0] in proxy_names:
-                        raise ValidationError(f"第{i}行: 代理名称 {result[0]!r} 重复")
+                        raise ValidationError(
+                            ErrorCode.VALIDATION_NAME_DUPLICATE,
+                            params={"name": result[0]},
+                            line=i,
+                        )
                     proxies.append(result)
                     proxy_names.add(result[0])
                     valid_lines += 1
-            except (ValidationError, IndexError) as e:
+            except ValidationError as e:
                 # 继续验证其他行，但记录错误
-                errors.append(str(e))
+                errors.append(e)
                 logger.warning("%s", e)
 
         if strict and errors:
-            raise ValidationError("批量代理配置包含错误：\n" + "\n".join(errors))
+            raise ValidationError(
+                ErrorCode.VALIDATION_BATCH_INVALID,
+                errors=errors,
+            )
 
         if valid_lines == 0:
-            raise ValidationError("没有找到有效的代理配置")
+            raise ValidationError(ErrorCode.VALIDATION_BATCH_NONE_VALID)
 
         return proxies

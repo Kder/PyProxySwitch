@@ -17,6 +17,8 @@ from pyproxyswitch.logger_config import get_logger
 from pyproxyswitch.paths import I18N_DIR
 from pyproxyswitch.proxy_manager import ProxyManager
 
+from .error_display import localized_error_message
+
 
 class Window(QtWidgets.QDialog):
     """主程序UI"""
@@ -126,7 +128,7 @@ class Window(QtWidgets.QDialog):
             QtWidgets.QMessageBox.critical(
                 self,
                 self.tr("Error"),
-                self.tr("Failed to start proxy service: {error}").format(error=e),
+                localized_error_message(e),
             )
 
     def set_proxy_service_available(self, available: bool) -> None:
@@ -256,7 +258,11 @@ class Window(QtWidgets.QDialog):
             self.proxy_manager.start_proxy(proxy_name)
         except Exception as e:
             get_logger().error(f"Failed to switch to {proxy_name}: {e}")
-            QtWidgets.QMessageBox.critical(self, self.tr("Error"), str(e))
+            QtWidgets.QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                localized_error_message(e),
+            )
             return
 
         self.set_proxy_service_available(True)

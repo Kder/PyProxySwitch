@@ -40,10 +40,13 @@ __projecturl__ = "http://pyproxyswitch.kder.info"
 import logging
 import sys
 
+from pyproxyswitch.errors import format_cli_error
+
 
 def main(log_level: int | str | None = None) -> None:
     """应用程序主入口点"""
     logger = None
+    language = "en"
     # 检查必要的依赖
     try:
         from PySide6 import QtWidgets
@@ -57,8 +60,10 @@ def main(log_level: int | str | None = None) -> None:
         from pyproxyswitch.logger_config import setup_logger
 
         # 命令行未覆盖时使用持久化的调试选项。
+        config = ConfigManager()
+        language = str(config.get("LANG", "zh_CN"))
         if log_level is None:
-            log_level = logging.DEBUG if ConfigManager().get("DEBUG", 0) else logging.INFO
+            log_level = logging.DEBUG if config.get("DEBUG", 0) else logging.INFO
 
         root_logger = logging.getLogger("PyProxySwitch")
         # 检查是否已经有logger配置，如果没有才重新配置
@@ -90,7 +95,7 @@ def main(log_level: int | str | None = None) -> None:
         print("\nPyProxySwitch terminated by user")
         sys.exit(0)
     except Exception as e:
-        print(f"Fatal error: {e}")
+        print(format_cli_error(e, language, fatal=True))
         if logger is not None:
             logger.exception("Fatal error occurred")
         sys.exit(1)

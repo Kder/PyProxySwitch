@@ -4,7 +4,7 @@
 <context>
     <name>AddProxy_Dialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="72"/>
+        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="74"/>
         <source>Validation Error</source>
         <translation>Validation Error</translation>
     </message>
@@ -12,12 +12,12 @@
 <context>
     <name>BatchImportDialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="45"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="47"/>
         <source>Batch Add/Modify/Delete Proxy</source>
         <translation>Batch Add/Modify/Delete Proxy</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="49"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="51"/>
         <source>Please use the following syntax for one proxy per line:
 
 proxy_name address:port username:password proxy_type
@@ -46,64 +46,64 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 </translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="74"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="76"/>
         <source>Preview</source>
         <translation>Preview</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="105"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="107"/>
         <source>Valid proxies found:</source>
         <translation>Valid proxies found:</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="111"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="113"/>
         <source>more</source>
         <translation>more</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="115"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="117"/>
         <source>Import Preview</source>
         <translation>Import Preview</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="137"/>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="149"/>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="156"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="139"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="151"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="158"/>
         <source>Import Failed</source>
         <translation>Import Failed</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="138"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="140"/>
         <source>No valid proxies found.</source>
         <translation>No valid proxies found.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="188"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="190"/>
         <source>Export Proxies</source>
         <translation>Export Proxies</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="190"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="192"/>
         <source>Text Files (*.txt);;All Files (*)</source>
         <translation>Text Files (*.txt);;All Files (*)</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="216"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="218"/>
         <source>Success</source>
         <translation>Success</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="217"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="219"/>
         <source>Proxies exported successfully</source>
         <translation>Proxies exported successfully</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="224"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="226"/>
         <source>Failed to export proxies</source>
         <translation>Failed to export proxies</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="229"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="231"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
@@ -111,147 +111,147 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 <context>
     <name>Config_Dialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="106"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="108"/>
         <source>Add Proxy</source>
         <translation>Add Proxy</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="109"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="111"/>
         <source>Delete Proxy</source>
         <translation>Delete Proxy</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="114"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="116"/>
         <source>Import Proxies</source>
         <translation>Import Proxies</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="117"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="119"/>
         <source>Export Proxies</source>
         <translation>Export Proxies</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="124"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="126"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="137"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="181"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="199"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="216"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="139"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="183"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="201"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="218"/>
         <source>Failed to save configuration</source>
         <translation>Failed to save configuration</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="152"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="154"/>
         <source>Name</source>
         <comment>Config_Dialog</comment>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="154"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="156"/>
         <source>Address</source>
         <comment>Config_Dialog</comment>
         <translation>Address</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="156"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="158"/>
         <source>Port</source>
         <comment>Config_Dialog</comment>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="157"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="159"/>
         <source>Type</source>
         <comment>Config_Dialog</comment>
         <translation>Type</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="159"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="161"/>
         <source>Username</source>
         <comment>Config_Dialog</comment>
         <translation>Username</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="162"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="164"/>
         <source>Password</source>
         <comment>Config_Dialog</comment>
         <translation>Password</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="240"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="242"/>
         <source>Failed to restore the previous configuration</source>
         <translation>Failed to restore the previous configuration</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="243"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="245"/>
         <source>Port must be between 1 and 65535</source>
         <translation>Port must be between 1 and 65535</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="245"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="247"/>
         <source>Port must be a valid number</source>
         <translation>Port must be a valid number</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="291"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="293"/>
         <source>Name</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="292"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="294"/>
         <source>Address</source>
         <translation>Address</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="293"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
         <source>Port</source>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="294"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
         <source>Type</source>
         <translation>Type</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="297"/>
         <source>Username</source>
         <translation>Username</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="298"/>
         <source>Password</source>
         <translation>Password</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="378"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="383"/>
         <source>Failed to read proxy list file</source>
         <translation>Failed to read proxy list file</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="400"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="598"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="405"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="604"/>
         <source>Failed to save proxy list</source>
         <translation>Failed to save proxy list</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="429"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="434"/>
         <source>A proxy with this name already exists</source>
         <translation>A proxy with this name already exists</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="435"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="440"/>
         <source>Please select a proxy to modify</source>
         <translation>Please select a proxy to modify</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="505"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="511"/>
         <source>Confirm Delete</source>
         <translation>Confirm Delete</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="506"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="512"/>
         <source>Are you sure you want to delete this proxy?</source>
         <translation>Are you sure you want to delete this proxy?</translation>
     </message>
@@ -402,71 +402,66 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 <context>
     <name>Window</name>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="82"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="84"/>
         <source>System Tray</source>
         <translation>System Tray</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="84"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="86"/>
         <source>I&apos;ve not detected any system tray on this system.
 PyProxySwitch cannot start.</source>
         <translation>I&apos;ve not detected any system tray on this system.
 PyProxySwitch cannot start.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="105"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="107"/>
         <source>Proxy service starting</source>
         <translation>Proxy service starting</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="129"/>
-        <source>Failed to start proxy service: {error}</source>
-        <translation>Failed to start proxy service: {error}</translation>
-    </message>
-    <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="141"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="143"/>
         <source>Proxy service unavailable</source>
         <translation>Proxy service unavailable</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="177"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="179"/>
         <source>Config</source>
         <translation>Config</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="180"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="182"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="185"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="187"/>
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="238"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="240"/>
         <source>About PyProxySwitch</source>
         <translation>About PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="241"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="243"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="128"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="259"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="269"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="130"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="263"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="275"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="270"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="276"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>Proxy switched, but the selection could not be saved.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="298"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="304"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>I&apos;m here, welcome to PyProxySwitch!</translation>
     </message>

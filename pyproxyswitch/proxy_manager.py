@@ -8,7 +8,7 @@ import logging
 import threading
 from typing import TYPE_CHECKING
 
-from pyproxyswitch.errors import ConfigError, ProxyStartError
+from pyproxyswitch.errors import ConfigError, ErrorCode, ProxyStartError
 from pyproxyswitch.native_proxy import NativeProxyServer, Upstream
 
 logger = logging.getLogger("PyProxySwitch")
@@ -67,13 +67,16 @@ class ProxyManager:
                     port,
                     upstream,
                     timeout=5,
-                    user_message="Failed to reconfigure proxy service",
+                    error_code=ErrorCode.PROXY_RECONFIGURE_FAILED,
                 )
         except (ConfigError, ProxyStartError):
             raise
         except (OSError, RuntimeError, TimeoutError, TypeError, ValueError) as exc:
             logger.error("Failed to start native proxy: %s", exc)
-            raise ProxyStartError("Failed to start proxy service", str(exc)) from exc
+            raise ProxyStartError(
+                ErrorCode.PROXY_START_FAILED,
+                detail=str(exc),
+            ) from exc
 
     def restart_listener(self, timeout: int = 5) -> None:
         """Apply a changed local bind address/port while preserving the route."""
@@ -85,7 +88,7 @@ class ProxyManager:
                 port,
                 upstream,
                 timeout=timeout,
-                user_message="Failed to restart proxy service",
+                error_code=ErrorCode.PROXY_RESTART_FAILED,
             )
 
     def stop_proxy(self, timeout: int = 5) -> bool:
@@ -103,14 +106,22 @@ class ProxyManager:
     def _listener_address(self) -> tuple[str, int]:
         host = str(self._config.get("LOCAL_ADDRESS", "127.0.0.1")).strip()
         if not host:
-            raise ConfigError("Invalid local address", "LOCAL_ADDRESS cannot be empty")
+            raise ConfigError(
+                ErrorCode.CONFIG_LOCAL_ADDRESS_REQUIRED,
+                detail="LOCAL_ADDRESS cannot be empty",
+            )
         try:
             port = int(self._config.get("LOCAL_PORT", 8888))
         except (TypeError, ValueError):
-            raise ConfigError("Invalid local port", "LOCAL_PORT must be an integer") from None
+            raise ConfigError(
+                ErrorCode.CONFIG_LOCAL_PORT_INTEGER,
+                detail="LOCAL_PORT must be an integer",
+            ) from None
         if not 1 <= port <= 65535:
             raise ConfigError(
-                f"Invalid local port: {port}", "LOCAL_PORT must be between 1 and 65535"
+                ErrorCode.CONFIG_LOCAL_PORT_RANGE,
+                params={"port": port},
+                detail="LOCAL_PORT must be between 1 and 65535",
             )
         return host, port
 
@@ -121,7 +132,7 @@ class ProxyManager:
         upstream: Upstream,
         *,
         timeout: int,
-        user_message: str,
+        error_code: ErrorCode,
     ) -> None:
         """Replace a listener and restore its old address when the new bind fails."""
 
@@ -139,7 +150,10 @@ class ProxyManager:
 
         if old_server is not None:
             if not old_server.stop(timeout=timeout):
-                raise ProxyStartError(user_message, "Native listener did not stop in time")
+                raise ProxyStartError(
+                    error_code,
+                    detail="Native listener did not stop in time",
+                )
             self._server = None
 
         server: NativeProxyServer | None = None
@@ -162,7 +176,7 @@ class ProxyManager:
                     self._server = fallback
                 except Exception:
                     logger.exception("Failed to restore the previous listener")
-            raise ProxyStartError(user_message, str(exc)) from exc
+            raise ProxyStartError(error_code, detail=str(exc)) from exc
 
     def _create_server(self, host: str, port: int, upstream: Upstream) -> NativeProxyServer:
         return NativeProxyServer(
@@ -174,7 +188,10 @@ class ProxyManager:
 
     def _resolve_upstream(self, proxy_name: str) -> Upstream:
         if not isinstance(proxy_name, str) or not proxy_name:
-            raise ConfigError("Invalid proxy name", "Proxy name must be a non-empty string")
+            raise ConfigError(
+                ErrorCode.CONFIG_PROXY_NAME_REQUIRED,
+                detail="Proxy name must be a non-empty string",
+            )
         if proxy_name == "NoProxy":
             return Upstream.direct()
 
@@ -183,8 +200,12 @@ class ProxyManager:
         )
         if selected is None:
             raise ConfigError(
-                f"Proxy not found: {proxy_name}",
-                f"No proxy named {proxy_name!r} exists in the configured proxy list",
+                ErrorCode.CONFIG_PROXY_NOT_FOUND,
+                params={"name": proxy_name},
+                detail=(
+                    f"No proxy named {proxy_name!r} exists in the configured "
+                    "proxy list"
+                ),
             )
         name, host, port, kind, username, password = selected
 
@@ -200,8 +221,9 @@ class ProxyManager:
             )
         except (TypeError, ValueError) as exc:
             raise ConfigError(
-                f"Invalid proxy configuration: {proxy_name}",
-                f"Invalid configuration for {proxy_name!r}: {exc}",
+                ErrorCode.CONFIG_PROXY_INVALID,
+                params={"name": proxy_name},
+                detail=f"Invalid configuration for {proxy_name!r}: {exc}",
             ) from exc
 
 

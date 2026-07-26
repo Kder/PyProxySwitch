@@ -10,6 +10,7 @@ import logging
 
 import pytest
 
+from pyproxyswitch.errors import ErrorCode
 from pyproxyswitch.proxy_validation import ValidationError
 
 
@@ -49,20 +50,20 @@ class TestProxyValidatorName:
         """测试空名称"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_name("")
-        assert "不能为空" in str(exc_info.value)
+        assert "不能为空" in exc_info.value.localized("zh_CN")
 
     def test_invalid_name_whitespace_only(self, proxy_validator):
         """测试仅包含空白字符的名称"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_name("   ")
-        assert "不能为空" in str(exc_info.value)
+        assert "不能为空" in exc_info.value.localized("zh_CN")
 
     def test_invalid_name_too_long(self, proxy_validator):
         """测试过长名称"""
         long_name = "a" * 51
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_name(long_name)
-        assert "50" in str(exc_info.value)
+        assert "50" in exc_info.value.localized("zh_CN")
 
     def test_invalid_name_special_chars(self, proxy_validator):
         """测试包含特殊字符的名称"""
@@ -83,7 +84,7 @@ class TestProxyValidatorName:
         for name in reserved_names:
             with pytest.raises(ValidationError) as exc_info:
                 proxy_validator.validate_proxy_name(name)
-            assert "保留名称" in str(exc_info.value)
+            assert "保留名称" in exc_info.value.localized("zh_CN")
 
 
 class TestProxyValidatorAddress:
@@ -131,7 +132,7 @@ class TestProxyValidatorAddress:
         """测试空地址"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_address("")
-        assert "不能为空" in str(exc_info.value)
+        assert "不能为空" in exc_info.value.localized("zh_CN")
 
     def test_invalid_ipv4_octet_overflow(self, proxy_validator):
         """测试 IPv4 段值超出范围
@@ -184,13 +185,13 @@ class TestProxyValidatorPort:
         """测试端口 0"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_port("0")
-        assert "1-65535" in str(exc_info.value)
+        assert "1-65535" in exc_info.value.localized("zh_CN")
 
     def test_invalid_port_too_large(self, proxy_validator):
         """测试超出范围的端口"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_port("65536")
-        assert "1-65535" in str(exc_info.value)
+        assert "1-65535" in exc_info.value.localized("zh_CN")
 
     def test_invalid_port_negative(self, proxy_validator):
         """测试负数端口"""
@@ -201,7 +202,7 @@ class TestProxyValidatorPort:
         """测试非数字端口"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_port("abc")
-        assert "必须是数字" in str(exc_info.value)
+        assert "必须是数字" in exc_info.value.localized("zh_CN")
 
 
 class TestProxyValidatorType:
@@ -223,7 +224,7 @@ class TestProxyValidatorType:
         """测试无效代理类型"""
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_proxy_type(invalid_type)
-        assert "必须是以下之一" in str(exc_info.value)
+        assert "必须是以下之一" in exc_info.value.localized("zh_CN")
 
 
 class TestProxyValidatorUsername:
@@ -257,8 +258,12 @@ class TestProxyValidatorUsername:
 
     @pytest.mark.parametrize("control", ["\x00", "\t", "\x7f"])
     def test_invalid_username_control_chars(self, proxy_validator, control):
-        with pytest.raises(ValidationError, match="控制字符"):
+        with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_username(f"user{control}name")
+        assert (
+            exc_info.value.code
+            == ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER
+        )
 
     def test_invalid_username_too_long(self, proxy_validator):
         """测试过长用户名"""
@@ -334,16 +339,24 @@ class TestProxyValidatorFullProxy:
         [("", "password"), ("username", "")],
     )
     def test_socks5_auth_requires_both_fields(self, proxy_validator, username, password):
-        with pytest.raises(ValidationError, match="同时提供"):
+        with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_full_proxy(
                 "auth_socks", "10.0.0.1", "1080", "SOCKS5", username, password
             )
+        assert (
+            exc_info.value.code
+            == ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_PAIR
+        )
 
     def test_socks5_auth_limits_utf8_byte_length(self, proxy_validator):
-        with pytest.raises(ValidationError, match="255字节"):
+        with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_full_proxy(
                 "auth_socks", "10.0.0.1", "1080", "SOCKS5", "user", "😀" * 100
             )
+        assert (
+            exc_info.value.code
+            == ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG
+        )
 
     def test_full_proxy_valid_socks4(self, proxy_validator):
         """测试有效的 SOCKS4 代理"""
@@ -387,6 +400,8 @@ class TestProxyValidatorFullProxy:
             proxy_validator.validate_full_proxy("", "192.168.1.1", "8080", "HTTP", "", "")
 
         assert len(received_signals) == 1
+        assert isinstance(received_signals[0], ValidationError)
+        assert received_signals[0].code == ErrorCode.VALIDATION_NAME_REQUIRED
 
 
 class TestBatchImportValidator:
@@ -438,13 +453,13 @@ class TestBatchImportValidator:
         """测试无效格式"""
         with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_line("invalid", 1)
-        assert "格式错误" in str(exc_info.value)
+        assert "格式错误" in exc_info.value.localized("zh_CN")
 
     def test_validate_batch_line_no_port(self, batch_validator):
         """测试缺少端口"""
         with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_line("test 192.168.1.1", 1)
-        assert "地址格式错误" in str(exc_info.value)
+        assert "地址格式错误" in exc_info.value.localized("zh_CN")
 
     def test_validate_batch_content_valid(self, batch_validator, sample_proxy_content):
         """测试批量内容解析"""
@@ -459,7 +474,7 @@ class TestBatchImportValidator:
 """
         with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_content(content)
-        assert "没有找到有效的代理配置" in str(exc_info.value)
+        assert "没有找到有效的代理配置" in exc_info.value.localized("zh_CN")
 
     def test_validate_batch_content_partial_valid(self, batch_validator):
         """测试部分有效的批量内容"""
@@ -483,12 +498,14 @@ another_valid 10.0.0.1:3128
 
         with (
             caplog.at_level(logging.WARNING, logger="PyProxySwitch"),
-            pytest.raises(ValidationError, match="第2行"),
+            pytest.raises(ValidationError) as exc_info,
         ):
             batch_validator.validate_batch_content(content, strict=True)
 
+        assert exc_info.value.code == ErrorCode.VALIDATION_BATCH_INVALID
+        assert "第2行" in exc_info.value.localized("zh_CN")
         assert "supersecret" not in caplog.text
-        assert "第2行" in caplog.text
+        assert "Line 2" in caplog.text
 
     def test_validate_batch_content_with_quoted_strings(self, batch_validator):
         """测试带引号的字符串"""
@@ -529,7 +546,7 @@ class TestBatchImportEdgeCases:
         """测试只有IP的行（无端口）"""
         with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_line("test 192.168.1.1", 1)
-        assert "地址格式错误" in str(exc_info.value)
+        assert "地址格式错误" in exc_info.value.localized("zh_CN")
 
     def test_batch_line_with_ipv6_no_bracket(self, batch_validator):
         """测试不带方括号的 IPv6 地址"""
@@ -551,14 +568,19 @@ class TestBatchImportEdgeCases:
         assert result[3] == "SOCKS5"
 
     def test_batch_line_rejects_unknown_proxy_type(self, batch_validator):
-        with pytest.raises(ValidationError, match="受支持的代理类型"):
+        with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_line("test 127.0.0.1:1080 FTP", 1)
+        assert exc_info.value.code == ErrorCode.VALIDATION_BATCH_AUTH_OR_TYPE
 
     def test_batch_line_rejects_extra_parameters(self, batch_validator):
-        with pytest.raises(ValidationError, match="参数过多"):
+        with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_line(
                 "test 127.0.0.1:1080 user:pass SOCKS5 ignored", 1
             )
+        assert (
+            exc_info.value.code
+            == ErrorCode.VALIDATION_BATCH_TOO_MANY_FIELDS
+        )
 
     def test_batch_line_with_spaces_in_quotes(self, batch_validator):
         """测试引号中带空格的解析"""
@@ -574,14 +596,18 @@ class TestProxyValidationEdgeCases:
 
     def test_address_field_rejects_embedded_port(self, proxy_validator):
         """地址字段拒绝内嵌端口，避免与独立端口字段冲突。"""
-        with pytest.raises(ValidationError, match="不能包含端口号"):
-            proxy_validator.validate_proxy_address("[::1]:8080")
-
-        with pytest.raises(ValidationError, match="不能包含端口号"):
-            proxy_validator.validate_proxy_address("[2001:db8::1]:8080")
-
-        with pytest.raises(ValidationError, match="不能包含端口号"):
-            proxy_validator.validate_proxy_address("proxy.example:8080")
+        addresses = [
+            "[::1]:8080",
+            "[2001:db8::1]:8080",
+            "proxy.example:8080",
+        ]
+        for address in addresses:
+            with pytest.raises(ValidationError) as exc_info:
+                proxy_validator.validate_proxy_address(address)
+            assert (
+                exc_info.value.code
+                == ErrorCode.VALIDATION_ADDRESS_EMBEDDED_PORT
+            )
 
     def test_ipv6_socket_validation(self, proxy_validator):
         """测试IPv6地址socket验证（覆盖lines 134-145）"""
@@ -600,7 +626,9 @@ class TestProxyValidationEdgeCases:
         for char in dangerous_chars:
             with pytest.raises(ValidationError) as exc_info:
                 proxy_validator.validate_proxy_address(f"test{char}example")
-            assert f"域名包含危险字符: {char}" in str(exc_info.value)
+            assert f"域名包含危险字符：{char!r}" in exc_info.value.localized(
+                "zh_CN"
+            )
 
     def test_batch_validation_shlex_error_handling(self, batch_validator):
         """测试批量验证中shlex.split异常处理（覆盖lines 350-354）"""
@@ -661,7 +689,7 @@ class TestProxyValidationEdgeCases:
             batch_validator.validate_batch_line("test invalid..domain:8080", 5)
 
         # 错误信息应该包含行号
-        assert "第5行" in str(exc_info.value)
+        assert "第5行" in exc_info.value.localized("zh_CN")
 
     def test_batch_content_validation_error_handling(self, batch_validator):
         """测试批量内容验证错误处理（覆盖lines 434-440）"""
@@ -673,7 +701,7 @@ invalid line without proper format
 
         with pytest.raises(ValidationError) as exc_info:
             batch_validator.validate_batch_content(content)
-        assert "没有找到有效的代理配置" in str(exc_info.value)
+        assert "没有找到有效的代理配置" in exc_info.value.localized("zh_CN")
 
         # 测试部分有效的混合内容
         mixed_content = """# Valid proxy

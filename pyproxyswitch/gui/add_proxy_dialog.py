@@ -13,6 +13,8 @@ from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 # 导入UI文件
 from pyproxyswitch.resources.add_proxy_ui import Ui_Dialog_AddProxy
 
+from .error_display import localized_error_message
+
 
 class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
     '''"添加代理"对话框'''
@@ -70,7 +72,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 QtWidgets.QMessageBox.warning(
                     self,
                     self.tr('Validation Error'),
-                    str(e),
+                    localized_error_message(e),
                     QtWidgets.QMessageBox.StandardButton.Ok
                 )
         else:

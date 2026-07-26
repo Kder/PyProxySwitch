@@ -19,6 +19,8 @@ from pyproxyswitch.proxy_validation import (
     ValidationError,
 )
 
+from .error_display import localized_error_message
+
 
 class BatchImportDialog(QtWidgets.QDialog):
     """批量导入代理对话框"""
@@ -118,10 +120,10 @@ class BatchImportDialog(QtWidgets.QDialog):
             )
 
         except ValidationError as e:
-            self._lbl_error.setText(str(e))
+            self._lbl_error.setText(localized_error_message(e))
             self._lbl_error.show()
         except Exception as e:
-            self._lbl_error.setText(str(e))
+            self._lbl_error.setText(localized_error_message(e))
             self._lbl_error.show()
 
     def _on_accept(self) -> None:
@@ -147,14 +149,14 @@ class BatchImportDialog(QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Import Failed"),
-                str(e),
+                localized_error_message(e),
                 QtWidgets.QMessageBox.StandardButton.Ok
             )
         except Exception as e:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Import Failed"),
-                str(e),
+                localized_error_message(e),
                 QtWidgets.QMessageBox.StandardButton.Ok
             )
 

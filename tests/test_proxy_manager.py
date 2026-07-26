@@ -1,6 +1,6 @@
 import pytest
 
-from pyproxyswitch.errors import ConfigError, ProxyStartError
+from pyproxyswitch.errors import ConfigError, ErrorCode, ProxyStartError
 from pyproxyswitch.proxy_manager import ProxyManager
 
 
@@ -91,16 +91,24 @@ def test_switching_upstream_reuses_listener(fake_server):
 def test_unknown_proxy_is_rejected(fake_server):
     manager = ProxyManager(StubConfig())
 
-    with pytest.raises(ConfigError, match="Proxy not found"):
+    with pytest.raises(ConfigError) as exc_info:
         manager.start_proxy("missing")
+    assert exc_info.value.code == ErrorCode.CONFIG_PROXY_NOT_FOUND
+    assert exc_info.value.params == {"name": "missing"}
 
 
 @pytest.mark.parametrize("port", [0, 65536, "invalid"])
 def test_invalid_listener_port_is_rejected(fake_server, port):
     manager = ProxyManager(StubConfig(LOCAL_PORT=port))
 
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError) as exc_info:
         manager.start_proxy("NoProxy")
+    expected = (
+        ErrorCode.CONFIG_LOCAL_PORT_INTEGER
+        if port == "invalid"
+        else ErrorCode.CONFIG_LOCAL_PORT_RANGE
+    )
+    assert exc_info.value.code == expected
 
 
 def test_restart_listener_preserves_upstream(fake_server):
@@ -145,8 +153,9 @@ def test_failed_listener_change_restores_previous_address(fake_server):
     config.settings["LOCAL_PORT"] = 9999
     fake_server.fail_start_ports.add(9999)
 
-    with pytest.raises(ProxyStartError, match="Failed to restart"):
+    with pytest.raises(ProxyStartError) as exc_info:
         manager.restart_listener()
+    assert exc_info.value.code == ErrorCode.PROXY_RESTART_FAILED
 
     assert manager.server is not None
     assert manager.server.port == 8888
@@ -165,8 +174,9 @@ def test_failed_listener_change_restores_previous_upstream(fake_server):
     config.settings["LOCAL_PORT"] = 9999
     fake_server.fail_start_ports.add(9999)
 
-    with pytest.raises(ProxyStartError, match="Failed to reconfigure"):
+    with pytest.raises(ProxyStartError) as exc_info:
         manager.start_proxy("two")
+    assert exc_info.value.code == ErrorCode.PROXY_RECONFIGURE_FAILED
 
     assert manager.server is not None
     assert manager.server.port == 8888

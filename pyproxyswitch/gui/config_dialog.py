@@ -13,6 +13,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 from pyproxyswitch.config import ConfigManager
+from pyproxyswitch.errors import ErrorCode
 from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 
 # 导入UI文件
@@ -22,6 +23,7 @@ from .batch_import_dialog import BatchImportDialog
 
 # 导入代理类
 from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
+from .error_display import localized_error_message
 
 logger = logging.getLogger("PyProxySwitch")
 
@@ -235,7 +237,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                                 server is not None and server.is_running
                             )
                         logger.error(f"Failed to move native proxy listener: {e}")
-                        message = str(e)
+                        message = localized_error_message(e)
                         if not restored:
                             message += "\n" + self.tr("Failed to restore the previous configuration")
                         self.show_error(message)
@@ -343,7 +345,10 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             if col == self.proxy_name:
                 normalized = self.validator.validate_proxy_name(value)
                 if self._proxy_name_exists(self.data_model, normalized, exclude_row=row):
-                    raise ValidationError(f"代理名称 {normalized!r} 已存在")
+                    raise ValidationError(
+                        ErrorCode.VALIDATION_NAME_DUPLICATE,
+                        params={"name": normalized},
+                    )
             elif col == self.proxy_address:
                 normalized = self.validator.validate_proxy_address(value)
             elif col == self.proxy_port:
@@ -355,10 +360,10 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             elif col == self.proxy_pass:
                 normalized = self.validator.validate_password(value)
             else:
-                raise ValidationError("未知的代理字段")
+                raise ValidationError(ErrorCode.VALIDATION_FIELD_UNKNOWN)
             return normalized
         except ValidationError as e:
-            self.show_error(str(e))
+            self.show_error(localized_error_message(e))
             return None
 
     def _revert_cell_change(self, row, col):
@@ -479,7 +484,8 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                     self.data_model, proxy_data[self.proxy_name], exclude_row=row
                 ):
                     raise ValidationError(
-                        f"代理名称 {proxy_data[self.proxy_name]!r} 已存在"
+                        ErrorCode.VALIDATION_NAME_DUPLICATE,
+                        params={"name": proxy_data[self.proxy_name]},
                     )
 
                 # 更新模型中的数据
@@ -494,7 +500,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                     self.refresh_menu()
 
             except Exception as e:
-                self.show_error(str(e))
+                self.show_error(localized_error_message(e))
 
     def del_proxy(self):
         """删除代理"""
@@ -541,7 +547,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                         parent.set_proxy_service_available(
                             server is not None and server.is_running
                         )
-                    self.show_error(str(exc))
+                    self.show_error(localized_error_message(exc))
         else:
             logger.warning("Parent widget does not have refresh_menu method")
 
@@ -586,7 +592,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 )
             except ValidationError as exc:
                 self._reload_proxy_model()
-                self.show_error(str(exc))
+                self.show_error(localized_error_message(exc))
                 return False
             proxies.append([str(value) for value in validated])
 
