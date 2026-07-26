@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify that wheel and sdist metadata match an expected release version."""
+"""Verify that release artifacts match an expected release version."""
 
 from __future__ import annotations
 
@@ -54,28 +54,76 @@ def sdist_version(path: Path) -> str:
     return version
 
 
-def verify_release_artifacts(directory: Path, expected: str) -> None:
+def verify_portable_artifact(directory: Path, expected: str) -> Path:
+    portable = _single_match(directory, "*-portable.zip")
+    expected_stem = f"PyProxySwitch-{expected}-windows-x64-portable"
+    if portable.name != f"{expected_stem}.zip":
+        raise ValueError(
+            "portable archive name does not match release tag: "
+            f"expected {expected_stem}.zip, found {portable.name}"
+        )
+
+    with zipfile.ZipFile(portable) as archive:
+        names = archive.namelist()
+        prefix = f"{expected_stem}/"
+        outside_root = [name for name in names if not name.startswith(prefix)]
+        if outside_root:
+            raise ValueError(
+                f"portable archive contains entries outside {expected_stem}/: "
+                f"{outside_root[0]}"
+            )
+        required = {
+            f"{prefix}PyProxySwitch.exe",
+            f"{prefix}portable.ini",
+        }
+        missing = sorted(required.difference(names))
+        if missing:
+            raise ValueError(
+                "portable archive is missing required entries: " + ", ".join(missing)
+            )
+    return portable
+
+
+def verify_release_artifacts(
+    directory: Path,
+    expected: str,
+    portable_directory: Path | None = None,
+) -> None:
     wheel = _single_match(directory, "*.whl")
     sdist = _single_match(directory, "*.tar.gz")
     versions = {
         "wheel": wheel_version(wheel),
         "sdist": sdist_version(sdist),
     }
-    print(f"expected={expected} wheel={versions['wheel']} sdist={versions['sdist']}")
     mismatches = {kind: version for kind, version in versions.items() if version != expected}
     if mismatches:
         details = ", ".join(f"{kind}={version}" for kind, version in mismatches.items())
         raise ValueError(f"distribution version does not match release tag: {details}")
+
+    summary = f"expected={expected} wheel={versions['wheel']} sdist={versions['sdist']}"
+    if portable_directory is not None:
+        portable = verify_portable_artifact(portable_directory, expected)
+        summary += f" portable={portable.name}"
+    print(summary)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path, help="directory containing one wheel and one sdist")
     parser.add_argument("--expected", required=True, help="expected PEP 440 version")
+    parser.add_argument(
+        "--portable-directory",
+        type=Path,
+        help="directory containing one Windows portable zip",
+    )
     args = parser.parse_args()
 
     try:
-        verify_release_artifacts(args.directory, args.expected)
+        verify_release_artifacts(
+            args.directory,
+            args.expected,
+            portable_directory=args.portable_directory,
+        )
     except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as exc:
         parser.error(str(exc))
 

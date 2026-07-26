@@ -51,9 +51,15 @@ uv run --python <系统 Python 3.14 路径> python tools/release.py publish X.Y.
 `publish` 不会提交或推送分支内容；如果工作区不干净、`HEAD` 不等于
 `origin/master`、对应 Tests 未成功或标签已存在，它会拒绝发布。
 
-`.github/workflows/publish.yml` 仅由 `v[0-9]*` 标签触发。工作流获取完整 Git 历史，构建 wheel 和 sdist，并在 OIDC 上传 PyPI 前校验两个制品的版本元数据都与标签一致。
+推送标签后由两个职责独立、均仅匹配 `v[0-9]*` 标签的工作流处理：
 
-发布工作流还会要求标签版本等于 `releases.toml` 的首个版本，并检查
+- `.github/workflows/release.yml` 使用 Windows 和 Python 3.14 构建 Nuitka
+  portable zip，使用 Linux 构建 wheel 与 sdist，统一校验三个制品的版本，
+  然后创建 GitHub Release 并上传 `.whl`、`.tar.gz` 和 portable `.zip`。
+- `.github/workflows/publish.yml` 构建并校验 wheel 与 sdist，再通过 OIDC
+  上传 PyPI；它不创建 GitHub Release，`release.yml` 也不发布 PyPI。
+
+PyPI 发布工作流还会要求标签版本等于 `releases.toml` 的首个版本，并检查
 `CHANGELOG.md` 和网站生成文件没有过期。发布日期只读取
 `releases.toml`，不会使用工作流运行当天。
 

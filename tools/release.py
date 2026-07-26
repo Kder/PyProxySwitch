@@ -323,8 +323,9 @@ def publish(version: str) -> None:
     _run(["git", "tag", "-s", tag, "-m", f"PyProxySwitch {normalized}"])
     _run(["git", "push", "origin", tag])
     print(
-        f"\nPublished {tag}. The tag-triggered GitHub Actions workflow will "
-        "build, verify, and upload the release to PyPI."
+        f"\nPublished {tag}. The tag-triggered GitHub Actions workflows will "
+        "build and verify the artifacts, create the GitHub Release, and publish "
+        "the Python distributions to PyPI."
     )
 
 

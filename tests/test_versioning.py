@@ -41,6 +41,29 @@ def test_publish_workflow_is_tag_only_and_checks_artifact_metadata() -> None:
     assert "submodules: true" in workflow
 
 
+def test_github_release_workflow_builds_and_verifies_all_artifacts() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert '      - "v[0-9]*"' in workflow
+    assert "workflow_dispatch" not in workflow
+    assert 'python-version: "3.14"' in workflow
+    assert "uv python find" in workflow
+    assert "--no-managed-python" in workflow
+    assert "--no-python-downloads" in workflow
+    assert "--resolve-links 3.14" in workflow
+    assert "--group build" in workflow
+    assert "python tools/build_nuitka.py --clean" in workflow
+    assert "uv build" in workflow
+    assert "--portable-directory artifacts/portable" in workflow
+    assert "gh release create" in workflow
+    assert "artifacts/python/*.whl" in workflow
+    assert "artifacts/python/*.tar.gz" in workflow
+    assert "artifacts/portable/*.zip" in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+
+
 def test_release_procedure_is_kept_out_of_user_readmes() -> None:
     chinese_readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     english_readme = (REPO_ROOT / "README_EN.txt").read_text(encoding="utf-8")

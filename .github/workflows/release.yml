@@ -1,0 +1,199 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-portable:
+    name: Build Windows portable zip
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # setuptools-scm derives the package version from tags and history.
+          fetch-depth: 0
+          submodules: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Resolve system Python 3.14
+        id: python
+        shell: pwsh
+        run: |
+          $python = uv python find --system `
+            --no-managed-python `
+            --no-python-downloads `
+            --resolve-links 3.14
+          if (-not $python) {
+            throw "Unable to resolve the system Python 3.14 interpreter"
+          }
+          "python=$python" >> $env:GITHUB_OUTPUT
+
+      - name: Build portable zip with Nuitka
+        shell: pwsh
+        run: |
+          uv run `
+            --python "${{ steps.python.outputs.python }}" `
+            --group build `
+            python tools/build_nuitka.py --clean
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: release/*-portable.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-distributions:
+    name: Build wheel and sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # setuptools-scm derives the package version from tags and history.
+          fetch-depth: 0
+          submodules: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Resolve system Python 3.14
+        id: python
+        shell: bash
+        run: |
+          python_path="$(
+            uv python find \
+              --system \
+              --no-managed-python \
+              --no-python-downloads \
+              --resolve-links 3.14
+          )"
+          test -n "$python_path"
+          echo "python=$python_path" >> "$GITHUB_OUTPUT"
+
+      - name: Build wheel and sdist
+        shell: bash
+        run: |
+          uv build \
+            --python "${{ steps.python.outputs.python }}" \
+            --no-managed-python \
+            --no-python-downloads \
+            --out-dir dist
+
+      - name: Verify distribution versions
+        shell: bash
+        run: |
+          uv run \
+            --python "${{ steps.python.outputs.python }}" \
+            --no-project \
+            python tools/verify_release_artifacts.py \
+              --expected "${GITHUB_REF_NAME#v}" \
+              dist/
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs:
+      - build-portable
+      - build-distributions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Resolve system Python 3.14
+        id: python
+        shell: bash
+        run: |
+          python_path="$(
+            uv python find \
+              --system \
+              --no-managed-python \
+              --no-python-downloads \
+              --resolve-links 3.14
+          )"
+          test -n "$python_path"
+          echo "python=$python_path" >> "$GITHUB_OUTPUT"
+
+      - name: Download Python distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: artifacts/python
+
+      - name: Download Windows portable zip
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-portable
+          path: artifacts/portable
+
+      - name: Verify all release artifact versions
+        shell: bash
+        run: |
+          uv run \
+            --python "${{ steps.python.outputs.python }}" \
+            --no-project \
+            python tools/verify_release_artifacts.py \
+              --expected "${GITHUB_REF_NAME#v}" \
+              --portable-directory artifacts/portable \
+              artifacts/python
+
+      - name: Create GitHub Release and upload artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          artifacts=(
+            artifacts/python/*.whl
+            artifacts/python/*.tar.gz
+            artifacts/portable/*.zip
+          )
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${artifacts[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${artifacts[@]}" \
+              --verify-tag \
+              --generate-notes \
+              --title "PyProxySwitch ${GITHUB_REF_NAME#v}"
+          fi
