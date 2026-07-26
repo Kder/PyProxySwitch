@@ -184,6 +184,10 @@ class ProxyManager:
             port=port,
             upstream=upstream,
             connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
+            # A non-loopback LOCAL_ADDRESS is an explicit user opt-in documented
+            # by the application.  The lower-level server remains safe by
+            # default for direct API callers.
+            allow_remote_clients=True,
         )
 
     def _resolve_upstream(self, proxy_name: str) -> Upstream:

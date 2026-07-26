@@ -25,12 +25,20 @@ class FakeServer:
     instances = []
     fail_start_ports = set()
 
-    def __init__(self, host, port, upstream, connect_timeout):
+    def __init__(
+        self,
+        host,
+        port,
+        upstream,
+        connect_timeout,
+        allow_remote_clients=False,
+    ):
         self.host = host
         self.port = port
         self.bound_port = port
         self.upstream = upstream
         self.connect_timeout = connect_timeout
+        self.allow_remote_clients = allow_remote_clients
         self.is_running = False
         self.stop_result = True
         self.stop_calls = 0
@@ -67,6 +75,15 @@ def test_start_direct_proxy(fake_server):
     assert manager.server is fake_server.instances[0]
     assert manager.server.upstream.proxy_type == "DIRECT"
     assert manager.server.is_running
+
+
+def test_configured_listener_address_is_an_explicit_remote_bind_opt_in(fake_server):
+    manager = ProxyManager(StubConfig(LOCAL_ADDRESS="0.0.0.0"))
+
+    manager.start_proxy("NoProxy")
+
+    assert manager.server.host == "0.0.0.0"
+    assert manager.server.allow_remote_clients is True
 
 
 def test_switching_upstream_reuses_listener(fake_server):
