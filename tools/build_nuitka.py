@@ -129,7 +129,8 @@ def validate_build_environment() -> None:
     if importlib.util.find_spec("nuitka") is None:
         raise SystemExit(
             "error: Nuitka is not installed. Run: "
-            "uv run --group build python tools/build_nuitka.py"
+            "uv run --python <system-python-3.14> --group build "
+            "python tools/build_nuitka.py"
         )
 
     if sys.platform == "darwin" and shutil.which("clang") is None:

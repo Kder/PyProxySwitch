@@ -90,6 +90,8 @@ pipx uninstall PyProxySwitch
 
 # 开发
 
+完整的环境初始化、生成文件、检查、构建和发布命令见 [RELEASING.md](RELEASING.md)。
+
 修改 `pyproxyswitch/resources` 中的 Qt Designer `.ui` 文件后，运行 `python tools/generate_ui.py` 重新生成对应的 `*_ui.py` 文件。提交前可运行 `python tools/generate_ui.py --check` 检查生成文件是否为最新版本。
 
 运行 `python tools/generate_i18n.py update` 从 Python 和 `.ui` 文件更新 Qt `.ts` 翻译源，完成翻译后运行 `python tools/generate_i18n.py compile` 生成应用使用的 `.qm` 文件；省略子命令会依次执行这两个阶段。提交前可运行 `python tools/generate_i18n.py --check` 检查所有翻译产物。两个生成脚本都会自动使用当前 Python 环境中的 PySide6 工具，支持 Windows、Linux 和 macOS。

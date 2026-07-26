@@ -1,6 +1,64 @@
-# 发布流程
+# 开发、构建与发布流程
 
-本文档面向项目维护者。用户安装与使用说明保留在 README，PyPI 发布细节集中维护在此处。
+以下命令均在项目根目录的 PowerShell 中运行。
+
+## 初始化
+
+```powershell
+$PYTHON = uv python find --system --no-managed-python --no-python-downloads --resolve-links 3.14
+git submodule update --init --recursive
+uv sync --python $PYTHON --no-managed-python --no-python-downloads --extra dev --group build
+```
+
+每次打开新终端后重新设置 `$PYTHON`。
+
+## 修改与生成
+
+只运行与本次修改相关的命令：
+
+```powershell
+# 修改 pyproxyswitch/resources/*.ui 后
+uv run --python $PYTHON python tools/generate_ui.py
+
+# 修改界面文案后：更新 TS，翻译 i18n/*.ts，再编译 QM
+uv run --python $PYTHON python tools/generate_i18n.py update
+uv run --python $PYTHON python tools/generate_i18n.py compile
+
+# 修改 releases.toml 后
+uv run --python $PYTHON python tools/sync_release_docs.py --write
+```
+
+`sync_release_docs.py --write` 可能同时修改主仓库和 `htdocs` submodule。
+
+## 提交前检查
+
+```powershell
+uv run --python $PYTHON python tools/sync_release_docs.py --check
+uv run --python $PYTHON python htdocs/tools/validate_site.py
+uv run --python $PYTHON --extra dev python -m ruff check .
+uv run --python $PYTHON python tools/generate_ui.py --check
+uv run --python $PYTHON python tools/generate_i18n.py --check
+uv run --python $PYTHON --extra dev python -m mypy pyproxyswitch --ignore-missing-imports
+uv run --python $PYTHON --extra dev python -m pytest
+git diff --check
+git status --short
+git submodule status --recursive
+```
+
+## 本地构建
+
+```powershell
+# wheel + sdist
+uv build --python $PYTHON --no-managed-python --no-python-downloads --out-dir dist
+
+# Windows portable zip
+uv run --python $PYTHON --group build python tools/build_nuitka.py --clean
+```
+
+输出：
+
+- `dist/*.whl`、`dist/*.tar.gz`
+- `release/PyProxySwitch-<版本>-windows-x64-portable.zip`
 
 ## 版本模型
 
@@ -20,23 +78,45 @@
 
 在 GitHub 仓库 Settings → Environments 中创建 `pypi` environment。仓库不保存 PyPI API token。
 
+```powershell
+gh auth status
+git config --get user.signingkey
+```
+
+SourceForge 镜像需要仓库 secret：`SOURCEFORGE_SSH_KEY`。
+
 ## 发布检查
 
-1. 从 `master` 的干净工作区开始，拉取远端和 `htdocs` submodule 的最新提交。
-2. 在 `releases.toml` 顶部添加新版本、明确的发布日期、中英文摘要和变更项。
-3. 按 `AGENTS.md` 的要求，通过 uv 定位的系统 Python 3.14 运行发布准备：
+```powershell
+git switch master
+git pull --ff-only
+git submodule update --init --recursive
+```
 
-   ```powershell
-   uv run --python <系统 Python 3.14 路径> --extra dev python tools/release.py prepare X.Y.Z
-   ```
+在 `releases.toml` 顶部添加 `X.Y.Z`、发布日期、中英文摘要和变更项，然后运行：
 
-   `prepare` 会生成并检查发布文档，验证网站、UI 和翻译生成结果，运行
-   Ruff、mypy 和完整测试，并在 `build/release-check/` 构建和验证 wheel
-   与 sdist。发布日期只读取 `releases.toml`。
+```powershell
+uv run --python $PYTHON --extra dev python tools/release.py prepare X.Y.Z
 
-4. 查看命令输出的主仓库和 `htdocs` 差异。
-5. 先提交并推送 `htdocs`，再在主仓库提交更新后的 submodule 指针和其他改动。
-6. 确认准备发布的提交已经推送且 GitHub Tests 工作流通过。
+# htdocs 有变更时先提交 submodule
+git -C htdocs status --short
+git -C htdocs add -A
+git -C htdocs commit -m "发布 X.Y.Z"
+git -C htdocs push origin master
+
+# 再提交主仓库
+git add -A
+git commit -m "发布 X.Y.Z"
+git push origin master
+
+$HEAD_SHA = git rev-parse HEAD
+gh run list --workflow test.yml --commit $HEAD_SHA
+$RUN_ID = gh run list --workflow test.yml --commit $HEAD_SHA --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_ID --exit-status
+```
+
+`prepare` 会同步发布文档，检查网站/UI/翻译，运行 Ruff、mypy 和完整测试，
+并在 `build/release-check/` 构建、校验 wheel 与 sdist。
 
 ## 创建版本
 
@@ -44,25 +124,32 @@
 Tests，然后创建并推送签名 annotated tag：
 
 ```powershell
-uv run --python <系统 Python 3.14 路径> python tools/release.py publish X.Y.Z
+uv run --python $PYTHON python tools/release.py publish X.Y.Z
 ```
 
 本机需要已登录的 GitHub CLI（`gh auth status`）和可用的 Git 签名密钥。
 `publish` 不会提交或推送分支内容；如果工作区不干净、`HEAD` 不等于
 `origin/master`、对应 Tests 未成功或标签已存在，它会拒绝发布。
 
-推送标签后由两个职责独立、均仅匹配 `v[0-9]*` 标签的工作流处理：
+## 自动工作流
 
-- `.github/workflows/release.yml` 使用 Windows 和 Python 3.14 构建 Nuitka
-  portable zip，使用 Linux 构建 wheel 与 sdist，统一校验三个制品的版本，
-  然后创建 GitHub Release 并上传 `.whl`、`.tar.gz` 和 portable `.zip`。
-- `.github/workflows/publish.yml` 构建并校验 wheel 与 sdist，再通过 OIDC
-  上传 PyPI；它不创建 GitHub Release，`release.yml` 也不发布 PyPI。
+| 文件 | 触发 | 结果 |
+| --- | --- | --- |
+| `.github/workflows/test.yml` | push/PR → `master`、`develop` | Ruff、mypy、生成文件检查；3 个系统 × Python 3.11–3.14 测试 |
+| `.github/workflows/release.yml` | `v[0-9]*` tag | Windows portable zip + Linux wheel/sdist → GitHub Release |
+| `.github/workflows/publish.yml` | `v[0-9]*` tag | wheel/sdist → PyPI OIDC |
+| `.github/workflows/mirror-sourceforge.yml` | push、delete、手动 | `master` → SourceForge `github-mirror`，同步全部 tag |
 
-PyPI 发布工作流还会要求标签版本等于 `releases.toml` 的首个版本，并检查
-`CHANGELOG.md` 和网站生成文件没有过期。发布日期只读取
-`releases.toml`，不会使用工作流运行当天。
+`release.yml` 与 `publish.yml` 独立构建和校验；前者不发布 PyPI，后者不创建
+GitHub Release。两个工作流都要求 tag 版本等于 `releases.toml` 首个版本。
 
 ## 发布失败
 
-不要移动、删除或复用已经推送或发布的 tag。修复问题并重新完成检查，然后使用新的补丁版本标签发布。
+```powershell
+gh run view $RUN_ID --log-failed
+gh run rerun $RUN_ID --failed
+gh run watch $RUN_ID --exit-status
+```
+
+瞬时故障可重跑；代码或制品问题必须修复后发布新的补丁版本。不要移动、删除
+或复用已经推送或发布的 tag。

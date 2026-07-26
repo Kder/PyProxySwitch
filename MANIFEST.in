@@ -9,6 +9,7 @@ recursive-include pyproxyswitch/data *.qm PPS.conf proxy.txt
 recursive-include pyproxyswitch/resources *.ui
 recursive-include i18n *.ts
 include tools/build_nuitka.py tools/generate_i18n.py tools/generate_ui.py
+include tools/release.py
 include tools/sync_release_docs.py
 include tools/verify_release_artifacts.py
 prune htdocs

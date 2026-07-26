@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Prepare and publish a PyProxySwitch release.
 
-Release metadata remains human-authored in ``releases.toml``.  This command
-orchestrates the deterministic checks and signed-tag handoff to the existing
-GitHub Actions PyPI workflow.
+Release metadata remains human-authored in ``releases.toml``. This command
+orchestrates deterministic checks and the signed-tag handoff to the GitHub
+Release and PyPI workflows.
 """
 
 from __future__ import annotations
@@ -220,10 +220,22 @@ def prepare(version: str) -> None:
 
     _build_distributions(normalized)
     _show_changes()
+    publish_command = subprocess.list2cmdline(
+        [
+            "uv",
+            "run",
+            "--python",
+            sys.executable,
+            "python",
+            "tools/release.py",
+            "publish",
+            normalized,
+        ]
+    )
     print(
         "\nRelease preparation passed. Commit and push htdocs first if it changed, "
         "then commit and push the main repository. Wait for Tests to succeed "
-        f"before running: python tools/release.py publish {normalized}"
+        f"before running: {publish_command}"
     )
 
 

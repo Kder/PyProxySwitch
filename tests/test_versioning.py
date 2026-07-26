@@ -56,6 +56,8 @@ def test_github_release_workflow_builds_and_verifies_all_artifacts() -> None:
     assert "--group build" in workflow
     assert "python tools/build_nuitka.py --clean" in workflow
     assert "uv build" in workflow
+    assert "tools/sync_release_docs.py" in workflow
+    assert '--expected-version "${GITHUB_REF_NAME#v}"' in workflow
     assert "--portable-directory artifacts/portable" in workflow
     assert "gh release create" in workflow
     assert "artifacts/python/*.whl" in workflow
@@ -76,6 +78,7 @@ def test_release_procedure_is_kept_out_of_user_readmes() -> None:
     assert "Trusted Publishers" not in english_readme
     assert "Git tag 是正式版本的唯一来源" in release_guide
     assert ".github/workflows/publish.yml" in release_guide
+    assert "include tools/release.py" in manifest
     assert "include RELEASING.md" in manifest
     assert "include CHANGELOG.md" in manifest
     assert "include releases.toml" in manifest

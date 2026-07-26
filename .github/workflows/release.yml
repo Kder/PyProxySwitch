@@ -96,6 +96,16 @@ jobs:
           test -n "$python_path"
           echo "python=$python_path" >> "$GITHUB_OUTPUT"
 
+      - name: Verify generated release documentation
+        shell: bash
+        run: |
+          uv run \
+            --python "${{ steps.python.outputs.python }}" \
+            --no-project \
+            python tools/sync_release_docs.py \
+              --check \
+              --expected-version "${GITHUB_REF_NAME#v}"
+
       - name: Build wheel and sdist
         shell: bash
         run: |
