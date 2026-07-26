@@ -46,15 +46,17 @@ def test_load_version_matches_package(build_nuitka):
     assert __version__ == build_nuitka.load_version()
 
 
-def test_nuitka_is_declared_in_uv_build_dependency_group():
+def test_nuitka_build_dependencies_are_declared():
     config = tomllib.loads(
         (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
     )
+    requirements = config["dependency-groups"]["build"]
 
     assert any(
         requirement.lower().startswith("nuitka")
-        for requirement in config["dependency-groups"]["build"]
+        for requirement in requirements
     )
+    assert any(requirement.lower().startswith("setuptools-scm") for requirement in requirements)
 
 
 @pytest.mark.parametrize(

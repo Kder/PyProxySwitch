@@ -4,7 +4,7 @@
 <context>
     <name>AddProxy_Dialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="68"/>
+        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="72"/>
         <source>Validation Error</source>
         <translation>验证错误</translation>
     </message>
@@ -231,7 +231,7 @@ socks_proxy 203.0.113.5:1080 SOCKS5
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/config_dialog.py" line="400"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="597"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="598"/>
         <source>Failed to save proxy list</source>
         <translation>保存代理列表失败</translation>
     </message>
@@ -246,12 +246,12 @@ socks_proxy 203.0.113.5:1080 SOCKS5
         <translation>请选择要修改的代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="504"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="505"/>
         <source>Confirm Delete</source>
         <translation>确认删除</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="505"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="506"/>
         <source>Are you sure you want to delete this proxy?</source>
         <translation>您确定要删除此代理吗？</translation>
     </message>

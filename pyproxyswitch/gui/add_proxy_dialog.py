@@ -39,8 +39,12 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 address = self.le_address.text().strip()
                 port = self.le_port.text().strip()
                 proxy_type = self.comboBox_type.currentText()
-                username = self.le_username.text()
-                password = self.le_password.text()
+                if self.checkBox_proxy_auth.isChecked():
+                    username = self.le_username.text()
+                    password = self.le_password.text()
+                else:
+                    username = ""
+                    password = ""
 
                 # 执行完整验证
                 validated = self.validator.validate_full_proxy(

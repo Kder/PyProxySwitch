@@ -56,6 +56,14 @@ def test_changelog_rendering_is_deterministic_and_bilingual(release_docs) -> Non
     assert "## 0.9.0 — 2009-08-20" in first
 
 
+def test_site_changelog_preserves_legacy_redirect_anchor(release_docs) -> None:
+    releases = release_docs.load_releases(REPO_ROOT / "releases.toml")
+
+    rendered = release_docs.render_site_changelog(releases)
+
+    assert '<span id="legacy"></span>' in rendered
+
+
 def test_invalid_or_duplicate_release_data_is_rejected(release_docs, tmp_path) -> None:
     duplicate = tmp_path / "releases.toml"
     duplicate.write_text(

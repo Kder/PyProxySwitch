@@ -674,6 +674,10 @@ class NativeProxyServer:
         parts = lines[0].split(None, 2)
         if len(parts) != 3 or parts[2] not in {"HTTP/1.0", "HTTP/1.1"}:
             raise ProxyProtocolError("Invalid HTTP request line")
+        if not set(parts[0]) <= _HTTP_TOKEN_CHARS:
+            raise ProxyProtocolError("Invalid HTTP method")
+        if any(not 0x21 <= ord(char) <= 0x7E for char in parts[1]):
+            raise ProxyProtocolError("Invalid HTTP request target")
         headers: list[tuple[str, str]] = []
         for line in lines[1:]:
             if not line:

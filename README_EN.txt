@@ -49,7 +49,7 @@ cleanup, remove these directories manually:
 
 * Windows configuration: `%APPDATA%\Kder\PyProxySwitch` (`PPS.conf` and
   `proxy.txt`)
-* Windows logs: `%LOCALAPPDATA%\Kder\PyProxySwitch` (or the directory selected
+* Windows logs: `%LOCALAPPDATA%\Kder\PyProxySwitch\Logs` (or the directory selected
   by `LOG_PATH` in `PPS.conf`)
 * Linux: `~/.config/PyProxySwitch` and
   `~/.local/state/PyProxySwitch/log`

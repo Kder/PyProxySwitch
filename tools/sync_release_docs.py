@@ -164,6 +164,8 @@ def render_site_changelog(releases: tuple[Release, ...]) -> str:
             f"{_time_html(release)}<p>{html.escape(release.summary_zh)}</p>"
             f"{_changes_html(release.changes_zh)}</section>"
         )
+    if len(sections) > 10:
+        sections[10] = '  <span id="legacy"></span>\n' + sections[10]
 
     toc_releases = releases[:10]
     toc = "".join(f'<a href="#{release.anchor}">{release.version}</a>' for release in toc_releases)

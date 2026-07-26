@@ -178,6 +178,23 @@ def test_explicit_zero_port_in_absolute_http_url_is_rejected() -> None:
         server._http_destination("http://example.com:0/test", [])
 
 
+@pytest.mark.parametrize(
+    ("request_line", "message"),
+    [
+        (b"GE(T / HTTP/1.1", "method"),
+        (b"GET /bad\x00target HTTP/1.1", "target"),
+        (b"GET /\x80 HTTP/1.1", "target"),
+    ],
+)
+def test_invalid_http_request_line_characters_are_rejected(
+    request_line: bytes, message: str
+) -> None:
+    raw_header = request_line + b"\r\nHost: example.com\r\n\r\n"
+
+    with pytest.raises(ProxyProtocolError, match=message):
+        NativeProxyServer._parse_http_header(raw_header)
+
+
 def test_options_asterisk_is_preserved_through_http_upstream() -> None:
     with (
         _running_http_server() as (_, destination_port),

@@ -218,7 +218,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
                         parent = self.parentWidget()
                         if hasattr(parent, "proxy_manager"):
-                            parent.proxy_manager.restart_listener()
+                            parent.proxy_manager.start_proxy(parent.item_text)
                             if hasattr(parent, "set_proxy_service_available"):
                                 parent.set_proxy_service_available(True)
                         logger.info(f"Native proxy listener moved to port {port}")
@@ -459,6 +459,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         dialog.le_username.setText(user)
         dialog.le_password.setText(pwd)
+        dialog.checkBox_proxy_auth.setChecked(bool(user or pwd))
 
         if dialog.exec() == QtWidgets.QDialog.Accepted:
             proxy_data = [

@@ -47,7 +47,7 @@ pipx uninstall PyProxySwitch
 卸载只移除程序本体与命令入口。按 Python 应用的通行惯例，用户数据会被保留；如需彻底删除，请手动移除以下目录：
 
 - Windows 配置：`%APPDATA%\Kder\PyProxySwitch`（`PPS.conf`、`proxy.txt`）
-- Windows 日志：`%LOCALAPPDATA%\Kder\PyProxySwitch`（或 `PPS.conf` 中 `LOG_PATH` 指定的目录）
+- Windows 日志：`%LOCALAPPDATA%\Kder\PyProxySwitch\Logs`（或 `PPS.conf` 中 `LOG_PATH` 指定的目录）
 - Linux：`~/.config/PyProxySwitch` 与 `~/.local/state/PyProxySwitch/log`
 - macOS：`~/Library/Application Support/PyProxySwitch` 与 `~/Library/Logs/PyProxySwitch`
 

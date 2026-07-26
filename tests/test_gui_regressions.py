@@ -26,6 +26,7 @@ def test_add_proxy_dialog_stores_normalized_values(qapp) -> None:
     dialog.le_proxy_name.setText("  normalized  ")
     dialog.le_address.setText("[::1]")
     dialog.le_port.setText("8080")
+    dialog.checkBox_proxy_auth.setChecked(True)
     dialog.le_username.setText(" alice ")
     dialog.le_password.setText(" secret ")
 
@@ -36,6 +37,23 @@ def test_add_proxy_dialog_stores_normalized_values(qapp) -> None:
     assert dialog.le_address.text() == "::1"
     assert dialog.le_username.text() == "alice"
     assert dialog.le_password.text() == " secret "
+
+
+def test_add_proxy_dialog_discards_credentials_when_auth_is_disabled(qapp) -> None:
+    dialog = AddProxy_Dialog()
+    dialog.le_proxy_name.setText("no_auth")
+    dialog.le_address.setText("localhost")
+    dialog.le_port.setText("8080")
+    dialog.checkBox_proxy_auth.setChecked(True)
+    dialog.le_username.setText("alice")
+    dialog.le_password.setText("secret")
+    dialog.checkBox_proxy_auth.setChecked(False)
+
+    dialog.done(QtWidgets.QDialog.DialogCode.Accepted)
+
+    assert dialog.result() == QtWidgets.QDialog.DialogCode.Accepted
+    assert dialog.le_username.text() == ""
+    assert dialog.le_password.text() == ""
 
 
 def test_invalid_sorted_edit_reverts_its_own_row(qapp, tmp_path, monkeypatch) -> None:
@@ -228,6 +246,77 @@ def test_refreshing_menu_reapplies_edited_active_proxy(qapp, tmp_path) -> None:
 
     assert parent.refresh_count == 1
     assert parent.proxy_manager.started == ["one"]
+
+
+def test_changing_listener_port_reapplies_the_selected_proxy(qapp, tmp_path) -> None:
+    config = _make_config(
+        tmp_path,
+        [("one", "proxy.example", "8080", "HTTP", "", "")],
+    )
+
+    class ProxyManagerStub:
+        def __init__(self):
+            self.started = []
+            self.restart_calls = 0
+
+        def start_proxy(self, name):
+            self.started.append(name)
+
+        def restart_listener(self):
+            self.restart_calls += 1
+
+    class Parent(QtWidgets.QWidget):
+        def __init__(self):
+            super().__init__()
+            self.item_text = "one"
+            self.proxy_manager = ProxyManagerStub()
+            self.proxy_service_available = False
+
+        def set_proxy_service_available(self, available):
+            self.proxy_service_available = available
+
+    parent = Parent()
+    dialog = Config_Dialog(parent)
+    dialog.le_localport.setText("9999")
+
+    dialog.change_localport()
+
+    assert config.get("LOCAL_PORT") == 9999
+    assert parent.proxy_manager.started == ["one"]
+    assert parent.proxy_manager.restart_calls == 0
+    assert parent.proxy_service_available
+
+
+def test_modifying_authenticated_proxy_enables_credential_fields(
+    qapp, tmp_path, monkeypatch
+) -> None:
+    _make_config(
+        tmp_path,
+        [("auth", "proxy.example", "8080", "HTTP", "alice", "secret")],
+    )
+    captured = []
+
+    class CapturingDialog(AddProxy_Dialog):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+            captured.append(self)
+
+        def exec(self):
+            return QtWidgets.QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr(
+        "pyproxyswitch.gui.add_proxy_dialog.AddProxy_Dialog",
+        CapturingDialog,
+    )
+    dialog = Config_Dialog()
+    dialog.tableView.setCurrentIndex(dialog.data_model.index(0, dialog.proxy_name))
+
+    dialog.modify_proxy()
+
+    editor = captured[0]
+    assert editor.checkBox_proxy_auth.isChecked()
+    assert editor.le_username.isEnabled()
+    assert editor.le_password.isEnabled()
 
 
 def test_debug_checkbox_updates_console_logging_immediately(qapp, tmp_path) -> None:

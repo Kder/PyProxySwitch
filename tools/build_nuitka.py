@@ -31,15 +31,11 @@ EXE_NAME = "PyProxySwitch.exe" if sys.platform == "win32" else "PyProxySwitch"
 
 
 def load_version() -> str:
-    """Read the package version without importing the application package."""
+    """Derive the current package version directly from the Git checkout."""
 
-    version_file = REPO_ROOT / "pyproxyswitch" / "_version.py"
-    spec = importlib.util.spec_from_file_location("_pps_version", version_file)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"unable to load version from {version_file}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return str(module.__version__)
+    from setuptools_scm import get_version
+
+    return get_version(root=str(REPO_ROOT), local_scheme="no-local-version")
 
 
 def platform_tag() -> str:
