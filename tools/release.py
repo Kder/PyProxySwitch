@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tomllib
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import NoReturn
@@ -29,6 +30,12 @@ TAG_RE = re.compile(r"v(\d+(?:\.\d+){1,3})")
 
 class ReleaseError(RuntimeError):
     """A release precondition was not satisfied."""
+
+
+@dataclass(frozen=True)
+class _ReleaseTagState:
+    local_object: str | None
+    remote_object: str | None
 
 
 def _run(
@@ -103,12 +110,33 @@ def _require_master() -> None:
         raise ReleaseError(f"release commands must run on master, current branch is {branch!r}")
 
 
-def _require_newer_than_tags(version: str) -> None:
-    versions: list[str] = []
-    for tag in _git_output("tag", "--list", "v[0-9]*").splitlines():
+def _release_tag_versions() -> set[str]:
+    tags = set(_git_output("tag", "--list", "v[0-9]*").splitlines())
+    remote_tags = _git_output(
+        "ls-remote",
+        "--tags",
+        "--refs",
+        "origin",
+        "refs/tags/v[0-9]*",
+    )
+    for line in remote_tags.splitlines():
+        fields = line.split()
+        if len(fields) != 2 or not fields[1].startswith("refs/tags/"):
+            raise ReleaseError(f"git returned invalid remote tag data: {line!r}")
+        tags.add(fields[1].removeprefix("refs/tags/"))
+
+    versions: set[str] = set()
+    for tag in tags:
         match = TAG_RE.fullmatch(tag.strip())
         if match is not None:
-            versions.append(match.group(1))
+            versions.add(match.group(1))
+    return versions
+
+
+def _require_newer_than_tags(version: str, *, allow_existing: bool = False) -> None:
+    versions = _release_tag_versions()
+    if allow_existing:
+        versions.discard(version)
     if not versions:
         return
     latest_tag = max(versions, key=_version_key)
@@ -257,7 +285,7 @@ def _require_clean_checkout() -> None:
 
 
 def _require_pushed_head() -> str:
-    _run(["git", "fetch", "origin", "master", "--tags"])
+    _run(["git", "fetch", "--no-tags", "origin", "master"])
     head = _git_output("rev-parse", "HEAD")
     remote_head = _git_output("rev-parse", "refs/remotes/origin/master")
     if head != remote_head:
@@ -267,17 +295,109 @@ def _require_pushed_head() -> str:
     return head
 
 
-def _require_tag_absent(version: str) -> None:
-    tag = f"v{version}"
-    result = subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}"],
-        cwd=REPO_ROOT,
-        check=False,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+def _local_tag_object(tag: str) -> str | None:
+    output = _git_output(
+        "for-each-ref",
+        "--format=%(objectname)",
+        f"refs/tags/{tag}",
     )
-    if result.returncode == 0:
-        raise ReleaseError(f"tag {tag} already exists")
+    objects = output.splitlines()
+    if len(objects) > 1:
+        raise ReleaseError(f"git returned multiple local objects for tag {tag}")
+    return objects[0] if objects else None
+
+
+def _remote_release_tag_object(tag: str, head: str) -> str | None:
+    tag_ref = f"refs/tags/{tag}"
+    peeled_ref = f"{tag_ref}^{{}}"
+    output = _git_output(
+        "ls-remote",
+        "--tags",
+        "origin",
+        tag_ref,
+        peeled_ref,
+    )
+    refs: dict[str, str] = {}
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) != 2 or fields[1] not in {tag_ref, peeled_ref}:
+            raise ReleaseError(f"git returned invalid remote state for tag {tag}: {line!r}")
+        if fields[1] in refs:
+            raise ReleaseError(f"git returned duplicate remote state for tag {tag}")
+        refs[fields[1]] = fields[0]
+
+    if not refs:
+        return None
+    if tag_ref not in refs or peeled_ref not in refs:
+        raise ReleaseError(f"remote tag {tag} is not an annotated tag")
+    if refs[peeled_ref] != head:
+        raise ReleaseError(
+            f"remote tag {tag} targets {refs[peeled_ref][:12]}, expected {head[:12]}"
+        )
+    return refs[tag_ref]
+
+
+def _validate_local_release_tag(tag: str, head: str) -> str:
+    object_id = _local_tag_object(tag)
+    if object_id is None:
+        raise ReleaseError(f"local tag {tag} disappeared during validation")
+
+    target = _git_output("rev-parse", f"refs/tags/{tag}^{{}}")
+    if target != head:
+        raise ReleaseError(f"local tag {tag} targets {target[:12]}, expected {head[:12]}")
+    try:
+        _run(["git", "verify-tag", tag])
+    except subprocess.CalledProcessError as exc:
+        raise ReleaseError(f"local tag {tag} does not have a valid signature") from exc
+    return object_id
+
+
+def _inspect_release_tag(version: str, head: str) -> _ReleaseTagState:
+    tag = f"v{version}"
+    local_object = _local_tag_object(tag)
+    if local_object is not None:
+        local_object = _validate_local_release_tag(tag, head)
+
+    remote_object = _remote_release_tag_object(tag, head)
+    if remote_object is not None and local_object is None:
+        tag_ref = f"refs/tags/{tag}"
+        _run(["git", "fetch", "--no-tags", "origin", f"{tag_ref}:{tag_ref}"])
+        local_object = _validate_local_release_tag(tag, head)
+
+    if remote_object is not None and local_object != remote_object:
+        raise ReleaseError(
+            f"local and remote tag {tag} refer to different signed tag objects"
+        )
+    return _ReleaseTagState(local_object, remote_object)
+
+
+def _publish_release_tag(version: str, head: str) -> bool:
+    tag = f"v{version}"
+    state = _inspect_release_tag(version, head)
+    if state.remote_object is not None:
+        return False
+
+    _require_newer_than_tags(version, allow_existing=state.local_object is not None)
+
+    local_object = state.local_object
+    if local_object is None:
+        _run(["git", "tag", "-s", tag, "-m", f"PyProxySwitch {version}"])
+        local_object = _validate_local_release_tag(tag, head)
+
+    remote_object = _remote_release_tag_object(tag, head)
+    if remote_object is not None:
+        if remote_object != local_object:
+            raise ReleaseError(
+                f"local and remote tag {tag} refer to different signed tag objects"
+            )
+        return False
+
+    tag_ref = f"refs/tags/{tag}"
+    _run(["git", "push", "origin", f"{tag_ref}:{tag_ref}"])
+    remote_object = _remote_release_tag_object(tag, head)
+    if remote_object != local_object:
+        raise ReleaseError(f"remote tag {tag} was not updated to the expected signed tag")
+    return True
 
 
 def _require_successful_tests(head: str) -> None:
@@ -326,19 +446,21 @@ def publish(version: str) -> None:
     _require_master()
     _require_clean_checkout()
     head = _require_pushed_head()
-    _require_tag_absent(normalized)
-    _require_newer_than_tags(normalized)
     _sync_and_check_docs(normalized, write=False)
     _require_successful_tests(head)
 
     tag = f"v{normalized}"
-    _run(["git", "tag", "-s", tag, "-m", f"PyProxySwitch {normalized}"])
-    _run(["git", "push", "origin", tag])
-    print(
-        f"\nPublished {tag}. The tag-triggered GitHub Actions workflows will "
-        "build and verify the artifacts, create the GitHub Release, and publish "
-        "the Python distributions to PyPI."
-    )
+    if _publish_release_tag(normalized, head):
+        print(
+            f"\nPublished {tag}. The tag-triggered GitHub Actions workflows will "
+            "build and verify the artifacts, create the GitHub Release, and publish "
+            "the Python distributions to PyPI."
+        )
+    else:
+        print(
+            f"\nVerified existing {tag} on origin; no push was needed. "
+            "The original tag push already triggered the release workflows."
+        )
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -346,7 +468,7 @@ def _parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     for command, help_text in (
         ("prepare", "generate and validate all release inputs"),
-        ("publish", "verify CI, create a signed tag, and push it"),
+        ("publish", "verify CI and safely create, reuse, or push the signed tag"),
     ):
         subparser = subparsers.add_parser(command, help=help_text)
         subparser.add_argument("version", help="release version in X.Y.Z form")

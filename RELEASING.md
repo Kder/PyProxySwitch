@@ -129,7 +129,9 @@ uv run --python $PYTHON python tools/release.py publish X.Y.Z
 
 本机需要已登录的 GitHub CLI（`gh auth status`）和可用的 Git 签名密钥。
 `publish` 不会提交或推送分支内容；如果工作区不干净、`HEAD` 不等于
-`origin/master`、对应 Tests 未成功或标签已存在，它会拒绝发布。
+`origin/master` 或对应 Tests 未成功，它会拒绝发布。若标签推送中断，可重新执行
+同一命令：脚本只会复用签名有效、指向当前 `HEAD` 且与远端一致的 annotated tag；
+任何本地/远端标签冲突都会明确拒绝。
 
 ## 自动工作流
 
@@ -151,5 +153,6 @@ gh run rerun $RUN_ID --failed
 gh run watch $RUN_ID --exit-status
 ```
 
-瞬时故障可重跑；代码或制品问题必须修复后发布新的补丁版本。不要移动、删除
-或复用已经推送或发布的 tag。
+标签推送的瞬时故障可重新执行 `publish`；若远端已经收到同一标签，命令会验证后
+安全结束。工作流瞬时故障可重跑；代码或制品问题必须修复后发布新的补丁版本。
+不要移动、删除已经推送或发布的 tag，也不要让它指向另一提交或版本。
