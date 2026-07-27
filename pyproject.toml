@@ -49,6 +49,7 @@ dev = [
 [dependency-groups]
 build = [
     "nuitka>=4.1.3",
+    "patchelf>=0.17.2.4; sys_platform == 'linux'",
     "setuptools-scm>=8.0",
 ]
 

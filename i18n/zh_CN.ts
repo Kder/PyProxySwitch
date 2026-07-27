@@ -185,73 +185,73 @@ socks_proxy 203.0.113.5:1080 SOCKS5
         <translation>恢复原配置失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="245"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="246"/>
         <source>Port must be between 1 and 65535</source>
         <translation>端口必须在1到65535之间</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="247"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="249"/>
         <source>Port must be a valid number</source>
         <translation>端口必须是有效的数字</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="293"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
         <source>Name</source>
         <translation>代理名称</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="294"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
         <source>Address</source>
         <translation>地址</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="297"/>
         <source>Port</source>
         <translation>端口</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="298"/>
         <source>Type</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="297"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="299"/>
         <source>Username</source>
         <translation>用户名</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="298"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="300"/>
         <source>Password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="383"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="385"/>
         <source>Failed to read proxy list file</source>
         <translation>读取代理列表文件失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="405"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="604"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="407"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="606"/>
         <source>Failed to save proxy list</source>
         <translation>保存代理列表失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="434"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="436"/>
         <source>A proxy with this name already exists</source>
         <translation>已存在同名代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="440"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="442"/>
         <source>Please select a proxy to modify</source>
         <translation>请选择要修改的代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="511"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="513"/>
         <source>Confirm Delete</source>
         <translation>确认删除</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="512"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="514"/>
         <source>Are you sure you want to delete this proxy?</source>
         <translation>您确定要删除此代理吗？</translation>
     </message>

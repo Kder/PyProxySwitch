@@ -287,6 +287,21 @@ def test_changing_listener_port_reapplies_the_selected_proxy(qapp, tmp_path) -> 
     assert parent.proxy_service_available
 
 
+@pytest.mark.parametrize("invalid_port", ["", "0", "65536", "not-a-port"])
+def test_invalid_listener_port_restores_configured_value(
+    qapp, tmp_path, monkeypatch, invalid_port
+) -> None:
+    config = _make_config(tmp_path)
+    dialog = Config_Dialog()
+    monkeypatch.setattr(dialog, "show_error", lambda message: None)
+    dialog.le_localport.setText(invalid_port)
+
+    dialog.change_localport()
+
+    assert config.get("LOCAL_PORT") == 8888
+    assert dialog.le_localport.text() == "8888"
+
+
 def test_modifying_authenticated_proxy_enables_credential_fields(
     qapp, tmp_path, monkeypatch
 ) -> None:

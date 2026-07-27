@@ -1619,6 +1619,27 @@ class UpstreamChainTests(ProxyHarness):
         self.assertTrue(raw.startswith(b"HTTP/1.1 502 "))
         self.assertEqual([], record)
 
+    async def test_socks4_upstream_rejects_invalid_reply_version(self):
+        async def handler(reader, writer):
+            head = await reader.readexactly(8)
+            await reader.readuntil(b"\x00")
+            if head[4:7] == b"\x00\x00\x00" and head[7]:
+                await reader.readuntil(b"\x00")
+            writer.write(b"\x04\x5a" + bytes(6))
+            await writer.drain()
+
+        upstream_port = await self.serve(handler)
+        upstream = Upstream(
+            name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port
+        )
+        proxy = await self.start_proxy(upstream=upstream)
+
+        raw = await self.http_roundtrip(
+            proxy, b"CONNECT example.test:443 HTTP/1.1\r\nHost: x\r\n\r\n"
+        )
+
+        self.assertTrue(raw.startswith(b"HTTP/1.1 502 "), raw[:64])
+
     async def test_oversized_upstream_connect_response_gets_502(self):
         """Regression #4: LimitOverrunError must not escape as a bare drop."""
 

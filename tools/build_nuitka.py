@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -127,6 +128,15 @@ def validate_build_environment() -> None:
             "error: Nuitka is not installed. Run: "
             "uv run --python <system-python-3.14> --group build "
             "python tools/build_nuitka.py"
+        )
+
+    include_dir = sysconfig.get_path("include")
+    python_header = Path(include_dir) / "Python.h" if include_dir else None
+    if python_header is None or not python_header.is_file():
+        expected = python_header or "the interpreter include directory"
+        raise SystemExit(
+            f"error: Python development header not found: {expected}; "
+            f"install the development package matching {Path(sys.executable).resolve()}"
         )
 
     if sys.platform == "darwin" and shutil.which("clang") is None:

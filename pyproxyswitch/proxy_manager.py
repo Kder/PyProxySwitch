@@ -67,7 +67,11 @@ class ProxyManager:
                     port,
                     upstream,
                     timeout=5,
-                    error_code=ErrorCode.PROXY_RECONFIGURE_FAILED,
+                    error_code=(
+                        ErrorCode.PROXY_START_FAILED
+                        if self._server is None
+                        else ErrorCode.PROXY_RECONFIGURE_FAILED
+                    ),
                 )
         except (ConfigError, ProxyStartError):
             raise

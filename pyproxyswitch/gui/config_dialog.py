@@ -242,8 +242,10 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                             message += "\n" + self.tr("Failed to restore the previous configuration")
                         self.show_error(message)
             else:
+                self.le_localport.setText(str(self._config.get("LOCAL_PORT")))
                 self.show_error(self.tr("Port must be between 1 and 65535"))
         except ValueError:
+            self.le_localport.setText(str(self._config.get("LOCAL_PORT")))
             self.show_error(self.tr("Port must be a valid number"))
 
     def add_item(self, model, proxy):

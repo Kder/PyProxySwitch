@@ -7,6 +7,7 @@ PyProxySwitch 日志系统配置
 
 import logging
 import logging.handlers
+import tempfile
 from pathlib import Path
 
 from .paths import USER_LOG_DIR
@@ -35,6 +36,15 @@ def _prepare_log_dir(log_dir: Path) -> Path | None:
             candidate.mkdir(exist_ok=True, parents=True)
             if not candidate.is_dir():
                 raise OSError("directory creation failed")
+            # ``mkdir`` also succeeds for an existing read-only directory.
+            # Probe the actual operation the delayed file handler will need so
+            # an unusable custom path can fall back before the first log emit.
+            with tempfile.NamedTemporaryFile(
+                prefix=".PyProxySwitch.",
+                suffix=".tmp",
+                dir=candidate,
+            ):
+                pass
             return candidate
         except Exception as e:
             last_error = e

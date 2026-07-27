@@ -1029,9 +1029,10 @@ class NativeProxyServer:
         response = await self._read_exactly(
             reader, 8, "SOCKS4 upstream reply", UpstreamProtocolError
         )
-        if response[1] != 0x5A:
+        if response[0] != 0 or response[1] != 0x5A:
             raise UpstreamProtocolError(
-                f"SOCKS4 upstream connect failed with code {response[1]}"
+                "Invalid SOCKS4 upstream response "
+                f"(version={response[0]}, status={response[1]})"
             )
 
     # ---------------------------------------------------------------- relay

@@ -185,73 +185,73 @@ socks_proxy 203.0.113.5:1080 SOCKS5
         <translation>Failed to restore the previous configuration</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="245"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="246"/>
         <source>Port must be between 1 and 65535</source>
         <translation>Port must be between 1 and 65535</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="247"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="249"/>
         <source>Port must be a valid number</source>
         <translation>Port must be a valid number</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="293"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
         <source>Name</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="294"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
         <source>Address</source>
         <translation>Address</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="297"/>
         <source>Port</source>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="298"/>
         <source>Type</source>
         <translation>Type</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="297"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="299"/>
         <source>Username</source>
         <translation>Username</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="298"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="300"/>
         <source>Password</source>
         <translation>Password</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="383"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="385"/>
         <source>Failed to read proxy list file</source>
         <translation>Failed to read proxy list file</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="405"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="604"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="407"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="606"/>
         <source>Failed to save proxy list</source>
         <translation>Failed to save proxy list</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="434"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="436"/>
         <source>A proxy with this name already exists</source>
         <translation>A proxy with this name already exists</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="440"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="442"/>
         <source>Please select a proxy to modify</source>
         <translation>Please select a proxy to modify</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="511"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="513"/>
         <source>Confirm Delete</source>
         <translation>Confirm Delete</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="512"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="514"/>
         <source>Are you sure you want to delete this proxy?</source>
         <translation>Are you sure you want to delete this proxy?</translation>
     </message>

@@ -66,6 +66,23 @@ def test_github_release_workflow_builds_and_verifies_all_artifacts() -> None:
     assert "pypa/gh-action-pypi-publish" not in workflow
 
 
+def test_test_workflow_watches_all_packaging_inputs() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "test.yml").read_text(
+        encoding="utf-8"
+    )
+
+    for path in (
+        ".python-version",
+        "LICENSE",
+        "MANIFEST.in",
+        "README.md",
+        "README_EN.txt",
+        "RELEASING.md",
+        "uv.lock",
+    ):
+        assert workflow.count(f"- '{path}'") == 2
+
+
 def test_release_procedure_is_kept_out_of_user_readmes() -> None:
     chinese_readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     english_readme = (REPO_ROOT / "README_EN.txt").read_text(encoding="utf-8")

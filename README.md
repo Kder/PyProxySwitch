@@ -57,7 +57,7 @@ pipx uninstall PyProxySwitch
 
 绿色版的配置与日志保存在程序自身目录，不向系统用户目录写入应用数据，“卸载”只需删除程序文件夹。
 
-- **Nuitka 打包版：**运行 `uv run --group build python tools/build_nuitka.py`，uv 会按项目的 `build` 依赖组安装 Nuitka 并生成便携 zip；Windows 下默认为单目录 exe 版，解压即用。Nuitka 中间产物写入 `build/nuitka/`，可分发目录和 zip 写入 `release/`，不会混入仅用于 Python sdist/wheel 的 `dist/`。包内的 `portable.ini` 标记使配置写入程序目录下的 `config/`、日志写入 `logs/`。删除 `portable.ini` 即恢复使用系统用户目录。
+- **Nuitka 打包版：**运行 `uv run --group build python tools/build_nuitka.py`，uv 会按项目的 `build` 依赖组安装 Nuitka（以及 Linux 的 `patchelf`）并生成便携 zip；Linux 还需要与构建解释器匹配的 Python 开发头文件，Windows 下默认为单目录 exe 版，解压即用。Nuitka 中间产物写入 `build/nuitka/`，可分发目录和 zip 写入 `release/`，不会混入仅用于 Python sdist/wheel 的 `dist/`。包内的 `portable.ini` 标记使配置写入程序目录下的 `config/`、日志写入 `logs/`。删除 `portable.ini` 即恢复使用系统用户目录。
 - **环境变量方式：**任意运行方式（源码、pip、exe）下，将 `PYPROXYSWITCH_HOME` 指向便携目录（例如 U 盘中的文件夹），`PPS.conf`、`proxy.txt` 与 `logs/` 均保存在该目录下。
 
 路径优先级为：`PYPROXYSWITCH_HOME` > `portable.ini`（仅打包后的可执行文件生效）> 系统用户目录。

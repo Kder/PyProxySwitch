@@ -77,6 +77,17 @@ def test_start_direct_proxy(fake_server):
     assert manager.server.is_running
 
 
+def test_failed_initial_listener_uses_start_error(fake_server):
+    fake_server.fail_start_ports.add(8888)
+    manager = ProxyManager(StubConfig())
+
+    with pytest.raises(ProxyStartError) as exc_info:
+        manager.start_proxy("NoProxy")
+
+    assert exc_info.value.code == ErrorCode.PROXY_START_FAILED
+    assert manager.server is None
+
+
 def test_configured_listener_address_is_an_explicit_remote_bind_opt_in(fake_server):
     manager = ProxyManager(StubConfig(LOCAL_ADDRESS="0.0.0.0"))
 

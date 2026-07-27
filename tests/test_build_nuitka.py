@@ -56,6 +56,10 @@ def test_nuitka_build_dependencies_are_declared():
         requirement.lower().startswith("nuitka")
         for requirement in requirements
     )
+    assert any(
+        requirement.lower().startswith("patchelf") and "sys_platform" in requirement
+        for requirement in requirements
+    )
     assert any(requirement.lower().startswith("setuptools-scm") for requirement in requirements)
 
 
@@ -153,6 +157,16 @@ def test_dry_run_does_not_create_output_or_require_nuitka(
     output = capsys.readouterr().out
     assert "Nuitka portable build" in output
     assert "--standalone" in output
+
+
+def test_missing_python_headers_fail_before_compilation(
+    build_nuitka, monkeypatch, tmp_path
+):
+    monkeypatch.setattr(build_nuitka.importlib.util, "find_spec", lambda name: object())
+    monkeypatch.setattr(build_nuitka.sysconfig, "get_path", lambda name: str(tmp_path))
+
+    with pytest.raises(SystemExit, match="Python development header not found"):
+        build_nuitka.validate_build_environment()
 
 
 def test_clean_rejects_repository_root(build_nuitka):
