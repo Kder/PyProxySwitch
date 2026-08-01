@@ -56,6 +56,20 @@ def test_add_proxy_dialog_discards_credentials_when_auth_is_disabled(qapp) -> No
     assert dialog.le_password.text() == ""
 
 
+def test_socks4_dialog_uses_user_id_and_hides_password(qapp) -> None:
+    dialog = AddProxy_Dialog()
+    dialog.checkBox_proxy_auth.setChecked(True)
+    dialog.le_password.setText("must-be-cleared")
+
+    dialog.comboBox_type.setCurrentText("SOCKS4")
+
+    assert dialog.label_user.text() == "User ID"
+    assert dialog.le_username.isVisibleTo(dialog)
+    assert not dialog.label_pass.isVisibleTo(dialog)
+    assert not dialog.le_password.isVisibleTo(dialog)
+    assert dialog.le_password.text() == ""
+
+
 def test_invalid_sorted_edit_reverts_its_own_row(qapp, tmp_path, monkeypatch) -> None:
     _make_config(
         tmp_path,

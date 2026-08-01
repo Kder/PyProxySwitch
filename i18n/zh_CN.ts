@@ -4,7 +4,17 @@
 <context>
     <name>AddProxy_Dialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="74"/>
+        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="40"/>
+        <source>User ID</source>
+        <translation>用户ID</translation>
+    </message>
+    <message>
+        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="40"/>
+        <source>Username</source>
+        <translation type="unfinished">用户名</translation>
+    </message>
+    <message>
+        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="92"/>
         <source>Validation Error</source>
         <translation>验证错误</translation>
     </message>

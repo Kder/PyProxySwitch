@@ -197,13 +197,13 @@ class ConfigManager:
             normalized[key] = flag if flag in (0, 1) else defaults[key]
 
         value = values.get("LOCAL_PORT")
-        if isinstance(value, (str, int, float)) and not isinstance(value, bool):
-            try:
-                local_port = int(value)
-            except (OverflowError, ValueError):
-                local_port = defaults["LOCAL_PORT"]
+        if isinstance(value, int) and not isinstance(value, bool):
+            local_port = value
+        elif isinstance(value, str):
+            text = value.strip()
+            local_port = int(text) if text.isascii() and text.isdecimal() else 0
         else:
-            local_port = defaults["LOCAL_PORT"]
+            local_port = 0
         normalized["LOCAL_PORT"] = (
             local_port if 1 <= local_port <= 65535 else defaults["LOCAL_PORT"]
         )

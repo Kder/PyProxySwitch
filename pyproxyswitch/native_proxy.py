@@ -59,6 +59,7 @@ _MAX_HOST_LENGTH: Final = 255
 _MAX_SOCKS_FIELD_LENGTH: Final = 255
 _DEFAULT_IDLE_TIMEOUT: Final = 300.0
 _DEFAULT_MAX_CONNECTIONS: Final = 512
+_WINDOWS_SELECTOR_MAX_CONNECTIONS: Final = 200
 
 _SUPPORTED_TYPES = frozenset({"DIRECT", "HTTP", "SOCKS4", "SOCKS5"})
 _HTTP_VERSIONS = frozenset({"HTTP/1.0", "HTTP/1.1"})
@@ -207,6 +208,14 @@ class _HttpTarget:
 
 
 @dataclass(frozen=True, slots=True)
+class _BoundAddress:
+    """Address a proxy used for its target-side connection."""
+
+    host: str
+    port: int
+
+
+@dataclass(frozen=True, slots=True)
 class _HttpRequest:
     """A fully validated client request head."""
 
@@ -297,7 +306,7 @@ class Upstream:
                 encoded = value.encode("utf-8")
             except UnicodeEncodeError:
                 raise ValueError(f"Upstream {label} is not encodable as UTF-8") from None
-            if len(encoded) > _MAX_SOCKS_FIELD_LENGTH:
+            if proxy_type == "SOCKS5" and len(encoded) > _MAX_SOCKS_FIELD_LENGTH:
                 raise ValueError(
                     f"Upstream {label} cannot exceed {_MAX_SOCKS_FIELD_LENGTH} UTF-8 bytes"
                 )
@@ -305,6 +314,8 @@ class Upstream:
             object.__setattr__(self, "host", "")
             object.__setattr__(self, "port", 0)
             return
+        if proxy_type == "SOCKS4" and self.password:
+            raise ValueError("SOCKS4 supports a User ID but does not support passwords")
         if not self.host:
             raise ValueError("Upstream proxy address cannot be empty")
         try:
@@ -345,6 +356,10 @@ def _coerce_port(value: object, description: str) -> int:
         if text.isascii() and text.isdecimal():
             return int(text)
     raise ValueError(f"{description} must be an integer")
+
+
+def _uses_windows_selector_event_loop() -> bool:
+    return sys.platform == "win32" and sys.version_info[:2] == (3, 14)
 
 
 class NativeProxyServer:
@@ -388,6 +403,17 @@ class NativeProxyServer:
             raise ValueError("max_connections must be an integer")
         if max_connections < 1:
             raise ValueError("max_connections must be at least 1")
+        if (
+            _uses_windows_selector_event_loop()
+            and max_connections > _WINDOWS_SELECTOR_MAX_CONNECTIONS
+        ):
+            logger.warning(
+                "Capping max_connections from %d to %d because Windows Python 3.14 "
+                "SelectorEventLoop can monitor at most 512 sockets",
+                max_connections,
+                _WINDOWS_SELECTOR_MAX_CONNECTIONS,
+            )
+            max_connections = _WINDOWS_SELECTOR_MAX_CONNECTIONS
         self.max_connections = max_connections
         if destination_policy is not None and not callable(destination_policy):
             raise TypeError("destination_policy must be callable")
@@ -521,7 +547,7 @@ class NativeProxyServer:
 
     def _thread_main(self) -> None:
         try:
-            if sys.platform == "win32" and sys.version_info[:2] == (3, 14):
+            if _uses_windows_selector_event_loop():
                 # Avoid CPython 3.14 Proactor cleanup races on Windows.
                 with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
                     runner.run(self._run_server())
@@ -671,7 +697,7 @@ class NativeProxyServer:
     ) -> None:
         destination = request.destination
         try:
-            tunnel_reader, tunnel_writer = await self._open_tunnel(
+            tunnel_reader, tunnel_writer, _ = await self._open_tunnel(
                 destination.host, destination.port, upstream
             )
         except ProxyPolicyError:
@@ -718,7 +744,7 @@ class NativeProxyServer:
                 outgoing_target = destination.proxy_form
                 http_upstream: Upstream | None = upstream
             else:
-                remote_reader, remote_writer = await self._open_tunnel(
+                remote_reader, remote_writer, _ = await self._open_tunnel(
                     destination.host, destination.port, upstream
                 )
                 outgoing_target = destination.origin_form
@@ -799,7 +825,9 @@ class NativeProxyServer:
             host, port = await self._timed(
                 self._read_socks5_request(client_reader), self.handshake_timeout
             )
-            remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
+            remote_reader, remote_writer, bound_address = await self._open_tunnel(
+                host, port, upstream
+            )
         except _Socks5RequestError as exc:
             await self._send_socks5_reply(client_writer, exc.reply)
             return
@@ -808,9 +836,7 @@ class NativeProxyServer:
             return
 
         try:
-            await self._send_socks5_reply(
-                client_writer, 0, remote_writer.get_extra_info("sockname")
-            )
+            await self._send_socks5_reply(client_writer, 0, bound_address)
             await self._relay(client_reader, client_writer, remote_reader, remote_writer)
         finally:
             await self._close_writer(remote_writer)
@@ -856,14 +882,16 @@ class NativeProxyServer:
             host, port = await self._timed(
                 self._read_socks4_request(client_reader), self.handshake_timeout
             )
-            remote_reader, remote_writer = await self._open_tunnel(host, port, upstream)
+            remote_reader, remote_writer, bound_address = await self._open_tunnel(
+                host, port, upstream
+            )
         except (OSError, ProxyProtocolError, ValueError):
             client_writer.write(b"\x00\x5b" + bytes(6))
             with contextlib.suppress(OSError):
                 await client_writer.drain()
             return
 
-        reply_port, reply_ip = self._socks4_bound_address(remote_writer)
+        reply_port, reply_ip = self._socks4_bound_address(bound_address)
         try:
             client_writer.write(b"\x00\x5a" + struct.pack(">H", reply_port) + reply_ip)
             await client_writer.drain()
@@ -894,21 +922,29 @@ class NativeProxyServer:
 
     async def _open_tunnel(
         self, target_host: str, target_port: int, upstream: Upstream
-    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter, _BoundAddress | None]:
         self._check_destination(target_host, target_port)
 
-        async def connect() -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+        async def connect() -> tuple[
+            asyncio.StreamReader, asyncio.StreamWriter, _BoundAddress | None
+        ]:
             if upstream.proxy_type == "DIRECT":
-                return await self._open_endpoint(target_host, target_port)
+                reader, writer = await self._open_endpoint(target_host, target_port)
+                return reader, writer, self._writer_bound_address(writer)
             reader, writer = await self._open_endpoint(upstream.host, upstream.port)
             try:
+                bound_address: _BoundAddress | None = None
                 if upstream.proxy_type == "HTTP":
                     await self._http_connect(reader, writer, target_host, target_port, upstream)
                 elif upstream.proxy_type == "SOCKS5":
-                    await self._socks5_connect(reader, writer, target_host, target_port, upstream)
+                    bound_address = await self._socks5_connect(
+                        reader, writer, target_host, target_port, upstream
+                    )
                 else:
-                    await self._socks4_connect(reader, writer, target_host, target_port, upstream)
-                return reader, writer
+                    bound_address = await self._socks4_connect(
+                        reader, writer, target_host, target_port, upstream
+                    )
+                return reader, writer, bound_address
             except BaseException:
                 await self._close_writer(writer)
                 raise
@@ -963,7 +999,7 @@ class NativeProxyServer:
         host: str,
         port: int,
         upstream: Upstream,
-    ) -> None:
+    ) -> _BoundAddress:
         methods = b"\x00\x02" if upstream.username or upstream.password else b"\x00"
         writer.write(b"\x05" + bytes((len(methods),)) + methods)
         await writer.drain()
@@ -1005,8 +1041,16 @@ class NativeProxyServer:
         if reply != 0:
             # Checked before the bound address so a bogus ATYP cannot mask the code.
             raise UpstreamProtocolError(f"SOCKS5 upstream connect failed with code {reply}")
-        await self._read_socks_address(reader, address_type, UpstreamProtocolError)
-        await self._read_exactly(reader, 2, "SOCKS5 upstream bound port", UpstreamProtocolError)
+        bound_host = await self._read_socks_address(
+            reader, address_type, UpstreamProtocolError
+        )
+        bound_port = struct.unpack(
+            ">H",
+            await self._read_exactly(
+                reader, 2, "SOCKS5 upstream bound port", UpstreamProtocolError
+            ),
+        )[0]
+        return _BoundAddress(bound_host, bound_port)
 
     async def _socks4_connect(
         self,
@@ -1015,7 +1059,7 @@ class NativeProxyServer:
         host: str,
         port: int,
         upstream: Upstream,
-    ) -> None:
+    ) -> _BoundAddress:
         address = _ip_literal(host)
         if isinstance(address, ipaddress.IPv6Address):
             raise ProxyProtocolError(
@@ -1028,7 +1072,7 @@ class NativeProxyServer:
             domain = _validate_destination_host(host).encode("ascii") + b"\x00"
             raw_address = b"\x00\x00\x00\x01"
         user = upstream.username.encode("utf-8")
-        if b"\x00" in user or len(user) > _MAX_SOCKS_FIELD_LENGTH:
+        if b"\x00" in user or len(user) > _HEADER_LIMIT:
             raise ProxyProtocolError("Invalid SOCKS4 user ID")
         writer.write(b"\x04\x01" + struct.pack(">H", port) + raw_address + user + b"\x00" + domain)
         await writer.drain()
@@ -1040,6 +1084,9 @@ class NativeProxyServer:
                 "Invalid SOCKS4 upstream response "
                 f"(version={response[0]}, status={response[1]})"
             )
+        return _BoundAddress(
+            socket.inet_ntoa(response[4:8]), struct.unpack(">H", response[2:4])[0]
+        )
 
     # ---------------------------------------------------------------- relay
 
@@ -2025,13 +2072,12 @@ class NativeProxyServer:
         self,
         writer: asyncio.StreamWriter,
         reply: int,
-        sockname: object = None,
+        bound_address: _BoundAddress | None = None,
     ) -> None:
         host, port = "0.0.0.0", 0
-        if sockname:
-            with contextlib.suppress(Exception):
-                host = str(sockname[0])  # type: ignore[index]
-                port = int(sockname[1]) & 0xFFFF  # type: ignore[index]
+        if bound_address is not None:
+            host = bound_address.host
+            port = bound_address.port & 0xFFFF
         try:
             address = self._encode_socks5_address(host)
         except (ProxyProtocolError, ValueError):
@@ -2041,12 +2087,23 @@ class NativeProxyServer:
             await writer.drain()
 
     @staticmethod
-    def _socks4_bound_address(writer: asyncio.StreamWriter) -> tuple[int, bytes]:
+    def _socks4_bound_address(
+        bound_address: _BoundAddress | None,
+    ) -> tuple[int, bytes]:
+        if bound_address is None:
+            return 0, b"\x00\x00\x00\x00"
         try:
-            sockname = writer.get_extra_info("sockname")
-            return int(sockname[1]) & 0xFFFF, socket.inet_aton(str(sockname[0]))
+            return bound_address.port & 0xFFFF, socket.inet_aton(bound_address.host)
         except Exception:
             return 0, b"\x00\x00\x00\x00"
+
+    @staticmethod
+    def _writer_bound_address(writer: asyncio.StreamWriter) -> _BoundAddress | None:
+        try:
+            sockname = writer.get_extra_info("sockname")
+            return _BoundAddress(str(sockname[0]), int(sockname[1]) & 0xFFFF)
+        except Exception:
+            return None
 
     @staticmethod
     def _socks5_reply_for(exc: BaseException) -> int:

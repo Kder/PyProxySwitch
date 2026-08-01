@@ -33,6 +33,13 @@ class FakeServer:
         connect_timeout,
         allow_remote_clients=False,
     ):
+        if not allow_remote_clients and host not in {
+            "127.0.0.1",
+            "::1",
+            "localhost",
+            "localhost.localdomain",
+        }:
+            raise ValueError("non-loopback bind rejected")
         self.host = host
         self.port = port
         self.bound_port = port
@@ -75,6 +82,7 @@ def test_start_direct_proxy(fake_server):
     assert manager.server is fake_server.instances[0]
     assert manager.server.upstream.proxy_type == "DIRECT"
     assert manager.server.is_running
+    assert manager.server.allow_remote_clients is False
 
 
 def test_failed_initial_listener_uses_start_error(fake_server):
@@ -88,13 +96,14 @@ def test_failed_initial_listener_uses_start_error(fake_server):
     assert manager.server is None
 
 
-def test_configured_listener_address_is_an_explicit_remote_bind_opt_in(fake_server):
+def test_configured_non_loopback_listener_is_rejected_without_authentication(fake_server):
     manager = ProxyManager(StubConfig(LOCAL_ADDRESS="0.0.0.0"))
 
-    manager.start_proxy("NoProxy")
+    with pytest.raises(ProxyStartError) as exc_info:
+        manager.start_proxy("NoProxy")
 
-    assert manager.server.host == "0.0.0.0"
-    assert manager.server.allow_remote_clients is True
+    assert exc_info.value.code == ErrorCode.PROXY_START_FAILED
+    assert manager.server is None
 
 
 def test_switching_upstream_reuses_listener(fake_server):
@@ -125,7 +134,7 @@ def test_unknown_proxy_is_rejected(fake_server):
     assert exc_info.value.params == {"name": "missing"}
 
 
-@pytest.mark.parametrize("port", [0, 65536, "invalid"])
+@pytest.mark.parametrize("port", [0, 65536, "invalid", 8888.9, "8888.9", True])
 def test_invalid_listener_port_is_rejected(fake_server, port):
     manager = ProxyManager(StubConfig(LOCAL_PORT=port))
 
@@ -133,7 +142,7 @@ def test_invalid_listener_port_is_rejected(fake_server, port):
         manager.start_proxy("NoProxy")
     expected = (
         ErrorCode.CONFIG_LOCAL_PORT_INTEGER
-        if port == "invalid"
+        if port not in (0, 65536)
         else ErrorCode.CONFIG_LOCAL_PORT_RANGE
     )
     assert exc_info.value.code == expected

@@ -62,6 +62,9 @@ class ErrorCode(StrEnum):
     VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG = (
         "validation.socks5.credentials_too_long"
     )
+    VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED = (
+        "validation.socks4.password_unsupported"
+    )
     VALIDATION_BATCH_QUOTE = "validation.batch.quote"
     VALIDATION_BATCH_FORMAT = "validation.batch.format"
     VALIDATION_BATCH_TOO_MANY_FIELDS = "validation.batch.too_many_fields"
@@ -200,6 +203,10 @@ _MESSAGES: dict[ErrorCode, dict[str, str]] = {
         "zh_CN": (
             "SOCKS5用户名和密码的UTF-8编码不能超过{max_bytes}字节"
         ),
+    },
+    ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED: {
+        "en": "SOCKS4 supports a User ID but does not support passwords",
+        "zh_CN": "SOCKS4仅支持用户ID，不支持密码",
     },
     ErrorCode.VALIDATION_BATCH_QUOTE: {
         "en": "The line contains an incomplete quote or escape sequence",

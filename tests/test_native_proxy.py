@@ -18,6 +18,7 @@ import sys
 import threading
 import time
 import unittest
+from unittest import mock
 
 from pyproxyswitch import native_proxy
 from pyproxyswitch.native_proxy import (
@@ -241,7 +242,11 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
         return await self.serve(handler)
 
     async def fake_socks5_proxy(
-        self, record: list[tuple], *, require_auth: tuple[str, str] | None = None
+        self,
+        record: list[tuple],
+        *,
+        require_auth: tuple[str, str] | None = None,
+        bound_address: tuple[str, int] | None = None,
     ) -> int:
         async def handler(reader, writer):
             version, count = await reader.readexactly(2)
@@ -274,7 +279,12 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
             port = struct.unpack(">H", await reader.readexactly(2))[0]
             record.append((command, atype, host, port))
             upstream_reader, upstream_writer = await asyncio.open_connection(host, port)
-            writer.write(b"\x05\x00\x00\x01" + bytes(4) + struct.pack(">H", 0))
+            bound_host, bound_port = bound_address or ("0.0.0.0", 0)
+            writer.write(
+                b"\x05\x00\x00\x01"
+                + socket.inet_aton(bound_host)
+                + struct.pack(">H", bound_port)
+            )
             await writer.drain()
             try:
                 await relay_pair(reader, writer, upstream_reader, upstream_writer)
@@ -283,7 +293,12 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
 
         return await self.serve(handler)
 
-    async def fake_socks4_proxy(self, record: list[tuple]) -> int:
+    async def fake_socks4_proxy(
+        self,
+        record: list[tuple],
+        *,
+        bound_address: tuple[str, int] | None = None,
+    ) -> int:
         async def handler(reader, writer):
             version, command = await reader.readexactly(2)
             port = struct.unpack(">H", await reader.readexactly(2))[0]
@@ -295,7 +310,12 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
                 host = socket.inet_ntoa(raw)
             record.append((command, host, port, user[:-1]))
             upstream_reader, upstream_writer = await asyncio.open_connection(host, port)
-            writer.write(b"\x00\x5a" + bytes(6))
+            bound_host, bound_port = bound_address or ("0.0.0.0", 0)
+            writer.write(
+                b"\x00\x5a"
+                + struct.pack(">H", bound_port)
+                + socket.inet_aton(bound_host)
+            )
             await writer.drain()
             try:
                 await relay_pair(reader, writer, upstream_reader, upstream_writer)
@@ -306,7 +326,13 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
 
     # --------------------------------------------------------- socks clients
     async def socks5_open(
-        self, proxy: NativeProxyServer, host: str, port: int, atype: int = 3
+        self,
+        proxy: NativeProxyServer,
+        host: str,
+        port: int,
+        atype: int = 3,
+        *,
+        include_bound: bool = False,
     ):
         reader, writer = await self.connect(proxy)
         writer.write(b"\x05\x01\x00")
@@ -323,15 +349,28 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
         await writer.drain()
         head = await reader.readexactly(4)
         if head[3] == 1:
-            await reader.readexactly(4)
+            bound_host = socket.inet_ntoa(await reader.readexactly(4))
         elif head[3] == 4:
-            await reader.readexactly(16)
+            bound_host = socket.inet_ntop(socket.AF_INET6, await reader.readexactly(16))
         elif head[3] == 3:
-            await reader.readexactly((await reader.readexactly(1))[0])
-        await reader.readexactly(2)
+            bound_host = (
+                await reader.readexactly((await reader.readexactly(1))[0])
+            ).decode("ascii")
+        else:
+            self.fail(f"invalid SOCKS5 reply address type: {head[3]}")
+        bound_port = struct.unpack(">H", await reader.readexactly(2))[0]
+        if include_bound:
+            return reader, writer, head[1], (bound_host, bound_port)
         return reader, writer, head[1]
 
-    async def socks4_open(self, proxy: NativeProxyServer, host: str, port: int):
+    async def socks4_open(
+        self,
+        proxy: NativeProxyServer,
+        host: str,
+        port: int,
+        *,
+        include_bound: bool = False,
+    ):
         reader, writer = await self.connect(proxy)
         writer.write(
             b"\x04\x01" + struct.pack(">H", port) + b"\x00\x00\x00\x01" + b"tester\x00"
@@ -339,6 +378,11 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
         )
         await writer.drain()
         reply = await reader.readexactly(8)
+        if include_bound:
+            return reader, writer, reply[1], (
+                socket.inet_ntoa(reply[4:8]),
+                struct.unpack(">H", reply[2:4])[0],
+            )
         return reader, writer, reply[1]
 
 
@@ -374,10 +418,10 @@ class UpstreamValidationTests(unittest.TestCase):
             },
             {
                 "name": "x",
-                "proxy_type": "HTTP",
+                "proxy_type": "SOCKS4",
                 "host": "h",
                 "port": 1,
-                "username": "a" * 256,
+                "password": "unsupported",
             },
         ]
         for case in cases:
@@ -386,6 +430,20 @@ class UpstreamValidationTests(unittest.TestCase):
 
     def test_string_port_accepted(self):
         self.assertEqual(8080, Upstream(name="x", proxy_type="HTTP", host="h", port="8080").port)
+
+    def test_http_credentials_are_not_limited_by_socks5_frame_size(self):
+        password = "😀" * 100
+
+        upstream = Upstream(
+            name="x",
+            proxy_type="HTTP",
+            host="h",
+            port=8080,
+            username="a" * 256,
+            password=password,
+        )
+
+        self.assertEqual(password, upstream.password)
 
 
 class PublicApiCompatibilityTests(unittest.TestCase):
@@ -726,6 +784,18 @@ class Socks5MappingTests(unittest.TestCase):
 # lifecycle
 # --------------------------------------------------------------------------- #
 class LifecycleTests(unittest.TestCase):
+    def test_windows_selector_caps_connection_limit(self):
+        with (
+            mock.patch.object(
+                native_proxy, "_uses_windows_selector_event_loop", return_value=True
+            ),
+            self.assertLogs("PyProxySwitch", level="WARNING") as logs,
+        ):
+            proxy = NativeProxyServer(port=0)
+
+        self.assertEqual(200, proxy.max_connections)
+        self.assertIn("Capping max_connections from 512 to 200", "\n".join(logs.output))
+
     @unittest.skipUnless(
         sys.platform == "win32" and sys.version_info[:2] == (3, 14),
         "Windows Python 3.14-specific event loop workaround",
@@ -1603,6 +1673,27 @@ class UpstreamChainTests(ProxyHarness):
         # the destination name is forwarded verbatim, not transcoded
         self.assertEqual((1, 3, "localhost", echo), record[0])
 
+    async def test_socks5_upstream_bound_address_is_forwarded(self):
+        record: list[tuple] = []
+        expected_bound = ("198.51.100.7", 43210)
+        upstream_port = await self.fake_socks5_proxy(
+            record, bound_address=expected_bound
+        )
+        echo = await self.echo_port()
+        proxy = await self.start_proxy(
+            upstream=Upstream(
+                name="s5", proxy_type="SOCKS5", host=LOCAL, port=upstream_port
+            )
+        )
+
+        _, writer, reply, bound = await self.socks5_open(
+            proxy, LOCAL, echo, atype=1, include_bound=True
+        )
+
+        self.assertEqual(0, reply)
+        self.assertEqual(expected_bound, bound)
+        writer.close()
+
     async def test_socks4_upstream(self):
         record: list[tuple] = []
         upstream_port = await self.fake_socks4_proxy(record)
@@ -1617,6 +1708,27 @@ class UpstreamChainTests(ProxyHarness):
         self.assertIn(b"200", await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 5))
         writer.close()
         self.assertEqual((1, LOCAL, echo, b"id"), record[0])
+
+    async def test_socks4_upstream_bound_address_is_forwarded(self):
+        record: list[tuple] = []
+        expected_bound = ("203.0.113.9", 43211)
+        upstream_port = await self.fake_socks4_proxy(
+            record, bound_address=expected_bound
+        )
+        echo = await self.echo_port()
+        proxy = await self.start_proxy(
+            upstream=Upstream(
+                name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port
+            )
+        )
+
+        _, writer, reply, bound = await self.socks4_open(
+            proxy, LOCAL, echo, include_bound=True
+        )
+
+        self.assertEqual(0x5A, reply)
+        self.assertEqual(expected_bound, bound)
+        writer.close()
 
     async def test_socks4_upstream_rejects_ipv6(self):
         """Regression #8: an IPv6 literal must not be smuggled as a SOCKS4a name."""
@@ -1780,6 +1892,46 @@ class RegressionTests(ProxyHarness):
         self.assertEqual(b"", await asyncio.wait_for(second_reader.read(), 5))
         second_writer.close()
         first_writer.close()
+
+    @unittest.skipUnless(
+        sys.platform == "win32" and sys.version_info[:2] == (3, 14),
+        "Windows Python 3.14 SelectorEventLoop capacity regression",
+    )
+    async def test_windows_selector_handles_effective_connection_limit(self):
+        echo = await self.echo_port()
+        proxy = await self.start_proxy()
+        connections = []
+
+        async def open_tunnel(index: int) -> None:
+            reader, writer = await self.connect(proxy)
+            connections.append((reader, writer))
+            writer.write(
+                f"CONNECT {LOCAL}:{echo} HTTP/1.1\r\nHost: stress\r\n\r\n".encode()
+            )
+            await writer.drain()
+            head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 10)
+            self.assertTrue(head.startswith(b"HTTP/1.1 200 "), head[:80])
+            payload = index.to_bytes(4, "big")
+            writer.write(payload)
+            await writer.drain()
+            self.assertEqual(
+                payload, await asyncio.wait_for(reader.readexactly(len(payload)), 10)
+            )
+
+        try:
+            self.assertEqual(200, proxy.max_connections)
+            for start in range(0, 200, 20):
+                await asyncio.gather(
+                    *(open_tunnel(index) for index in range(start, start + 20))
+                )
+            await self.wait_until(lambda: proxy.active_connections == 200, timeout=10)
+            self.assertTrue(await asyncio.to_thread(proxy.stop, 15))
+            await asyncio.gather(
+                *(asyncio.wait_for(reader.read(), 10) for reader, _ in connections)
+            )
+        finally:
+            for _, writer in connections:
+                writer.close()
 
     async def test_destination_policy(self):
         """Regression #13: policy denial is a 403 / SOCKS5 reply 2."""

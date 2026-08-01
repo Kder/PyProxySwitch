@@ -365,6 +365,22 @@ class TestProxyValidatorFullProxy:
         )
         assert result[3] == "SOCKS4"
 
+    def test_socks4_password_is_rejected(self, proxy_validator):
+        with pytest.raises(ValidationError) as exc_info:
+            proxy_validator.validate_full_proxy(
+                "socks4_proxy",
+                "proxy.example.com",
+                "1080",
+                "SOCKS4",
+                "user-id",
+                "password",
+            )
+
+        assert (
+            exc_info.value.code
+            == ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED
+        )
+
     def test_full_proxy_valid_ipv6(self, proxy_validator):
         """测试 IPv6 代理"""
         result = proxy_validator.validate_full_proxy("ipv6_proxy", "[::1]", "8080", "HTTP", "", "")

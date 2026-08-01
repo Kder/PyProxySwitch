@@ -338,6 +338,11 @@ class ProxyValidator(QObject):
             validated_username = self.validate_username(username)
             validated_password = self.validate_password(password)
 
+            if validated_type == "SOCKS4" and validated_password:
+                raise ValidationError(
+                    ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED
+                )
+
             if validated_type == "SOCKS5" and (validated_username or validated_password):
                 if not validated_username or not validated_password:
                     raise ValidationError(

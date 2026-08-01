@@ -134,6 +134,26 @@ jobs:
             dist/*.tar.gz
           if-no-files-found: error
 
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build-distributions
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/PyProxySwitch
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download Python distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+
+      - name: Publish the shared distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
   release:
     name: Create GitHub Release
     needs:

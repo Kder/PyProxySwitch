@@ -114,13 +114,22 @@ class ProxyManager:
                 ErrorCode.CONFIG_LOCAL_ADDRESS_REQUIRED,
                 detail="LOCAL_ADDRESS cannot be empty",
             )
-        try:
-            port = int(self._config.get("LOCAL_PORT", 8888))
-        except (TypeError, ValueError):
+        raw_port = self._config.get("LOCAL_PORT", 8888)
+        if isinstance(raw_port, int) and not isinstance(raw_port, bool):
+            port = raw_port
+        elif isinstance(raw_port, str):
+            text = raw_port.strip()
+            if not text.isascii() or not text.isdecimal():
+                raise ConfigError(
+                    ErrorCode.CONFIG_LOCAL_PORT_INTEGER,
+                    detail="LOCAL_PORT must be an integer",
+                )
+            port = int(text)
+        else:
             raise ConfigError(
                 ErrorCode.CONFIG_LOCAL_PORT_INTEGER,
                 detail="LOCAL_PORT must be an integer",
-            ) from None
+            )
         if not 1 <= port <= 65535:
             raise ConfigError(
                 ErrorCode.CONFIG_LOCAL_PORT_RANGE,
@@ -188,10 +197,6 @@ class ProxyManager:
             port=port,
             upstream=upstream,
             connect_timeout=float(self._config.get("CONNECT_TIMEOUT", 15)),
-            # A non-loopback LOCAL_ADDRESS is an explicit user opt-in documented
-            # by the application.  The lower-level server remains safe by
-            # default for direct API callers.
-            allow_remote_clients=True,
         )
 
     def _resolve_upstream(self, proxy_name: str) -> Upstream:

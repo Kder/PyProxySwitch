@@ -93,9 +93,6 @@ Repository = "https://github.com/kder/PyProxySwitch"
 [project.gui-scripts]
 pyproxyswitch = "pyproxyswitch.main:main"
 
-[project.scripts]
-pyproxyswitch-cli = "pyproxyswitch.__main__:main"
-
 [tool.setuptools]
 include-package-data = true
 

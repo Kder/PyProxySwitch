@@ -111,6 +111,12 @@ def test_malformed_persisted_settings_are_repaired(tmp_path):
     assert config.get("SHOW_WELCOME") == 0
 
 
+def test_fractional_local_port_is_rejected_instead_of_truncated(tmp_path):
+    config = make_config(tmp_path, {"LOCAL_PORT": 8888.9})
+
+    assert config.get("LOCAL_PORT") == 8888
+
+
 def test_oversized_connect_timeout_is_repaired(tmp_path):
     config = make_config(tmp_path, {"CONNECT_TIMEOUT": 10**4000})
 

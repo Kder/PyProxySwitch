@@ -31,6 +31,20 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
         self.le_proxy_name.setValidator(self.validator.get_name_validator())
         self.le_username.setValidator(self.validator.get_username_validator())
         self.le_password.setValidator(self.validator.get_password_validator())
+        self.comboBox_type.currentTextChanged.connect(self._update_auth_fields)
+        self.checkBox_proxy_auth.toggled.connect(self._update_auth_fields)
+        self._update_auth_fields()
+
+    def _update_auth_fields(self, *_args: object) -> None:
+        socks4 = self.comboBox_type.currentText() == "SOCKS4"
+        self.label_user.setText(self.tr("User ID") if socks4 else self.tr("Username"))
+        self.label_pass.setVisible(not socks4)
+        self.le_password.setVisible(not socks4)
+        if socks4:
+            self.le_password.clear()
+        self.le_password.setEnabled(
+            not socks4 and self.checkBox_proxy_auth.isChecked()
+        )
 
     def done(self, retcode: int) -> None:
         '''验证代理项目是否符合要求'''
@@ -43,7 +57,11 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 proxy_type = self.comboBox_type.currentText()
                 if self.checkBox_proxy_auth.isChecked():
                     username = self.le_username.text()
-                    password = self.le_password.text()
+                    password = (
+                        ""
+                        if proxy_type == "SOCKS4"
+                        else self.le_password.text()
+                    )
                 else:
                     username = ""
                     password = ""

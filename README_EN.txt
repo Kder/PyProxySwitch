@@ -7,7 +7,8 @@ another third-party proxy binary.
 
 One local port accepts HTTP, SOCKS4/SOCKS4a and SOCKS5 clients. Configured
 upstreams may use HTTP, SOCKS4 or SOCKS5, with HTTP Basic and SOCKS5
-username/password authentication. NoProxy connects directly.
+username/password authentication. SOCKS4 accepts a User ID but no password.
+NoProxy connects directly.
 
 The native core proxies TCP traffic. It supports HTTP forwarding/CONNECT and
 SOCKS CONNECT; SOCKS BIND, SOCKS5 UDP ASSOCIATE and content caching are not
@@ -33,8 +34,8 @@ You can also install directly from the repository:
 
     pip install git+https://github.com/Kder/PyProxySwitch.git
 
-After installation, run `pyproxyswitch` for the GUI or `pyproxyswitch-cli`
-for the command-line interface.
+After installation, run `pyproxyswitch` for the GUI. A headless CLI is not
+currently provided.
 
 Uninstallation
 ==============
@@ -83,9 +84,11 @@ uninstall it, delete the application folder.
 The precedence is `PYPROXYSWITCH_HOME`, then `portable.ini` for frozen
 executables, then the operating system's per-user directories.
 
-Run `python PyProxySwitch.py`, point an application's HTTP or SOCKS proxy to
-127.0.0.1:8888, then choose an upstream from the system tray. The default bind
-address is loopback-only for safety.
+For a source checkout, first run `pip install -e .` in the repository and then
+start `pyproxyswitch`. For the Windows portable build, run `PyProxySwitch.exe`.
+Point an application's HTTP or SOCKS proxy to 127.0.0.1:8888, then choose an
+upstream from the system tray. Because the built-in proxy has no client
+authentication, the application rejects non-loopback listener addresses.
 
 Wheel installations store `PPS.conf` and `proxy.txt` in the current user's
 configuration directory, and logs in the current user's log directory. On
@@ -93,6 +96,11 @@ Windows these are under the user's AppData folders, not site-packages.
 
 Requirements: Python 3.11+, PySide6 and platformdirs. The proxy protocol core
 itself uses only the Python standard library.
+
+On Windows with Python 3.14, the proxy uses SelectorEventLoop to avoid a
+Proactor shutdown race and caps active connections at 200. Other supported
+platforms and Python versions retain the default event loop and 512-connection
+limit.
 
 Maintainer setup, generation, validation, build, and release commands are
 centralized in `RELEASING.md`.

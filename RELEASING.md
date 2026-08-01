@@ -95,7 +95,7 @@ git config --get user.signingkey
 
 - Owner：`Kder`
 - Repository：`PyProxySwitch`
-- Workflow：`publish.yml`
+- Workflow：`release.yml`
 - Environment：`pypi`
 
 在 GitHub 仓库 Settings → Environments 中创建 `pypi` environment。仓库不保存
@@ -182,9 +182,9 @@ gh run watch $RUN_ID --exit-status
 | 文件 | 触发 | 结果 |
 | --- | --- | --- |
 | `.github/workflows/test.yml` | push/PR → `master`、`develop` | Ruff、mypy、生成文件检查；3 个系统 × Python 3.11–3.14 测试 |
-| `.github/workflows/release.yml` | `v[0-9]*` tag | Windows portable zip + Linux wheel/sdist → GitHub Release |
-| `.github/workflows/publish.yml` | `v[0-9]*` tag | wheel/sdist → PyPI OIDC |
+| `.github/workflows/release.yml` | `v[0-9]*` tag | Windows portable zip + 一次构建的 Linux wheel/sdist → GitHub Release 与 PyPI OIDC |
 | `.github/workflows/mirror-sourceforge.yml` | push、delete、手动 | `master` → SourceForge `github-mirror`，同步全部 tag |
 
-`release.yml` 与 `publish.yml` 独立构建和校验；前者不发布 PyPI，后者不创建
-GitHub Release。两个工作流都要求 tag 版本等于 `releases.toml` 首个版本。
+`release.yml` 只构建一次 wheel/sdist，GitHub Release 和 PyPI 发布任务下载并消费
+同一份 `python-distributions` artifact。工作流要求 tag 版本等于
+`releases.toml` 首个版本。
