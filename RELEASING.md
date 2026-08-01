@@ -9,7 +9,7 @@
 ```powershell
 $PYTHON = uv python find --system --no-managed-python --no-python-downloads --resolve-links 3.14
 git submodule update --init --recursive
-uv sync --python $PYTHON --no-managed-python --no-python-downloads --extra dev --group build
+uv sync --python $PYTHON --no-managed-python --no-python-downloads --extra dev --group build --reinstall-package PyProxySwitch
 ```
 
 每次打开新终端后重新设置 `$PYTHON`。

@@ -24,6 +24,7 @@ from typing import NoReturn
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASES_FILE = REPO_ROOT / "releases.toml"
 RELEASE_BUILD_DIR = REPO_ROOT / "build" / "release-check"
+GENERATED_VERSION_FILE = REPO_ROOT / "pyproxyswitch" / "_version.py"
 RELEASE_VERSION_RE = re.compile(r"(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){2}")
 TAG_RE = re.compile(r"v(\d+(?:\.\d+){1,3})")
 
@@ -184,22 +185,31 @@ def _build_distributions(version: str) -> None:
     if shutil.which("uv") is None:
         raise ReleaseError("uv is required to build release artifacts")
     _reset_release_build_dir()
-    _run(
-        [
-            "uv",
-            "build",
-            "--python",
-            sys.executable,
-            "--no-managed-python",
-            "--no-python-downloads",
-            "--no-create-gitignore",
-            "--out-dir",
-            str(RELEASE_BUILD_DIR),
-        ],
-        env={
-            "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYPROXYSWITCH": version,
-        },
+    original_version_file = (
+        GENERATED_VERSION_FILE.read_bytes() if GENERATED_VERSION_FILE.exists() else None
     )
+    try:
+        _run(
+            [
+                "uv",
+                "build",
+                "--python",
+                sys.executable,
+                "--no-managed-python",
+                "--no-python-downloads",
+                "--no-create-gitignore",
+                "--out-dir",
+                str(RELEASE_BUILD_DIR),
+            ],
+            env={
+                "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYPROXYSWITCH": version,
+            },
+        )
+    finally:
+        if original_version_file is None:
+            GENERATED_VERSION_FILE.unlink(missing_ok=True)
+        else:
+            GENERATED_VERSION_FILE.write_bytes(original_version_file)
     _verify_distribution_files(RELEASE_BUILD_DIR)
     _run(
         [

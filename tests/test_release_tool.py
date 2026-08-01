@@ -102,15 +102,21 @@ def test_verify_distribution_files_rejects_unexpected_file(tmp_path) -> None:
 
 
 def test_build_distributions_uses_requested_scm_version(
+    tmp_path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls = []
+    version_file = tmp_path / "_version.py"
+    version_file.write_text("development version", encoding="utf-8")
 
     def fake_run(command, *, capture=False, env=None):
         calls.append((command, capture, env))
+        if command[:2] == ["uv", "build"]:
+            version_file.write_text("release version", encoding="utf-8")
         return ""
 
     monkeypatch.setattr(release.shutil, "which", lambda command: "uv.exe")
+    monkeypatch.setattr(release, "GENERATED_VERSION_FILE", version_file)
     monkeypatch.setattr(release, "_reset_release_build_dir", lambda: None)
     monkeypatch.setattr(release, "_verify_distribution_files", lambda directory: None)
     monkeypatch.setattr(release, "_run", fake_run)
@@ -124,6 +130,29 @@ def test_build_distributions_uses_requested_scm_version(
     assert build_env == {
         "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYPROXYSWITCH": "4.0.4"
     }
+    assert version_file.read_text(encoding="utf-8") == "development version"
+
+
+def test_build_distributions_restores_version_file_after_failure(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    version_file = tmp_path / "_version.py"
+    version_file.write_text("development version", encoding="utf-8")
+
+    def fail_build(command, *, capture=False, env=None):
+        version_file.write_text("release version", encoding="utf-8")
+        raise subprocess.CalledProcessError(1, command)
+
+    monkeypatch.setattr(release.shutil, "which", lambda command: "uv.exe")
+    monkeypatch.setattr(release, "GENERATED_VERSION_FILE", version_file)
+    monkeypatch.setattr(release, "_reset_release_build_dir", lambda: None)
+    monkeypatch.setattr(release, "_run", fail_build)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        release._build_distributions("4.0.4")
+
+    assert version_file.read_text(encoding="utf-8") == "development version"
 
 
 def test_require_pushed_head_fetches_without_updating_tags(

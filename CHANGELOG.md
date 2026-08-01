@@ -3,6 +3,28 @@
 
 本文件由 `releases.toml` 自动生成。This file is generated from `releases.toml`.
 
+## 4.0.5 — 2026-08-01
+
+### 中文
+
+强化 Windows Python 3.14 代理稳定性与监听安全，修正 SOCKS 链式语义，并统一发布制品。
+
+- 仅在 Windows Python 3.14 使用 SelectorEventLoop 规避 Proactor 关闭竞态，将有效连接上限安全地限制为 200，并增加 200 条真实隧道压力回归。
+- 无客户端认证时拒绝所有非回环监听，严格拒绝小数或布尔端口，并在 GUI 中恢复无效端口输入且正确区分启动与重配置错误。
+- 透传 SOCKS4/5 上游的 BND.ADDR 与 BND.PORT，严格校验 SOCKS4 响应版本，明确 SOCKS4 仅支持 User ID，并只对 SOCKS5 凭据应用 255 字节限制。
+- 在创建日志处理器前验证目录可写性，补强 Linux Python 开发头文件、patchelf 和打包输入的构建与 CI 校验，并确保发布准备可安全重试。
+- 移除名不副实的无头 CLI 入口，修正源码安装、性能和安全文档，并让 GitHub Release 与 PyPI 消费同一次构建的 wheel 和 sdist。
+
+### English
+
+Harden proxy stability and listener security on Windows Python 3.14, correct chained SOCKS semantics, and unify release artifacts.
+
+- Use SelectorEventLoop only on Windows Python 3.14 to avoid the Proactor shutdown race, safely cap active connections at 200, and add a 200-tunnel real-network stress regression.
+- Reject every non-loopback listener without client authentication, strictly reject fractional or Boolean ports, restore invalid GUI port edits, and distinguish startup from reconfiguration failures.
+- Forward upstream SOCKS4/5 BND.ADDR and BND.PORT values, strictly validate SOCKS4 reply versions, clarify that SOCKS4 supports only a User ID, and apply the 255-byte credential limit only to SOCKS5.
+- Probe log-directory writability before creating handlers, strengthen build and CI checks for Linux Python development headers, patchelf, and packaging inputs, and make release preparation safe to retry.
+- Remove the misleading headless CLI entry point, correct source-installation, performance, and security documentation, and make GitHub Release and PyPI consume the same wheel and sdist build.
+
 ## 4.0.4 — 2026-07-27
 
 ### 中文
