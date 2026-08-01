@@ -14,6 +14,7 @@ import base64
 import contextlib
 import socket
 import struct
+import sys
 import threading
 import time
 import unittest
@@ -725,6 +726,18 @@ class Socks5MappingTests(unittest.TestCase):
 # lifecycle
 # --------------------------------------------------------------------------- #
 class LifecycleTests(unittest.TestCase):
+    @unittest.skipUnless(
+        sys.platform == "win32" and sys.version_info[:2] == (3, 14),
+        "Windows Python 3.14-specific event loop workaround",
+    )
+    def test_windows_python_314_uses_selector_event_loop(self):
+        proxy = NativeProxyServer(port=0)
+        try:
+            proxy.start(timeout=10)
+            self.assertIsInstance(proxy._loop, asyncio.SelectorEventLoop)
+        finally:
+            proxy.stop(timeout=10)
+
     def test_start_stop_cycles(self):
         proxy = NativeProxyServer(port=0)
         try:

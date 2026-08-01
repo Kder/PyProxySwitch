@@ -34,6 +34,7 @@ import math
 import socket
 import string
 import struct
+import sys
 import threading
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
@@ -520,7 +521,12 @@ class NativeProxyServer:
 
     def _thread_main(self) -> None:
         try:
-            asyncio.run(self._run_server())
+            if sys.platform == "win32" and sys.version_info[:2] == (3, 14):
+                # Avoid CPython 3.14 Proactor cleanup races on Windows.
+                with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+                    runner.run(self._run_server())
+            else:
+                asyncio.run(self._run_server())
         except BaseException as exc:
             with self._state_lock:
                 if self._ready.is_set() and self._startup_error is None:
