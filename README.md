@@ -5,7 +5,7 @@ PyProxySwitch
 作者: Kder <kderlin (#) gmail dot com>，如果有什么建议，欢迎给我发邮件  
 网站: http://www.kder.info  
 项目主页: http://pyproxyswitch.kder.info/  
-更新记录: [CHANGELOG.md](CHANGELOG.md)
+更新记录: [CHANGELOG.md](CHANGELOG.md)  
 许可: Apache License, Version 2.0  
 
 # 简介
