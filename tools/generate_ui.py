@@ -72,9 +72,8 @@ def generate_ui_modules(*, check: bool = False) -> bool:
             generated_bytes = normalize_generated_module(generated.read_bytes())
             generated.write_bytes(generated_bytes)
 
-            if (
-                destination.exists()
-                and generated_bytes == normalize_generated_module(destination.read_bytes())
+            if destination.exists() and generated_bytes == normalize_generated_module(
+                destination.read_bytes()
             ):
                 continue
 

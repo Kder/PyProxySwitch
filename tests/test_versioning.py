@@ -33,9 +33,7 @@ def test_packaging_and_readmes_expose_only_the_gui_entry_point() -> None:
     english_readme = (REPO_ROOT / "README_EN.txt").read_text(encoding="utf-8")
 
     assert "scripts" not in config["project"]
-    assert config["project"]["gui-scripts"] == {
-        "pyproxyswitch": "pyproxyswitch.main:main"
-    }
+    assert config["project"]["gui-scripts"] == {"pyproxyswitch": "pyproxyswitch.main:main"}
     for readme in (chinese_readme, english_readme):
         assert "pyproxyswitch-cli" not in readme
         assert "python PyProxySwitch.py" not in readme
@@ -43,9 +41,7 @@ def test_packaging_and_readmes_expose_only_the_gui_entry_point() -> None:
 
 
 def test_github_release_workflow_builds_and_verifies_all_artifacts() -> None:
-    workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
 
     assert '      - "v[0-9]*"' in workflow
     assert "workflow_dispatch" not in workflow
@@ -71,9 +67,7 @@ def test_github_release_workflow_builds_and_verifies_all_artifacts() -> None:
 
 
 def test_test_workflow_watches_all_packaging_inputs() -> None:
-    workflow = (REPO_ROOT / ".github" / "workflows" / "test.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (REPO_ROOT / ".github" / "workflows" / "test.yml").read_text(encoding="utf-8")
 
     for path in (
         ".python-version",

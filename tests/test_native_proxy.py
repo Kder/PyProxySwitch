@@ -81,9 +81,7 @@ async def relay_pair(a_reader, a_writer, b_reader, b_writer) -> None:
                 if writer.can_write_eof():
                     writer.write_eof()
 
-    await asyncio.gather(
-        pump(a_reader, b_writer), pump(b_reader, a_writer), return_exceptions=True
-    )
+    await asyncio.gather(pump(a_reader, b_writer), pump(b_reader, a_writer), return_exceptions=True)
 
 
 class ProxyHarness(unittest.IsolatedAsyncioTestCase):
@@ -128,9 +126,7 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
         return proxy
 
     async def connect(self, proxy: NativeProxyServer):
-        return await asyncio.wait_for(
-            asyncio.open_connection(LOCAL, proxy.bound_port), timeout=5.0
-        )
+        return await asyncio.wait_for(asyncio.open_connection(LOCAL, proxy.bound_port), timeout=5.0)
 
     async def http_roundtrip(self, proxy: NativeProxyServer, raw: bytes) -> bytes:
         reader, writer = await self.connect(proxy)
@@ -143,9 +139,7 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
             with contextlib.suppress(Exception):
                 await writer.wait_closed()
 
-    async def http_roundtrip_eof(
-        self, proxy: NativeProxyServer, raw: bytes
-    ) -> bytes:
+    async def http_roundtrip_eof(self, proxy: NativeProxyServer, raw: bytes) -> bytes:
         reader, writer = await self.connect(proxy)
         try:
             writer.write(raw)
@@ -176,8 +170,7 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
                 payload += await reader.readexactly(extra)
             received.append(payload)
             writer.write(
-                b"HTTP/1.1 200 OK\r\nContent-Length: %d\r\nConnection: close\r\n\r\n"
-                % len(payload)
+                b"HTTP/1.1 200 OK\r\nContent-Length: %d\r\nConnection: close\r\n\r\n" % len(payload)
                 + payload
             )
             await writer.drain()
@@ -281,9 +274,7 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
             upstream_reader, upstream_writer = await asyncio.open_connection(host, port)
             bound_host, bound_port = bound_address or ("0.0.0.0", 0)
             writer.write(
-                b"\x05\x00\x00\x01"
-                + socket.inet_aton(bound_host)
-                + struct.pack(">H", bound_port)
+                b"\x05\x00\x00\x01" + socket.inet_aton(bound_host) + struct.pack(">H", bound_port)
             )
             await writer.drain()
             try:
@@ -311,11 +302,7 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
             record.append((command, host, port, user[:-1]))
             upstream_reader, upstream_writer = await asyncio.open_connection(host, port)
             bound_host, bound_port = bound_address or ("0.0.0.0", 0)
-            writer.write(
-                b"\x00\x5a"
-                + struct.pack(">H", bound_port)
-                + socket.inet_aton(bound_host)
-            )
+            writer.write(b"\x00\x5a" + struct.pack(">H", bound_port) + socket.inet_aton(bound_host))
             await writer.drain()
             try:
                 await relay_pair(reader, writer, upstream_reader, upstream_writer)
@@ -353,9 +340,9 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
         elif head[3] == 4:
             bound_host = socket.inet_ntop(socket.AF_INET6, await reader.readexactly(16))
         elif head[3] == 3:
-            bound_host = (
-                await reader.readexactly((await reader.readexactly(1))[0])
-            ).decode("ascii")
+            bound_host = (await reader.readexactly((await reader.readexactly(1))[0])).decode(
+                "ascii"
+            )
         else:
             self.fail(f"invalid SOCKS5 reply address type: {head[3]}")
         bound_port = struct.unpack(">H", await reader.readexactly(2))[0]
@@ -373,15 +360,24 @@ class ProxyHarness(unittest.IsolatedAsyncioTestCase):
     ):
         reader, writer = await self.connect(proxy)
         writer.write(
-            b"\x04\x01" + struct.pack(">H", port) + b"\x00\x00\x00\x01" + b"tester\x00"
-            + host.encode("ascii") + b"\x00"
+            b"\x04\x01"
+            + struct.pack(">H", port)
+            + b"\x00\x00\x00\x01"
+            + b"tester\x00"
+            + host.encode("ascii")
+            + b"\x00"
         )
         await writer.drain()
         reply = await reader.readexactly(8)
         if include_bound:
-            return reader, writer, reply[1], (
-                socket.inet_ntoa(reply[4:8]),
-                struct.unpack(">H", reply[2:4])[0],
+            return (
+                reader,
+                writer,
+                reply[1],
+                (
+                    socket.inet_ntoa(reply[4:8]),
+                    struct.unpack(">H", reply[2:4])[0],
+                ),
             )
         return reader, writer, reply[1]
 
@@ -474,10 +470,15 @@ class RequestParsingTests(unittest.TestCase):
 
     def test_minimal_request(self):
         request = self.parse(b"GET /a?b HTTP/1.1\r\nHost: h.example\r\n\r\n")
-        self.assertEqual(("GET", "origin", "h.example", 80), (
-            request.method, request.target_form, request.destination.host,
-            request.destination.port,
-        ))
+        self.assertEqual(
+            ("GET", "origin", "h.example", 80),
+            (
+                request.method,
+                request.target_form,
+                request.destination.host,
+                request.destination.port,
+            ),
+        )
         self.assertEqual("/a?b", request.destination.origin_form)
         self.assertEqual("http://h.example/a?b", request.destination.proxy_form)
 
@@ -512,12 +513,15 @@ class RequestParsingTests(unittest.TestCase):
                 self.parse(raw)
 
     def test_target_forms(self):
-        self.assertEqual("absolute", self.parse(
-            b"GET http://h/x HTTP/1.1\r\nHost: other\r\n\r\n").target_form)
-        self.assertEqual("asterisk", self.parse(
-            b"OPTIONS * HTTP/1.1\r\nHost: h\r\n\r\n").target_form)
-        self.assertEqual("authority", self.parse(
-            b"CONNECT h:443 HTTP/1.1\r\nHost: h:443\r\n\r\n").target_form)
+        self.assertEqual(
+            "absolute", self.parse(b"GET http://h/x HTTP/1.1\r\nHost: other\r\n\r\n").target_form
+        )
+        self.assertEqual(
+            "asterisk", self.parse(b"OPTIONS * HTTP/1.1\r\nHost: h\r\n\r\n").target_form
+        )
+        self.assertEqual(
+            "authority", self.parse(b"CONNECT h:443 HTTP/1.1\r\nHost: h:443\r\n\r\n").target_form
+        )
         for raw in (
             b"GET foo/bar HTTP/1.1\r\nHost: h\r\n\r\n",
             b"GET * HTTP/1.1\r\nHost: h\r\n\r\n",
@@ -564,7 +568,9 @@ class RequestParsingTests(unittest.TestCase):
         request = self.parse(
             b"POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 007\r\nContent-Length: 7\r\n\r\n"
         )
-        self.assertEqual(("content-length", 7), (request.framing.mode, request.framing.content_length))
+        self.assertEqual(
+            ("content-length", 7), (request.framing.mode, request.framing.content_length)
+        )
         self.assertEqual((("Host", "h"), ("Content-Length", "7")), request.headers)
 
     def test_connect_with_zero_length_body_allowed(self):
@@ -583,12 +589,13 @@ class RequestParsingTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ClientProtocolError):
                 self.parse(
                     b"GET / HTTP/1.1\r\nHost: h\r\nConnection: Upgrade\r\n"
-                    + b"Upgrade: " + value + b"\r\n\r\n"
+                    + b"Upgrade: "
+                    + value
+                    + b"\r\n\r\n"
                 )
 
         ignored = self.parse(
-            b"GET / HTTP/1.0\r\nHost: h\r\nConnection: Upgrade\r\n"
-            b"Upgrade: websocket\r\n\r\n"
+            b"GET / HTTP/1.0\r\nHost: h\r\nConnection: Upgrade\r\n" b"Upgrade: websocket\r\n\r\n"
         )
         self.assertFalse(ignored.is_upgrade)
 
@@ -611,9 +618,22 @@ class AuthorityTests(unittest.TestCase):
 
     def test_invalid(self):
         for text in (
-            "h:+80", "h:8_0", "h:١٢", "h:0", "h:65536", "h:", "h: 80", "",
-            "[::1", "[]:80", "[nothex]:80", "h/x:80", "u@h:80", "h\x00:80",
-            "a:b:c", "x" * 300,
+            "h:+80",
+            "h:8_0",
+            "h:١٢",
+            "h:0",
+            "h:65536",
+            "h:",
+            "h: 80",
+            "",
+            "[::1",
+            "[]:80",
+            "[nothex]:80",
+            "h/x:80",
+            "u@h:80",
+            "h\x00:80",
+            "a:b:c",
+            "x" * 300,
         ):
             with self.subTest(text=text), self.assertRaises(ProxyProtocolError):
                 NativeProxyServer._parse_authority(text, 80)
@@ -630,9 +650,7 @@ class RewriteTests(unittest.TestCase):
         headers = NativeProxyServer._replace_host_header(
             request.headers, request.destination.host, request.destination.port
         )
-        target = (
-            request.destination.proxy_form if upstream else request.destination.origin_form
-        )
+        target = request.destination.proxy_form if upstream else request.destination.origin_form
         return NativeProxyServer._build_http_request(
             NativeProxyServer(port=0), request, target, headers, upstream
         )
@@ -671,17 +689,25 @@ class RewriteTests(unittest.TestCase):
 
     def test_http_upstream_gets_absolute_form_and_auth(self):
         upstream = Upstream(
-            name="u", proxy_type="HTTP", host="127.0.0.1", port=3128,
-            username="user", password="pw",
+            name="u",
+            proxy_type="HTTP",
+            host="127.0.0.1",
+            port=3128,
+            username="user",
+            password="pw",
         )
-        out = self.build(b"GET http://h.example/x HTTP/1.1\r\nHost: h.example\r\n\r\n", upstream=upstream)
+        out = self.build(
+            b"GET http://h.example/x HTTP/1.1\r\nHost: h.example\r\n\r\n", upstream=upstream
+        )
         expected = base64.b64encode(b"user:pw").decode()
         self.assertTrue(out.startswith(b"GET http://h.example/x HTTP/1.1\r\n"))
         self.assertIn(f"Proxy-Authorization: Basic {expected}\r\n".encode(), out)
 
     def test_response_head_is_sanitised(self):
         out = NativeProxyServer._build_http_response(
-            "HTTP/1.1", 200, "OK",
+            "HTTP/1.1",
+            200,
+            "OK",
             (
                 ("Content-Length", "5"),
                 ("Transfer-Encoding", "chunked"),
@@ -700,8 +726,11 @@ class RewriteTests(unittest.TestCase):
 
     def test_response_head_keeps_upgrade_for_101(self):
         out = NativeProxyServer._build_http_response(
-            "HTTP/1.1", 101, "Switching Protocols",
-            (("Upgrade", "websocket"), ("Connection", "Upgrade")), "Upgrade",
+            "HTTP/1.1",
+            101,
+            "Switching Protocols",
+            (("Upgrade", "websocket"), ("Connection", "Upgrade")),
+            "Upgrade",
         )
         _, fields = parse_head(out)
         self.assertEqual({"upgrade": "websocket", "connection": "Upgrade"}, fields)
@@ -745,8 +774,12 @@ class RewriteTests(unittest.TestCase):
 class ChunkTests(unittest.TestCase):
     def test_valid_sizes(self):
         cases = {
-            b"0": 0, b"a": 10, b"00A": 10, b"1f;name": 31,
-            b"1f ; name = value": 31, b'5;n="q\\"s"': 5,
+            b"0": 0,
+            b"a": 10,
+            b"00A": 10,
+            b"1f;name": 31,
+            b"1f ; name = value": 31,
+            b'5;n="q\\"s"': 5,
             b"f" * 16: (1 << 64) - 1 if False else int(b"f" * 16, 16),
         }
         for line, expected in cases.items():
@@ -758,8 +791,20 @@ class ChunkTests(unittest.TestCase):
                     self.assertEqual(expected, NativeProxyServer._parse_http_chunk_size(line))
 
     def test_invalid_sizes(self):
-        for line in (b"", b"5 ", b" 5", b"0x5", b"5\r", b"-1", b"g",
-                     b"5;", b"5;=v", b"5;n=", b'5;n="unterminated', b"1" * 17):
+        for line in (
+            b"",
+            b"5 ",
+            b" 5",
+            b"0x5",
+            b"5\r",
+            b"-1",
+            b"g",
+            b"5;",
+            b"5;=v",
+            b"5;n=",
+            b'5;n="unterminated',
+            b"1" * 17,
+        ):
             with self.subTest(line=line), self.assertRaises(ClientProtocolError):
                 NativeProxyServer._parse_http_chunk_size(line)
 
@@ -786,9 +831,7 @@ class Socks5MappingTests(unittest.TestCase):
 class LifecycleTests(unittest.TestCase):
     def test_windows_selector_caps_connection_limit(self):
         with (
-            mock.patch.object(
-                native_proxy, "_uses_windows_selector_event_loop", return_value=True
-            ),
+            mock.patch.object(native_proxy, "_uses_windows_selector_event_loop", return_value=True),
             self.assertLogs("PyProxySwitch", level="WARNING") as logs,
         ):
             proxy = NativeProxyServer(port=0)
@@ -948,7 +991,8 @@ class HttpForwardTests(ProxyHarness):
         await self.http_roundtrip(
             proxy,
             f"POST /u HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n".encode()
-            + b"Transfer-Encoding: chunked\r\nTrailer: X-Sum\r\n\r\n" + body,
+            + b"Transfer-Encoding: chunked\r\nTrailer: X-Sum\r\n\r\n"
+            + body,
         )
         head, _, forwarded = handler.received[0].partition(b"\r\n\r\n")
         self.assertEqual(body, forwarded)
@@ -1032,9 +1076,7 @@ class HttpForwardTests(ProxyHarness):
                 )
             )
             await asyncio.sleep(0.05)
-            self.assertFalse(
-                task.done(), "early response was cancelled by the upload reset"
-            )
+            self.assertFalse(task.done(), "early response was cancelled by the upload reset")
             response_relayed.set()
             await asyncio.wait_for(task, 2.0)
             self.assertTrue(relayed)
@@ -1125,9 +1167,7 @@ class HttpForwardTests(ProxyHarness):
             writer.write(b"HTTP/1.1 100 Continue\r\n\r\n")
             await writer.drain()
             body = await reader.readexactly(4)
-            writer.write(
-                b"HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n" % len(body) + body
-            )
+            writer.write(b"HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n" % len(body) + body)
             await writer.drain()
             writer.close()
 
@@ -1176,10 +1216,12 @@ class HttpForwardTests(ProxyHarness):
 class ResponseSanitationTests(ProxyHarness):
     async def test_keep_alive_response_is_closed(self):
         """Regression #6: never let a client believe the connection is reusable."""
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: keep-alive\r\n"
-            b"Keep-Alive: timeout=5\r\nProxy-Authenticate: Basic\r\n\r\nok"
-        ))
+        origin = await self.serve(
+            self.responder(
+                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: keep-alive\r\n"
+                b"Keep-Alive: timeout=5\r\nProxy-Authenticate: Basic\r\n\r\nok"
+            )
+        )
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy, f"GET / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n\r\n".encode()
@@ -1197,8 +1239,7 @@ class ResponseSanitationTests(ProxyHarness):
         async def handler(reader, writer):
             await reader.readuntil(b"\r\n\r\n")
             writer.write(
-                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
-                b"Connection: keep-alive\r\n\r\nok"
+                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n" b"Connection: keep-alive\r\n\r\nok"
             )
             await writer.drain()
             await reader.read()
@@ -1262,9 +1303,7 @@ class ResponseSanitationTests(ProxyHarness):
         await asyncio.wait_for(upstream_closed.wait(), 2.0)
 
     async def test_unframed_response_falls_back_to_eof(self):
-        origin = await self.serve(
-            self.responder(b"HTTP/1.0 200 OK\r\n\r\nclose-delimited")
-        )
+        origin = await self.serve(self.responder(b"HTTP/1.0 200 OK\r\n\r\nclose-delimited"))
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy, f"GET / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n\r\n".encode()
@@ -1283,9 +1322,7 @@ class ResponseSanitationTests(ProxyHarness):
                     upstream_closed=upstream_closed,
                 ):
                     await reader.readuntil(b"\r\n\r\n")
-                    writer.write(
-                        f"HTTP/1.1 {status} Test\r\nContent-Length: 9\r\n\r\n".encode()
-                    )
+                    writer.write(f"HTTP/1.1 {status} Test\r\nContent-Length: 9\r\n\r\n".encode())
                     await writer.drain()
                     await reader.read()
                     upstream_closed.set()
@@ -1327,8 +1364,7 @@ class ResponseSanitationTests(ProxyHarness):
     async def test_identical_response_content_lengths_are_normalized(self):
         origin = await self.serve(
             self.responder(
-                b"HTTP/1.1 200 OK\r\nContent-Length: 02\r\n"
-                b"Content-Length: 2\r\n\r\nok"
+                b"HTTP/1.1 200 OK\r\nContent-Length: 02\r\n" b"Content-Length: 2\r\n\r\nok"
             )
         )
         proxy = await self.start_proxy()
@@ -1341,8 +1377,7 @@ class ResponseSanitationTests(ProxyHarness):
     async def test_conflicting_response_content_lengths_get_502(self):
         origin = await self.serve(
             self.responder(
-                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
-                b"Content-Length: 3\r\n\r\nok!"
+                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n" b"Content-Length: 3\r\n\r\nok!"
             )
         )
         proxy = await self.start_proxy()
@@ -1352,10 +1387,12 @@ class ResponseSanitationTests(ProxyHarness):
         self.assertTrue(raw.startswith(b"HTTP/1.1 502 "), raw[:80])
 
     async def test_content_length_transfer_encoding_conflict_gets_502(self):
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\n"
-            b"2\r\nok\r\n0\r\n\r\n"
-        ))
+        origin = await self.serve(
+            self.responder(
+                b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\n"
+                b"2\r\nok\r\n0\r\n\r\n"
+            )
+        )
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy, f"GET / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n\r\n".encode()
@@ -1396,8 +1433,7 @@ class ResponseSanitationTests(ProxyHarness):
         proxy = await self.start_proxy(idle_timeout=0.2)
         reader, writer = await self.connect(proxy)
         writer.write(
-            f"POST / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n".encode()
-            + b"Content-Length: 4\r\n\r\n"
+            f"POST / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n".encode() + b"Content-Length: 4\r\n\r\n"
         )
         await writer.drain()
         raw = await read_until_eof(reader, limit=2.0)
@@ -1456,10 +1492,7 @@ class ResponseSanitationTests(ProxyHarness):
 
         async def handler(reader, writer):
             await reader.readuntil(b"\r\n\r\n")
-            writer.write(
-                b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
-                b"1\r\nx\r"
-            )
+            writer.write(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n" b"1\r\nx\r")
             await writer.drain()
             await reader.read()
             upstream_closed.set()
@@ -1481,9 +1514,7 @@ class ResponseSanitationTests(ProxyHarness):
 
         async def handler(reader, writer):
             await reader.readuntil(b"\r\n\r\n")
-            writer.write(
-                f"HTTP/1.1 200 OK\r\nContent-Length: {response_size}\r\n\r\n".encode()
-            )
+            writer.write(f"HTTP/1.1 200 OK\r\nContent-Length: {response_size}\r\n\r\n".encode())
             block = b"x" * 65536
             for _ in range(response_size // len(block)):
                 writer.write(block)
@@ -1540,9 +1571,7 @@ class UpgradeTests(ProxyHarness):
         writer.close()
 
     async def test_declined_upgrade_returns_response(self):
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nno"
-        ))
+        origin = await self.serve(self.responder(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nno"))
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy,
@@ -1553,9 +1582,11 @@ class UpgradeTests(ProxyHarness):
         self.assertTrue(raw.endswith(b"no"))
 
     async def test_unsolicited_101_is_rejected(self):
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: x\r\nConnection: Upgrade\r\n\r\n"
-        ))
+        origin = await self.serve(
+            self.responder(
+                b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: x\r\nConnection: Upgrade\r\n\r\n"
+            )
+        )
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy, f"GET / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n\r\n".encode()
@@ -1563,11 +1594,13 @@ class UpgradeTests(ProxyHarness):
         self.assertTrue(raw.startswith(b"HTTP/1.1 502 "))
 
     async def test_101_must_select_a_requested_protocol(self):
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 101 Switching Protocols\r\n"
-            b"Upgrade: h2c\r\nConnection: Upgrade\r\n\r\n",
-            hold=5.0,
-        ))
+        origin = await self.serve(
+            self.responder(
+                b"HTTP/1.1 101 Switching Protocols\r\n"
+                b"Upgrade: h2c\r\nConnection: Upgrade\r\n\r\n",
+                hold=5.0,
+            )
+        )
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy,
@@ -1577,11 +1610,13 @@ class UpgradeTests(ProxyHarness):
         self.assertTrue(raw.startswith(b"HTTP/1.1 502 Bad Gateway\r\n"), raw[:80])
 
     async def test_invalid_101_upgrade_list_is_rejected(self):
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 101 Switching Protocols\r\n"
-            b"Upgrade: websocket/\r\nConnection: Upgrade\r\n\r\n",
-            hold=5.0,
-        ))
+        origin = await self.serve(
+            self.responder(
+                b"HTTP/1.1 101 Switching Protocols\r\n"
+                b"Upgrade: websocket/\r\nConnection: Upgrade\r\n\r\n",
+                hold=5.0,
+            )
+        )
         proxy = await self.start_proxy()
         raw = await self.http_roundtrip(
             proxy,
@@ -1618,9 +1653,7 @@ class TunnelTests(ProxyHarness):
         stream = await self.serve(handler)
         proxy = await self.start_proxy(idle_timeout=0.2)
         reader, writer = await self.connect(proxy)
-        writer.write(
-            f"CONNECT {LOCAL}:{stream} HTTP/1.1\r\nHost: x\r\n\r\n".encode()
-        )
+        writer.write(f"CONNECT {LOCAL}:{stream} HTTP/1.1\r\nHost: x\r\n\r\n".encode())
         await writer.drain()
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 2.0)
         self.assertTrue(head.startswith(b"HTTP/1.1 200 "))
@@ -1716,8 +1749,12 @@ class UpstreamChainTests(ProxyHarness):
         origin = await self.serve(handler)
         echo = await self.echo_port()
         upstream = Upstream(
-            name="u", proxy_type="HTTP", host=LOCAL, port=upstream_port,
-            username="user", password="pw",
+            name="u",
+            proxy_type="HTTP",
+            host=LOCAL,
+            port=upstream_port,
+            username="user",
+            password="pw",
         )
         proxy = await self.start_proxy(upstream=upstream)
 
@@ -1725,9 +1762,7 @@ class UpstreamChainTests(ProxyHarness):
             proxy, f"GET http://{LOCAL}:{origin}/x HTTP/1.1\r\nHost: z\r\n\r\n".encode()
         )
         self.assertIn(f"GET http://{LOCAL}:{origin}/x HTTP/1.1".encode(), record[0])
-        self.assertIn(
-            b"Proxy-Authorization: Basic " + base64.b64encode(b"user:pw"), record[0]
-        )
+        self.assertIn(b"Proxy-Authorization: Basic " + base64.b64encode(b"user:pw"), record[0])
 
         reader, writer = await self.connect(proxy)
         writer.write(f"CONNECT {LOCAL}:{echo} HTTP/1.1\r\nHost: x\r\n\r\n".encode())
@@ -1744,8 +1779,12 @@ class UpstreamChainTests(ProxyHarness):
         upstream_port = await self.fake_socks5_proxy(record, require_auth=("u", "p"))
         echo = await self.echo_port()
         upstream = Upstream(
-            name="s5", proxy_type="SOCKS5", host=LOCAL, port=upstream_port,
-            username="u", password="p",
+            name="s5",
+            proxy_type="SOCKS5",
+            host=LOCAL,
+            port=upstream_port,
+            username="u",
+            password="p",
         )
         proxy = await self.start_proxy(upstream=upstream)
         reader, writer, reply = await self.socks5_open(proxy, "localhost", echo, atype=3)
@@ -1760,14 +1799,10 @@ class UpstreamChainTests(ProxyHarness):
     async def test_socks5_upstream_bound_address_is_forwarded(self):
         record: list[tuple] = []
         expected_bound = ("198.51.100.7", 43210)
-        upstream_port = await self.fake_socks5_proxy(
-            record, bound_address=expected_bound
-        )
+        upstream_port = await self.fake_socks5_proxy(record, bound_address=expected_bound)
         echo = await self.echo_port()
         proxy = await self.start_proxy(
-            upstream=Upstream(
-                name="s5", proxy_type="SOCKS5", host=LOCAL, port=upstream_port
-            )
+            upstream=Upstream(name="s5", proxy_type="SOCKS5", host=LOCAL, port=upstream_port)
         )
 
         _, writer, reply, bound = await self.socks5_open(
@@ -1796,19 +1831,13 @@ class UpstreamChainTests(ProxyHarness):
     async def test_socks4_upstream_bound_address_is_forwarded(self):
         record: list[tuple] = []
         expected_bound = ("203.0.113.9", 43211)
-        upstream_port = await self.fake_socks4_proxy(
-            record, bound_address=expected_bound
-        )
+        upstream_port = await self.fake_socks4_proxy(record, bound_address=expected_bound)
         echo = await self.echo_port()
         proxy = await self.start_proxy(
-            upstream=Upstream(
-                name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port
-            )
+            upstream=Upstream(name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port)
         )
 
-        _, writer, reply, bound = await self.socks4_open(
-            proxy, LOCAL, echo, include_bound=True
-        )
+        _, writer, reply, bound = await self.socks4_open(proxy, LOCAL, echo, include_bound=True)
 
         self.assertEqual(0x5A, reply)
         self.assertEqual(expected_bound, bound)
@@ -1818,13 +1847,9 @@ class UpstreamChainTests(ProxyHarness):
         """Regression #8: an IPv6 literal must not be smuggled as a SOCKS4a name."""
         record: list[tuple] = []
         upstream_port = await self.fake_socks4_proxy(record)
-        upstream = Upstream(
-            name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port
-        )
+        upstream = Upstream(name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port)
         proxy = await self.start_proxy(upstream=upstream)
-        raw = await self.http_roundtrip(
-            proxy, b"CONNECT [::1]:80 HTTP/1.1\r\nHost: x\r\n\r\n"
-        )
+        raw = await self.http_roundtrip(proxy, b"CONNECT [::1]:80 HTTP/1.1\r\nHost: x\r\n\r\n")
         self.assertTrue(raw.startswith(b"HTTP/1.1 502 "))
         self.assertEqual([], record)
 
@@ -1838,9 +1863,7 @@ class UpstreamChainTests(ProxyHarness):
             await writer.drain()
 
         upstream_port = await self.serve(handler)
-        upstream = Upstream(
-            name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port
-        )
+        upstream = Upstream(name="s4", proxy_type="SOCKS4", host=LOCAL, port=upstream_port)
         proxy = await self.start_proxy(upstream=upstream)
 
         raw = await self.http_roundtrip(
@@ -1880,9 +1903,7 @@ class UpstreamChainTests(ProxyHarness):
             writer.close()
 
         upstream_port = await self.serve(handler)
-        upstream = Upstream(
-            name="s5", proxy_type="SOCKS5", host=LOCAL, port=upstream_port
-        )
+        upstream = Upstream(name="s5", proxy_type="SOCKS5", host=LOCAL, port=upstream_port)
         proxy = await self.start_proxy(upstream=upstream)
         _, writer, reply = await self.socks5_open(proxy, LOCAL, 9999, atype=1)
         self.assertEqual(1, reply)
@@ -1933,11 +1954,12 @@ class RegressionTests(ProxyHarness):
 
     async def test_no_error_page_after_response_started(self):
         """Regression #2: never splice a status line onto a live response."""
-        origin = await self.serve(self.responder(
-            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
-            b"2\r\nok\r\n",
-            hold=5.0,
-        ))
+        origin = await self.serve(
+            self.responder(
+                b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n" b"2\r\nok\r\n",
+                hold=5.0,
+            )
+        )
         proxy = await self.start_proxy()
         reader, writer = await self.connect(proxy)
         writer.write(
@@ -1966,6 +1988,7 @@ class RegressionTests(ProxyHarness):
 
     async def test_half_open_tunnel_is_reaped(self):
         """Regression #3: an idle half-open pair must not be pinned open."""
+
         async def handler(reader, writer):
             writer.write(b"hello")
             await writer.drain()
@@ -2004,25 +2027,19 @@ class RegressionTests(ProxyHarness):
         async def open_tunnel(index: int) -> None:
             reader, writer = await self.connect(proxy)
             connections.append((reader, writer))
-            writer.write(
-                f"CONNECT {LOCAL}:{echo} HTTP/1.1\r\nHost: stress\r\n\r\n".encode()
-            )
+            writer.write(f"CONNECT {LOCAL}:{echo} HTTP/1.1\r\nHost: stress\r\n\r\n".encode())
             await writer.drain()
             head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 10)
             self.assertTrue(head.startswith(b"HTTP/1.1 200 "), head[:80])
             payload = index.to_bytes(4, "big")
             writer.write(payload)
             await writer.drain()
-            self.assertEqual(
-                payload, await asyncio.wait_for(reader.readexactly(len(payload)), 10)
-            )
+            self.assertEqual(payload, await asyncio.wait_for(reader.readexactly(len(payload)), 10))
 
         try:
             self.assertEqual(200, proxy.max_connections)
             for start in range(0, 200, 20):
-                await asyncio.gather(
-                    *(open_tunnel(index) for index in range(start, start + 20))
-                )
+                await asyncio.gather(*(open_tunnel(index) for index in range(start, start + 20)))
             await self.wait_until(lambda: proxy.active_connections == 200, timeout=10)
             self.assertTrue(await asyncio.to_thread(proxy.stop, 15))
             await asyncio.gather(
@@ -2065,9 +2082,7 @@ class RegressionTests(ProxyHarness):
         proxy.set_upstream(Upstream(name="u", proxy_type="HTTP", host=LOCAL, port=1))
         writer.write(b"still-direct")
         await writer.drain()
-        self.assertEqual(
-            b"still-direct", await asyncio.wait_for(reader.readexactly(12), 5)
-        )
+        self.assertEqual(b"still-direct", await asyncio.wait_for(reader.readexactly(12), 5))
         writer.close()
 
     async def test_stop_closes_active_connections_quickly(self):

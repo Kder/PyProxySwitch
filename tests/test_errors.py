@@ -65,8 +65,7 @@ def test_batch_error_translates_nested_line_context():
         "Line 2: Port must be between 1 and 65535"
     )
     assert format_user_error(error, "zh_CN") == (
-        "批量代理配置包含错误：\n"
-        "第2行：端口号必须在1-65535之间"
+        "批量代理配置包含错误：\n" "第2行：端口号必须在1-65535之间"
     )
 
 
@@ -76,9 +75,7 @@ def test_unknown_error_code_is_rejected():
 
 
 def test_unknown_exception_is_passed_through_at_boundary():
-    assert format_user_error(RuntimeError("technical detail"), "zh_CN") == (
-        "technical detail"
-    )
+    assert format_user_error(RuntimeError("technical detail"), "zh_CN") == ("technical detail")
 
 
 def test_cli_error_line_is_fully_localized():
@@ -86,6 +83,4 @@ def test_cli_error_line_is_fully_localized():
     assert format_cli_error(error, "en", fatal=True) == (
         "Fatal error: Failed to start proxy service"
     )
-    assert format_cli_error(error, "zh_CN", fatal=True) == (
-        "致命错误：代理服务启动失败"
-    )
+    assert format_cli_error(error, "zh_CN", fatal=True) == ("致命错误：代理服务启动失败")

@@ -187,6 +187,7 @@ def _init_logger() -> logging.Logger:
             logger.setLevel(logging.INFO)
         return logger
 
+
 # 延迟初始化logger
 logger: logging.Logger | None = None
 

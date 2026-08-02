@@ -69,8 +69,7 @@ def verify_portable_artifact(directory: Path, expected: str) -> Path:
         outside_root = [name for name in names if not name.startswith(prefix)]
         if outside_root:
             raise ValueError(
-                f"portable archive contains entries outside {expected_stem}/: "
-                f"{outside_root[0]}"
+                f"portable archive contains entries outside {expected_stem}/: " f"{outside_root[0]}"
             )
         required = {
             f"{prefix}PyProxySwitch.exe",
@@ -78,9 +77,7 @@ def verify_portable_artifact(directory: Path, expected: str) -> Path:
         }
         missing = sorted(required.difference(names))
         if missing:
-            raise ValueError(
-                "portable archive is missing required entries: " + ", ".join(missing)
-            )
+            raise ValueError("portable archive is missing required entries: " + ", ".join(missing))
     return portable
 
 

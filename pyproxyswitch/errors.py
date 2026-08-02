@@ -28,55 +28,33 @@ class ErrorCode(StrEnum):
     VALIDATION_NAME_DUPLICATE = "validation.name.duplicate"
     VALIDATION_ADDRESS_REQUIRED = "validation.address.required"
     VALIDATION_ADDRESS_EMBEDDED_PORT = "validation.address.embedded_port"
-    VALIDATION_ADDRESS_DANGEROUS_CHARACTER = (
-        "validation.address.dangerous_character"
-    )
+    VALIDATION_ADDRESS_DANGEROUS_CHARACTER = "validation.address.dangerous_character"
     VALIDATION_ADDRESS_INVALID_IPV6 = "validation.address.invalid_ipv6"
     VALIDATION_ADDRESS_INVALID = "validation.address.invalid"
     VALIDATION_ADDRESS_INVALID_IPV4 = "validation.address.invalid_ipv4"
-    VALIDATION_ADDRESS_INVALID_IPV4_VALUE = (
-        "validation.address.invalid_ipv4_value"
-    )
+    VALIDATION_ADDRESS_INVALID_IPV4_VALUE = "validation.address.invalid_ipv4_value"
     VALIDATION_ADDRESS_DOMAIN_TOO_LONG = "validation.address.domain_too_long"
     VALIDATION_PORT_REQUIRED = "validation.port.required"
     VALIDATION_PORT_NUMERIC = "validation.port.numeric"
     VALIDATION_PORT_RANGE = "validation.port.range"
     VALIDATION_PROXY_TYPE_UNSUPPORTED = "validation.proxy_type.unsupported"
     VALIDATION_USERNAME_TOO_LONG = "validation.username.too_long"
-    VALIDATION_USERNAME_CONTROL_CHARACTER = (
-        "validation.username.control_character"
-    )
-    VALIDATION_USERNAME_DANGEROUS_CHARACTER = (
-        "validation.username.dangerous_character"
-    )
+    VALIDATION_USERNAME_CONTROL_CHARACTER = "validation.username.control_character"
+    VALIDATION_USERNAME_DANGEROUS_CHARACTER = "validation.username.dangerous_character"
     VALIDATION_PASSWORD_TOO_LONG = "validation.password.too_long"
-    VALIDATION_PASSWORD_CONTROL_CHARACTER = (
-        "validation.password.control_character"
-    )
-    VALIDATION_SOCKS5_CREDENTIALS_PAIR = (
-        "validation.socks5.credentials_pair"
-    )
-    VALIDATION_SOCKS5_CREDENTIALS_UNICODE = (
-        "validation.socks5.credentials_unicode"
-    )
-    VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG = (
-        "validation.socks5.credentials_too_long"
-    )
-    VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED = (
-        "validation.socks4.password_unsupported"
-    )
+    VALIDATION_PASSWORD_CONTROL_CHARACTER = "validation.password.control_character"
+    VALIDATION_SOCKS5_CREDENTIALS_PAIR = "validation.socks5.credentials_pair"
+    VALIDATION_SOCKS5_CREDENTIALS_UNICODE = "validation.socks5.credentials_unicode"
+    VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG = "validation.socks5.credentials_too_long"
+    VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED = "validation.socks4.password_unsupported"
     VALIDATION_BATCH_QUOTE = "validation.batch.quote"
     VALIDATION_BATCH_FORMAT = "validation.batch.format"
     VALIDATION_BATCH_TOO_MANY_FIELDS = "validation.batch.too_many_fields"
-    VALIDATION_BATCH_ADDRESS_PORT_REQUIRED = (
-        "validation.batch.address_port_required"
-    )
+    VALIDATION_BATCH_ADDRESS_PORT_REQUIRED = "validation.batch.address_port_required"
     VALIDATION_BATCH_INVALID_IPV6 = "validation.batch.invalid_ipv6"
     VALIDATION_BATCH_AUTH_OR_TYPE = "validation.batch.auth_or_type"
     VALIDATION_BATCH_AUTH_FORMAT = "validation.batch.auth_format"
-    VALIDATION_BATCH_PROXY_TYPE_UNSUPPORTED = (
-        "validation.batch.proxy_type_unsupported"
-    )
+    VALIDATION_BATCH_PROXY_TYPE_UNSUPPORTED = "validation.batch.proxy_type_unsupported"
     VALIDATION_BATCH_INVALID = "validation.batch.invalid"
     VALIDATION_BATCH_NONE_VALID = "validation.batch.none_valid"
     VALIDATION_FIELD_UNKNOWN = "validation.field.unknown"
@@ -106,10 +84,7 @@ _MESSAGES: dict[ErrorCode, dict[str, str]] = {
             "Proxy name may contain only letters, numbers, Chinese characters, "
             "underscores, and hyphens, with a length of 1-{max_length}"
         ),
-        "zh_CN": (
-            "代理名称只能包含字母、数字、中文、下划线和连字符，"
-            "长度1-{max_length}"
-        ),
+        "zh_CN": ("代理名称只能包含字母、数字、中文、下划线和连字符，" "长度1-{max_length}"),
     },
     ErrorCode.VALIDATION_NAME_RESERVED: {
         "en": "{name!r} is a reserved proxy name",
@@ -200,9 +175,7 @@ _MESSAGES: dict[ErrorCode, dict[str, str]] = {
             "SOCKS5 username and password must each be at most {max_bytes} "
             "bytes when UTF-8 encoded"
         ),
-        "zh_CN": (
-            "SOCKS5用户名和密码的UTF-8编码不能超过{max_bytes}字节"
-        ),
+        "zh_CN": ("SOCKS5用户名和密码的UTF-8编码不能超过{max_bytes}字节"),
     },
     ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED: {
         "en": "SOCKS4 supports a User ID but does not support passwords",
@@ -230,8 +203,7 @@ _MESSAGES: dict[ErrorCode, dict[str, str]] = {
     },
     ErrorCode.VALIDATION_BATCH_AUTH_OR_TYPE: {
         "en": (
-            "Credentials must use username:password format, or specify a "
-            "supported proxy type"
+            "Credentials must use username:password format, or specify a " "supported proxy type"
         ),
         "zh_CN": "认证信息必须使用用户名:密码格式，或指定受支持的代理类型",
     },
@@ -339,18 +311,12 @@ class LocalizedError(Exception):
             message = template.format_map(self.params)
         except KeyError as exc:
             missing = exc.args[0]
-            raise ValueError(
-                f"Missing parameter {missing!r} for error code {self.code}"
-            ) from exc
+            raise ValueError(f"Missing parameter {missing!r} for error code {self.code}") from exc
 
         if self.errors:
-            message += "\n" + "\n".join(
-                error.localized(locale) for error in self.errors
-            )
+            message += "\n" + "\n".join(error.localized(locale) for error in self.errors)
         if self.line is not None:
-            prefix = (
-                f"第{self.line}行：" if locale == "zh_CN" else f"Line {self.line}: "
-            )
+            prefix = f"第{self.line}行：" if locale == "zh_CN" else f"Line {self.line}: "
             message = prefix + message
         return message
 

@@ -156,9 +156,7 @@ class ProxyManager:
             else None
         )
         old_upstream = (
-            old_server.upstream
-            if old_server is not None and old_address is not None
-            else upstream
+            old_server.upstream if old_server is not None and old_address is not None else upstream
         )
 
         if old_server is not None:
@@ -215,10 +213,7 @@ class ProxyManager:
             raise ConfigError(
                 ErrorCode.CONFIG_PROXY_NOT_FOUND,
                 params={"name": proxy_name},
-                detail=(
-                    f"No proxy named {proxy_name!r} exists in the configured "
-                    "proxy list"
-                ),
+                detail=(f"No proxy named {proxy_name!r} exists in the configured " "proxy list"),
             )
         name, host, port, kind, username, password = selected
 

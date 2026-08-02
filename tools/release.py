@@ -87,9 +87,7 @@ def _latest_release() -> tuple[str, date]:
     if not isinstance(version, str):
         raise ReleaseError("the latest releases.toml entry has no valid version")
     if not isinstance(release_date, date):
-        raise ReleaseError(
-            f"release {version} must have an explicit unquoted TOML local date"
-        )
+        raise ReleaseError(f"release {version} must have an explicit unquoted TOML local date")
     return version, release_date
 
 
@@ -142,9 +140,7 @@ def _require_newer_than_tags(version: str, *, allow_existing: bool = False) -> N
         return
     latest_tag = max(versions, key=_version_key)
     if _version_key(version) <= _version_key(latest_tag):
-        raise ReleaseError(
-            f"release {version} must be newer than existing tag v{latest_tag}"
-        )
+        raise ReleaseError(f"release {version} must be newer than existing tag v{latest_tag}")
 
 
 def _sync_and_check_docs(version: str, *, write: bool) -> None:
@@ -176,8 +172,7 @@ def _verify_distribution_files(directory: Path) -> None:
     if len(wheels) != 1 or len(sdists) != 1 or unexpected:
         names = ", ".join(path.name for path in files) or "(empty)"
         raise ReleaseError(
-            "release build must contain exactly one wheel and one .tar.gz "
-            f"sdist; found: {names}"
+            "release build must contain exactly one wheel and one .tar.gz " f"sdist; found: {names}"
         )
 
 
@@ -282,11 +277,7 @@ def _require_clean_checkout() -> None:
     if status:
         raise ReleaseError(f"working tree or submodule is not clean:\n{status}")
     submodules = _git_output("submodule", "status", "--recursive")
-    invalid = [
-        line
-        for line in submodules.splitlines()
-        if line and not line.startswith(" ")
-    ]
+    invalid = [line for line in submodules.splitlines() if line and not line.startswith(" ")]
     if invalid:
         raise ReleaseError(
             "submodules are uninitialized, conflicted, or not at the recorded commit:\n"
@@ -299,9 +290,7 @@ def _require_pushed_head() -> str:
     head = _git_output("rev-parse", "HEAD")
     remote_head = _git_output("rev-parse", "refs/remotes/origin/master")
     if head != remote_head:
-        raise ReleaseError(
-            f"HEAD {head[:12]} does not match origin/master {remote_head[:12]}"
-        )
+        raise ReleaseError(f"HEAD {head[:12]} does not match origin/master {remote_head[:12]}")
     return head
 
 
@@ -375,9 +364,7 @@ def _inspect_release_tag(version: str, head: str) -> _ReleaseTagState:
         local_object = _validate_local_release_tag(tag, head)
 
     if remote_object is not None and local_object != remote_object:
-        raise ReleaseError(
-            f"local and remote tag {tag} refer to different signed tag objects"
-        )
+        raise ReleaseError(f"local and remote tag {tag} refer to different signed tag objects")
     return _ReleaseTagState(local_object, remote_object)
 
 
@@ -397,9 +384,7 @@ def _publish_release_tag(version: str, head: str) -> bool:
     remote_object = _remote_release_tag_object(tag, head)
     if remote_object is not None:
         if remote_object != local_object:
-            raise ReleaseError(
-                f"local and remote tag {tag} refer to different signed tag objects"
-            )
+            raise ReleaseError(f"local and remote tag {tag} refer to different signed tag objects")
         return False
 
     tag_ref = f"refs/tags/{tag}"
@@ -446,8 +431,7 @@ def _require_successful_tests(head: str) -> None:
         if isinstance(run, dict)
     )
     raise ReleaseError(
-        f"no successful Tests workflow found for {head[:12]}"
-        + (f":\n{summary}" if summary else "")
+        f"no successful Tests workflow found for {head[:12]}" + (f":\n{summary}" if summary else "")
     )
 
 

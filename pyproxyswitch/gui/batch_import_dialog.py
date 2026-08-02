@@ -6,7 +6,6 @@
 提供批量导入/导出代理的功能，从 config_dialog.py 中抽取。
 """
 
-
 from collections.abc import Sequence
 
 from PySide6 import QtCore, QtWidgets
@@ -25,9 +24,7 @@ from .error_display import localized_error_message
 class BatchImportDialog(QtWidgets.QDialog):
     """批量导入代理对话框"""
 
-    def __init__(
-        self, parent: QtWidgets.QWidget | None = None, initial_content: str = ""
-    ) -> None:
+    def __init__(self, parent: QtWidgets.QWidget | None = None, initial_content: str = "") -> None:
         """初始化对话框
 
         Args:
@@ -48,15 +45,15 @@ class BatchImportDialog(QtWidgets.QDialog):
 
         # 创建提示信息
         lbl_text = self.tr(
-            'Please use the following syntax for one proxy per line:\n\n'
-            'proxy_name address:port username:password proxy_type\n\n'
+            "Please use the following syntax for one proxy per line:\n\n"
+            "proxy_name address:port username:password proxy_type\n\n"
             '"username" and "password" are only required when the proxy needs '
-            'authorization.\n'
+            "authorization.\n"
             '"proxy_type" can be HTTP, SOCKS4 or SOCKS5.\n\n'
-            'Example:\n'
-            'my_proxy 192.168.1.100:8080\n'
-            'auth_proxy 10.0.0.1:3120 user:pass HTTP\n'
-            'socks_proxy 203.0.113.5:1080 SOCKS5\n\n'
+            "Example:\n"
+            "my_proxy 192.168.1.100:8080\n"
+            "auth_proxy 10.0.0.1:3120 user:pass HTTP\n"
+            "socks_proxy 203.0.113.5:1080 SOCKS5\n\n"
         )
 
         self._lbl_tip = QtWidgets.QLabel(lbl_text, self)
@@ -79,8 +76,8 @@ class BatchImportDialog(QtWidgets.QDialog):
         # 创建按钮盒
         self._btn_box = QtWidgets.QDialogButtonBox(self)
         self._btn_box.setStandardButtons(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel |
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Ok
         )
         self._btn_box.accepted.connect(self._on_accept)
         self._btn_box.rejected.connect(self.reject)
@@ -116,7 +113,7 @@ class BatchImportDialog(QtWidgets.QDialog):
                 self,
                 self.tr("Import Preview"),
                 preview_text,
-                QtWidgets.QMessageBox.StandardButton.Ok
+                QtWidgets.QMessageBox.StandardButton.Ok,
             )
 
         except ValidationError as e:
@@ -138,7 +135,7 @@ class BatchImportDialog(QtWidgets.QDialog):
                     self,
                     self.tr("Import Failed"),
                     self.tr("No valid proxies found."),
-                    QtWidgets.QMessageBox.StandardButton.Ok
+                    QtWidgets.QMessageBox.StandardButton.Ok,
                 )
                 return
 
@@ -150,14 +147,14 @@ class BatchImportDialog(QtWidgets.QDialog):
                 self,
                 self.tr("Import Failed"),
                 localized_error_message(e),
-                QtWidgets.QMessageBox.StandardButton.Ok
+                QtWidgets.QMessageBox.StandardButton.Ok,
             )
         except Exception as e:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Import Failed"),
                 localized_error_message(e),
-                QtWidgets.QMessageBox.StandardButton.Ok
+                QtWidgets.QMessageBox.StandardButton.Ok,
             )
 
     def get_valid_proxies(self) -> list[ValidatedProxy]:

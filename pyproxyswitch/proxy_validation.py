@@ -52,9 +52,7 @@ class ProxyValidator(QObject):
         )
 
         # 密码验证（允许更宽松的字符集）
-        self.password_validator = QRegularExpressionValidator(
-            QRegularExpression(".{0,100}"), self
-        )
+        self.password_validator = QRegularExpressionValidator(QRegularExpression(".{0,100}"), self)
 
     def validate_proxy_name(self, name: str) -> str:
         """验证代理名称
@@ -135,9 +133,7 @@ class ProxyValidator(QObject):
                 socket.inet_pton(socket.AF_INET6, ipv6_inner)
                 address = ipv6_inner  # 去掉方括号
             except (OSError, UnicodeError):
-                raise ValidationError(
-                    ErrorCode.VALIDATION_ADDRESS_INVALID_IPV6
-                ) from None
+                raise ValidationError(ErrorCode.VALIDATION_ADDRESS_INVALID_IPV6) from None
         elif ":" in address:
             # 可能是IPv6地址
             try:
@@ -146,12 +142,8 @@ class ProxyValidator(QObject):
                 pass
             except (OSError, UnicodeError):
                 # 不是有效的IPv6，继续检查其他格式
-                if not self.ipv4_pattern.match(
-                    address
-                ) and not self.domain_pattern.match(address):
-                    raise ValidationError(
-                        ErrorCode.VALIDATION_ADDRESS_INVALID
-                    ) from None
+                if not self.ipv4_pattern.match(address) and not self.domain_pattern.match(address):
+                    raise ValidationError(ErrorCode.VALIDATION_ADDRESS_INVALID) from None
         # 检查是否为纯数字+点号格式（IP类地址）
         elif address.replace(".", "").isdigit() and "." in address:
             # 这是IP类地址，必须符合IPv4格式
@@ -161,9 +153,7 @@ class ProxyValidator(QObject):
             parts = address.split(".")
             for part in parts:
                 if int(part) > 255:
-                    raise ValidationError(
-                        ErrorCode.VALIDATION_ADDRESS_INVALID_IPV4_VALUE
-                    )
+                    raise ValidationError(ErrorCode.VALIDATION_ADDRESS_INVALID_IPV4_VALUE)
         elif self.domain_pattern.match(address):
             # 验证域名
             if len(address) > 253:
@@ -260,9 +250,7 @@ class ProxyValidator(QObject):
             )
 
         if any(ord(char) < 32 or ord(char) == 127 for char in username):
-            raise ValidationError(
-                ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER
-            )
+            raise ValidationError(ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER)
 
         # 检查是否包含危险字符
         dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`", ":", "\n", "\r"]
@@ -298,9 +286,7 @@ class ProxyValidator(QObject):
 
         # 检查是否包含控制字符
         if any(ord(char) < 32 or ord(char) == 127 for char in password):
-            raise ValidationError(
-                ErrorCode.VALIDATION_PASSWORD_CONTROL_CHARACTER
-            )
+            raise ValidationError(ErrorCode.VALIDATION_PASSWORD_CONTROL_CHARACTER)
 
         return password
 
@@ -339,22 +325,16 @@ class ProxyValidator(QObject):
             validated_password = self.validate_password(password)
 
             if validated_type == "SOCKS4" and validated_password:
-                raise ValidationError(
-                    ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED
-                )
+                raise ValidationError(ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED)
 
             if validated_type == "SOCKS5" and (validated_username or validated_password):
                 if not validated_username or not validated_password:
-                    raise ValidationError(
-                        ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_PAIR
-                    )
+                    raise ValidationError(ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_PAIR)
                 try:
                     encoded_username = validated_username.encode("utf-8")
                     encoded_password = validated_password.encode("utf-8")
                 except UnicodeEncodeError:
-                    raise ValidationError(
-                        ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_UNICODE
-                    ) from None
+                    raise ValidationError(ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_UNICODE) from None
                 if len(encoded_username) > 255 or len(encoded_password) > 255:
                     raise ValidationError(
                         ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG,
@@ -418,9 +398,7 @@ class BatchImportValidator:
 
         # 解析地址和端口
         if ":" not in line_items[1]:
-            raise ValidationError(
-                ErrorCode.VALIDATION_BATCH_ADDRESS_PORT_REQUIRED
-            )
+            raise ValidationError(ErrorCode.VALIDATION_BATCH_ADDRESS_PORT_REQUIRED)
         username = ""
         password = ""
         proxy_type = "HTTP"
@@ -450,9 +428,7 @@ class BatchImportValidator:
             else:
                 username, separator, password = line_items[2].partition(":")
                 if not separator:
-                    raise ValidationError(
-                        ErrorCode.VALIDATION_BATCH_AUTH_OR_TYPE
-                    )
+                    raise ValidationError(ErrorCode.VALIDATION_BATCH_AUTH_OR_TYPE)
         elif len(line_items) == 4:
             username, separator, password = line_items[2].partition(":")
             if not separator:
@@ -500,9 +476,7 @@ class BatchImportValidator:
         except ValidationError as e:
             raise e.with_line(line_number) from e
 
-    def validate_batch_content(
-        self, content: str, *, strict: bool = False
-    ) -> list[ValidatedProxy]:
+    def validate_batch_content(self, content: str, *, strict: bool = False) -> list[ValidatedProxy]:
         """验证批量导入内容
 
         Args:

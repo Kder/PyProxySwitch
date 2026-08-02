@@ -12,10 +12,10 @@ from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
 from .main_window import Window
 
 __all__ = [
-    'Window',
-    'Config_Dialog',
-    'AddProxy_Dialog',
-    'ProxyTypeDelegate',
-    'ProxyPortDelegate',
-    'ProxyNameDelegate'
+    "Window",
+    "Config_Dialog",
+    "AddProxy_Dialog",
+    "ProxyTypeDelegate",
+    "ProxyPortDelegate",
+    "ProxyNameDelegate",
 ]

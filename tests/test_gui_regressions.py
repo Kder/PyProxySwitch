@@ -472,10 +472,7 @@ def test_failed_proxy_save_restores_table_and_config(qapp, tmp_path, monkeypatch
     dialog.data_model.setData(address_index, "changed.example", QtCore.Qt.ItemDataRole.EditRole)
 
     assert config.get_proxies()[0][1] == "localhost"
-    assert (
-        dialog.data_model.data(dialog.data_model.index(0, dialog.proxy_address))
-        == "localhost"
-    )
+    assert dialog.data_model.data(dialog.data_model.index(0, dialog.proxy_address)) == "localhost"
     assert errors
 
 

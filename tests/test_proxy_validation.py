@@ -260,10 +260,7 @@ class TestProxyValidatorUsername:
     def test_invalid_username_control_chars(self, proxy_validator, control):
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_username(f"user{control}name")
-        assert (
-            exc_info.value.code
-            == ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER
-        )
+        assert exc_info.value.code == ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER
 
     def test_invalid_username_too_long(self, proxy_validator):
         """测试过长用户名"""
@@ -343,20 +340,14 @@ class TestProxyValidatorFullProxy:
             proxy_validator.validate_full_proxy(
                 "auth_socks", "10.0.0.1", "1080", "SOCKS5", username, password
             )
-        assert (
-            exc_info.value.code
-            == ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_PAIR
-        )
+        assert exc_info.value.code == ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_PAIR
 
     def test_socks5_auth_limits_utf8_byte_length(self, proxy_validator):
         with pytest.raises(ValidationError) as exc_info:
             proxy_validator.validate_full_proxy(
                 "auth_socks", "10.0.0.1", "1080", "SOCKS5", "user", "😀" * 100
             )
-        assert (
-            exc_info.value.code
-            == ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG
-        )
+        assert exc_info.value.code == ErrorCode.VALIDATION_SOCKS5_CREDENTIALS_TOO_LONG
 
     def test_full_proxy_valid_socks4(self, proxy_validator):
         """测试有效的 SOCKS4 代理"""
@@ -376,10 +367,7 @@ class TestProxyValidatorFullProxy:
                 "password",
             )
 
-        assert (
-            exc_info.value.code
-            == ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED
-        )
+        assert exc_info.value.code == ErrorCode.VALIDATION_SOCKS4_PASSWORD_UNSUPPORTED
 
     def test_full_proxy_valid_ipv6(self, proxy_validator):
         """测试 IPv6 代理"""
@@ -590,13 +578,8 @@ class TestBatchImportEdgeCases:
 
     def test_batch_line_rejects_extra_parameters(self, batch_validator):
         with pytest.raises(ValidationError) as exc_info:
-            batch_validator.validate_batch_line(
-                "test 127.0.0.1:1080 user:pass SOCKS5 ignored", 1
-            )
-        assert (
-            exc_info.value.code
-            == ErrorCode.VALIDATION_BATCH_TOO_MANY_FIELDS
-        )
+            batch_validator.validate_batch_line("test 127.0.0.1:1080 user:pass SOCKS5 ignored", 1)
+        assert exc_info.value.code == ErrorCode.VALIDATION_BATCH_TOO_MANY_FIELDS
 
     def test_batch_line_with_spaces_in_quotes(self, batch_validator):
         """测试引号中带空格的解析"""
@@ -620,10 +603,7 @@ class TestProxyValidationEdgeCases:
         for address in addresses:
             with pytest.raises(ValidationError) as exc_info:
                 proxy_validator.validate_proxy_address(address)
-            assert (
-                exc_info.value.code
-                == ErrorCode.VALIDATION_ADDRESS_EMBEDDED_PORT
-            )
+            assert exc_info.value.code == ErrorCode.VALIDATION_ADDRESS_EMBEDDED_PORT
 
     def test_ipv6_socket_validation(self, proxy_validator):
         """测试IPv6地址socket验证（覆盖lines 134-145）"""
@@ -642,9 +622,7 @@ class TestProxyValidationEdgeCases:
         for char in dangerous_chars:
             with pytest.raises(ValidationError) as exc_info:
                 proxy_validator.validate_proxy_address(f"test{char}example")
-            assert f"域名包含危险字符：{char!r}" in exc_info.value.localized(
-                "zh_CN"
-            )
+            assert f"域名包含危险字符：{char!r}" in exc_info.value.localized("zh_CN")
 
     def test_batch_validation_shlex_error_handling(self, batch_validator):
         """测试批量验证中shlex.split异常处理（覆盖lines 350-354）"""

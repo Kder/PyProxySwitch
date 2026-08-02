@@ -250,9 +250,7 @@ class _ConnectionActivity:
     def __init__(self, timeout: float | None) -> None:
         self._timeout = timeout
         self._loop = asyncio.get_running_loop()
-        self._deadline = (
-            None if timeout is None else self._loop.time() + timeout
-        )
+        self._deadline = None if timeout is None else self._loop.time() + timeout
         self._watchdogs: set[asyncio.Timeout] = set()
 
     def touch(self) -> None:
@@ -507,9 +505,7 @@ class NativeProxyServer:
             startup_error, running = self._startup_state()
             if startup_error is not None:
                 self.stop(timeout=timeout)
-                raise RuntimeError(
-                    f"Cannot start native proxy: {startup_error}"
-                ) from startup_error
+                raise RuntimeError(f"Cannot start native proxy: {startup_error}") from startup_error
             if not running:
                 self.stop(timeout=timeout)
                 raise RuntimeError("Native proxy stopped before it finished starting")
@@ -664,9 +660,7 @@ class NativeProxyServer:
         progress = _ResponseProgress()
         try:
             remainder = await self._timed(
-                self._read_header_block(
-                    client_reader, "HTTP request headers", ClientProtocolError
-                ),
+                self._read_header_block(client_reader, "HTTP request headers", ClientProtocolError),
                 self.handshake_timeout,
             )
             raw_header = first + remainder
@@ -705,9 +699,7 @@ class NativeProxyServer:
             raise
         except TimeoutError as exc:
             await self._send_http_error(client_writer, 504, "Gateway Timeout", progress)
-            raise _UpstreamTimeoutError(
-                f"CONNECT {request.target} timed out"
-            ) from exc
+            raise _UpstreamTimeoutError(f"CONNECT {request.target} timed out") from exc
         except (OSError, ProxyProtocolError, ValueError) as exc:
             await self._send_http_error(client_writer, 502, "Bad Gateway", progress)
             raise UpstreamProtocolError(f"CONNECT {request.target} failed: {exc}") from exc
@@ -734,9 +726,7 @@ class NativeProxyServer:
         remote_writer: asyncio.StreamWriter | None = None
         try:
             self._check_destination(destination.host, destination.port)
-            headers = self._replace_host_header(
-                request.headers, destination.host, destination.port
-            )
+            headers = self._replace_host_header(request.headers, destination.host, destination.port)
             if upstream.proxy_type == "HTTP":
                 remote_reader, remote_writer = await self._timed(
                     self._open_endpoint(upstream.host, upstream.port), self.connect_timeout
@@ -762,9 +752,7 @@ class NativeProxyServer:
                 raise
             if isinstance(exc, TimeoutError):
                 await self._send_http_error(client_writer, 504, "Gateway Timeout", progress)
-                raise _UpstreamTimeoutError(
-                    f"HTTP {request.target} timed out"
-                ) from exc
+                raise _UpstreamTimeoutError(f"HTTP {request.target} timed out") from exc
             if isinstance(exc, (OSError, ProxyProtocolError, ValueError)):
                 await self._send_http_error(client_writer, 502, "Bad Gateway", progress)
                 raise UpstreamProtocolError(f"HTTP {request.target} failed: {exc}") from exc
@@ -811,9 +799,7 @@ class NativeProxyServer:
             # instead of dropping the client silently; the synthetic response
             # is suppressed automatically once a final response has started.
             await self._send_http_error(client_writer, 502, "Bad Gateway", progress)
-            raise UpstreamProtocolError(
-                f"HTTP {request.method} request failed: {exc}"
-            ) from exc
+            raise UpstreamProtocolError(f"HTTP {request.method} request failed: {exc}") from exc
         finally:
             await self._close_writer(remote_writer)
 
@@ -934,9 +920,9 @@ class NativeProxyServer:
     ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter, _BoundAddress | None]:
         self._check_destination(target_host, target_port)
 
-        async def connect() -> tuple[
-            asyncio.StreamReader, asyncio.StreamWriter, _BoundAddress | None
-        ]:
+        async def connect() -> (
+            tuple[asyncio.StreamReader, asyncio.StreamWriter, _BoundAddress | None]
+        ):
             if upstream.proxy_type == "DIRECT":
                 reader, writer = await self._open_endpoint(target_host, target_port)
                 return reader, writer, self._writer_bound_address(writer)
@@ -1038,9 +1024,7 @@ class NativeProxyServer:
         elif method != 0:
             raise UpstreamProtocolError(f"Unsupported SOCKS5 auth method: {method}")
 
-        writer.write(
-            b"\x05\x01\x00" + self._encode_socks5_address(host) + struct.pack(">H", port)
-        )
+        writer.write(b"\x05\x01\x00" + self._encode_socks5_address(host) + struct.pack(">H", port))
         await writer.drain()
         version, reply, reserved, address_type = await self._read_exactly(
             reader, 4, "SOCKS5 upstream reply", UpstreamProtocolError
@@ -1050,9 +1034,7 @@ class NativeProxyServer:
         if reply != 0:
             # Checked before the bound address so a bogus ATYP cannot mask the code.
             raise UpstreamProtocolError(f"SOCKS5 upstream connect failed with code {reply}")
-        bound_host = await self._read_socks_address(
-            reader, address_type, UpstreamProtocolError
-        )
+        bound_host = await self._read_socks_address(reader, address_type, UpstreamProtocolError)
         bound_port = struct.unpack(
             ">H",
             await self._read_exactly(
@@ -1071,9 +1053,7 @@ class NativeProxyServer:
     ) -> _BoundAddress:
         address = _ip_literal(host)
         if isinstance(address, ipaddress.IPv6Address):
-            raise ProxyProtocolError(
-                "SOCKS4 upstream proxies cannot reach IPv6 destinations"
-            )
+            raise ProxyProtocolError("SOCKS4 upstream proxies cannot reach IPv6 destinations")
         if isinstance(address, ipaddress.IPv4Address):
             raw_address = address.packed
             domain = b""
@@ -1090,12 +1070,9 @@ class NativeProxyServer:
         )
         if response[0] != 0 or response[1] != 0x5A:
             raise UpstreamProtocolError(
-                "Invalid SOCKS4 upstream response "
-                f"(version={response[0]}, status={response[1]})"
+                "Invalid SOCKS4 upstream response " f"(version={response[0]}, status={response[1]})"
             )
-        return _BoundAddress(
-            socket.inet_ntoa(response[4:8]), struct.unpack(">H", response[2:4])[0]
-        )
+        return _BoundAddress(socket.inet_ntoa(response[4:8]), struct.unpack(">H", response[2:4])[0])
 
     # ---------------------------------------------------------------- relay
 
@@ -1118,12 +1095,8 @@ class NativeProxyServer:
 
         if activity is None:
             activity = _ConnectionActivity(self.idle_timeout)
-        client_to_remote = asyncio.create_task(
-            self._pipe(client_reader, remote_writer, activity)
-        )
-        remote_to_client = asyncio.create_task(
-            self._pipe(remote_reader, client_writer, activity)
-        )
+        client_to_remote = asyncio.create_task(self._pipe(client_reader, remote_writer, activity))
+        remote_to_client = asyncio.create_task(self._pipe(remote_reader, client_writer, activity))
         tasks = (client_to_remote, remote_to_client)
         try:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -1161,9 +1134,7 @@ class NativeProxyServer:
 
         activity = _ConnectionActivity(self.idle_timeout)
         request_body = asyncio.create_task(
-            self._forward_http_body(
-                client_reader, remote_writer, framing, activity=activity
-            )
+            self._forward_http_body(client_reader, remote_writer, framing, activity=activity)
         )
         response = asyncio.create_task(
             self._forward_http_response(
@@ -1275,22 +1246,17 @@ class NativeProxyServer:
             if status == 101:
                 if not requested_upgrades:
                     raise UpstreamProtocolError("Unexpected HTTP 101 response")
-                selected_upgrades = self._http_upgrade_protocols(
-                    headers, UpstreamProtocolError
-                )
+                selected_upgrades = self._http_upgrade_protocols(headers, UpstreamProtocolError)
                 if not selected_upgrades:
                     raise UpstreamProtocolError("Invalid HTTP 101 Upgrade response")
                 requested_keys = {
-                    self._http_upgrade_protocol_key(protocol)
-                    for protocol in requested_upgrades
+                    self._http_upgrade_protocol_key(protocol) for protocol in requested_upgrades
                 }
                 if any(
                     self._http_upgrade_protocol_key(protocol) not in requested_keys
                     for protocol in selected_upgrades
                 ):
-                    raise UpstreamProtocolError(
-                        "HTTP 101 selected an unrequested Upgrade protocol"
-                    )
+                    raise UpstreamProtocolError("HTTP 101 selected an unrequested Upgrade protocol")
                 await self._write_response_head(
                     client_writer,
                     version,
@@ -1353,9 +1319,7 @@ class NativeProxyServer:
         progress: _ResponseProgress,
         activity: _ConnectionActivity,
     ) -> None:
-        client_writer.write(
-            self._build_http_response(version, status, reason, headers, connection)
-        )
+        client_writer.write(self._build_http_response(version, status, reason, headers, connection))
         if status == 101 or status >= 200:
             progress.final_started = True
         await self._drain(client_writer, activity)
@@ -1384,9 +1348,7 @@ class NativeProxyServer:
             await self._drain(writer, activity)
             return
         if framing.mode == "chunked":
-            await self._forward_chunked_body(
-                reader, writer, error, description, activity
-            )
+            await self._forward_chunked_body(reader, writer, error, description, activity)
             return
         await self._pipe(reader, writer, activity)
 
@@ -1446,9 +1408,7 @@ class NativeProxyServer:
                     await self._drain(writer, activity)
                     return
                 try:
-                    name, _ = self._parse_http_field(
-                        trailer_line[:-2].decode("latin-1")
-                    )
+                    name, _ = self._parse_http_field(trailer_line[:-2].decode("latin-1"))
                 except ProxyProtocolError as exc:
                     raise error(str(exc)) from exc
                 if name.lower() in _FORBIDDEN_TRAILER_FIELDS:
@@ -1542,9 +1502,7 @@ class NativeProxyServer:
         if writer.transport.get_write_buffer_size() >= _WRITE_HIGH_WATER:
             await self._drain(writer, activity)
 
-    async def _drain(
-        self, writer: asyncio.StreamWriter, activity: _ConnectionActivity
-    ) -> None:
+    async def _drain(self, writer: asyncio.StreamWriter, activity: _ConnectionActivity) -> None:
         try:
             await activity.wait(writer.drain())
         except TimeoutError:
@@ -1566,7 +1524,14 @@ class NativeProxyServer:
                 raise ClientProtocolError("CONNECT requests cannot contain a body")
             host, port = cls._parse_authority(target, 443)
             return _HttpRequest(
-                method, target, version, "authority", headers, framing, False, (),
+                method,
+                target,
+                version,
+                "authority",
+                headers,
+                framing,
+                False,
+                (),
                 _HttpTarget(host, port),
             )
         if target == "*":
@@ -1601,9 +1566,7 @@ class NativeProxyServer:
         )
 
     @classmethod
-    def _parse_http_header(
-        cls, raw_header: bytes
-    ) -> tuple[tuple[str, str, str], _Headers]:
+    def _parse_http_header(cls, raw_header: bytes) -> tuple[tuple[str, str, str], _Headers]:
         text = raw_header.decode("latin-1")
         lines = text.split("\r\n")
         if lines and not lines[0]:
@@ -1639,9 +1602,7 @@ class NativeProxyServer:
         return name, value
 
     @classmethod
-    def _parse_http_response_header(
-        cls, raw_header: bytes
-    ) -> tuple[str, int, str, _Headers]:
+    def _parse_http_response_header(cls, raw_header: bytes) -> tuple[str, int, str, _Headers]:
         text = raw_header.decode("latin-1")
         lines = text.split("\r\n")
         parts = lines[0].split(" ", 2)
@@ -1672,9 +1633,7 @@ class NativeProxyServer:
             value for name, value in headers if name.lower() == "transfer-encoding"
         ]
         if content_lengths and transfer_encodings:
-            raise ClientProtocolError(
-                "Content-Length and Transfer-Encoding cannot appear together"
-            )
+            raise ClientProtocolError("Content-Length and Transfer-Encoding cannot appear together")
 
         if content_lengths:
             parsed_lengths: list[int] = []
@@ -2017,7 +1976,7 @@ class NativeProxyServer:
             end = authority.find("]")
             if end < 2:
                 raise ClientProtocolError("Invalid IPv6 authority")
-            host = authority[1 : end]
+            host = authority[1:end]
             suffix = authority[end + 1 :]
             if suffix:
                 if not suffix.startswith(":"):
@@ -2240,9 +2199,7 @@ class NativeProxyServer:
         return error_class(str(exc))
 
     @classmethod
-    def _task_result(
-        cls, task: asyncio.Task[_T], error_class: type[ProxyProtocolError]
-    ) -> _T:
+    def _task_result(cls, task: asyncio.Task[_T], error_class: type[ProxyProtocolError]) -> _T:
         try:
             return task.result()
         except TimeoutError as exc:
@@ -2269,8 +2226,7 @@ class NativeProxyServer:
             f"HTTP/1.1 {status} {reason}\r\n"
             f"Content-Type: text/plain; charset=us-ascii\r\n"
             f"Content-Length: {len(body)}\r\n"
-            f"Connection: close\r\n\r\n".encode("ascii")
-            + body
+            f"Connection: close\r\n\r\n".encode("ascii") + body
         )
         if progress is not None:
             progress.final_started = True
@@ -2285,9 +2241,7 @@ class NativeProxyServer:
     @staticmethod
     def _tune_writer(writer: asyncio.StreamWriter) -> None:
         with contextlib.suppress(Exception):
-            writer.transport.set_write_buffer_limits(
-                high=_WRITE_HIGH_WATER, low=_WRITE_LOW_WATER
-            )
+            writer.transport.set_write_buffer_limits(high=_WRITE_HIGH_WATER, low=_WRITE_LOW_WATER)
         sock = writer.get_extra_info("socket")
         if sock is not None:
             with contextlib.suppress(OSError):
@@ -2379,6 +2333,7 @@ class NativeProxyServer:
 
         with self._state_lock:
             return self._startup_error, self.is_running
+
 
 __all__ = [
     "ClientProtocolError",

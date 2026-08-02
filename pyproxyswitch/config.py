@@ -232,9 +232,7 @@ class ConfigManager:
         for key in ("DEFAULT_ITEM", "LAST_ITEM"):
             value = values.get(key)
             normalized[key] = (
-                value.strip()
-                if isinstance(value, str) and value.strip()
-                else defaults[key]
+                value.strip() if isinstance(value, str) and value.strip() else defaults[key]
             )
 
         log_path = values.get("LOG_PATH")

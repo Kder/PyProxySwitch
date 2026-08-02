@@ -17,15 +17,15 @@ from .error_display import localized_error_message
 
 
 class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
-    '''"添加代理"对话框'''
+    """ "添加代理"对话框"""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
-        '''初始化UI'''
+        """初始化UI"""
         super().__init__(parent)
         self.setupUi(self)
         self.validator = ProxyValidator()
         self.setFixedSize(381, 242)
-        self.setWindowIcon(QtGui.QIcon(':/img/pps.png'))
+        self.setWindowIcon(QtGui.QIcon(":/img/pps.png"))
         self.le_proxy_name.setFocus()
         self.le_port.setValidator(self.validator.get_port_validator())
         self.le_proxy_name.setValidator(self.validator.get_name_validator())
@@ -42,12 +42,10 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
         self.le_password.setVisible(not socks4)
         if socks4:
             self.le_password.clear()
-        self.le_password.setEnabled(
-            not socks4 and self.checkBox_proxy_auth.isChecked()
-        )
+        self.le_password.setEnabled(not socks4 and self.checkBox_proxy_auth.isChecked())
 
     def done(self, retcode: int) -> None:
-        '''验证代理项目是否符合要求'''
+        """验证代理项目是否符合要求"""
         if retcode == QtWidgets.QDialog.DialogCode.Accepted:
             try:
                 # 使用增强验证器验证所有参数
@@ -57,11 +55,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 proxy_type = self.comboBox_type.currentText()
                 if self.checkBox_proxy_auth.isChecked():
                     username = self.le_username.text()
-                    password = (
-                        ""
-                        if proxy_type == "SOCKS4"
-                        else self.le_password.text()
-                    )
+                    password = "" if proxy_type == "SOCKS4" else self.le_password.text()
                 else:
                     username = ""
                     password = ""
@@ -89,9 +83,9 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
                 # 显示错误信息
                 QtWidgets.QMessageBox.warning(
                     self,
-                    self.tr('Validation Error'),
+                    self.tr("Validation Error"),
                     localized_error_message(e),
-                    QtWidgets.QMessageBox.StandardButton.Ok
+                    QtWidgets.QMessageBox.StandardButton.Ok,
                 )
         else:
             super().done(retcode)

@@ -239,7 +239,9 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                         logger.error(f"Failed to move native proxy listener: {e}")
                         message = localized_error_message(e)
                         if not restored:
-                            message += "\n" + self.tr("Failed to restore the previous configuration")
+                            message += "\n" + self.tr(
+                                "Failed to restore the previous configuration"
+                            )
                         self.show_error(message)
             else:
                 self.le_localport.setText(str(self._config.get("LOCAL_PORT")))
@@ -254,7 +256,9 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 验证代理信息
         try:
-            validated = self.validator.validate_full_proxy(name, address, str(port), ptype, user, pwd)
+            validated = self.validator.validate_full_proxy(
+                name, address, str(port), ptype, user, pwd
+            )
         except ValidationError:
             return False
 
@@ -546,9 +550,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                     logger.error("Failed to apply updated proxy settings: %s", exc)
                     if hasattr(parent, "set_proxy_service_available"):
                         server = parent.proxy_manager.server
-                        parent.set_proxy_service_available(
-                            server is not None and server.is_running
-                        )
+                        parent.set_proxy_service_available(server is not None and server.is_running)
                     self.show_error(localized_error_message(exc))
         else:
             logger.warning("Parent widget does not have refresh_menu method")

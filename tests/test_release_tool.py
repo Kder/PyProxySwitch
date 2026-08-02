@@ -72,9 +72,7 @@ def test_latest_release_requires_explicit_toml_date(
         release._latest_release()
 
 
-def test_latest_release_reads_version_and_date(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_latest_release_reads_version_and_date(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     releases_file = tmp_path / "releases.toml"
     releases_file.write_text(
         '[[release]]\nversion = "4.0.4"\ndate = 2026-07-26\n',
@@ -127,9 +125,7 @@ def test_build_distributions_uses_requested_scm_version(
     assert build_command[:2] == ["uv", "build"]
     assert "--no-managed-python" in build_command
     assert "--no-python-downloads" in build_command
-    assert build_env == {
-        "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYPROXYSWITCH": "4.0.4"
-    }
+    assert build_env == {"SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYPROXYSWITCH": "4.0.4"}
     assert version_file.read_text(encoding="utf-8") == "development version"
 
 
@@ -210,10 +206,7 @@ def test_local_release_tag_must_target_current_head(
             "not an annotated tag",
         ),
         (
-            (
-                f"{'b' * 40}\trefs/tags/v4.0.4\n"
-                f"{'c' * 40}\trefs/tags/v4.0.4^{{}}"
-            ),
+            (f"{'b' * 40}\trefs/tags/v4.0.4\n" f"{'c' * 40}\trefs/tags/v4.0.4^{{}}"),
             "targets",
         ),
     ],
@@ -234,10 +227,7 @@ def test_remote_release_tag_accepts_annotated_tag_at_head(
 ) -> None:
     head = "a" * 40
     tag_object = "b" * 40
-    remote_output = (
-        f"{tag_object}\trefs/tags/v4.0.4\n"
-        f"{head}\trefs/tags/v4.0.4^{{}}"
-    )
+    remote_output = f"{tag_object}\trefs/tags/v4.0.4\n" f"{head}\trefs/tags/v4.0.4^{{}}"
     monkeypatch.setattr(release, "_git_output", lambda *args: remote_output)
 
     assert release._remote_release_tag_object("v4.0.4", head) == tag_object
