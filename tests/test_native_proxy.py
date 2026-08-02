@@ -1032,16 +1032,15 @@ class HttpForwardTests(ProxyHarness):
             reader, writer = await self.connect(proxy)
             try:
                 writer.write(request)
-                await writer.drain()
-                raw = await read_until_eof(reader)
+                with contextlib.suppress(ConnectionError):
+                    await writer.drain()
+                raw = await read_until_closed(reader)
                 self.assertTrue(
                     raw.startswith(b"HTTP/1.1 413 ") or raw.startswith(b"HTTP/1.1 502 "),
                     raw[:80],
                 )
             finally:
                 writer.close()
-                with contextlib.suppress(Exception):
-                    await writer.wait_closed()
 
     async def test_upload_reset_waits_for_inflight_early_response(self):
         """A write-side upload failure must not cancel an early response that
@@ -1050,6 +1049,13 @@ class HttpForwardTests(ProxyHarness):
         proxy = NativeProxyServer(LOCAL, 0, Upstream.direct(), idle_timeout=30.0)
         response_relayed = asyncio.Event()
         relayed = False
+
+        class EofReader:
+            """Stand-in for the client reader: the upload is mocked to fail
+            before any body is consumed, so draining sees an immediate EOF."""
+
+            async def read(self, size: int = -1) -> bytes:
+                return b""
 
         async def failing_upload(*_args, **_kwargs):
             raise ConnectionResetError("upstream closed during upload")
@@ -1066,7 +1072,7 @@ class HttpForwardTests(ProxyHarness):
         ):
             task = asyncio.create_task(
                 proxy._relay_http_request(
-                    client_reader=None,
+                    client_reader=EofReader(),
                     client_writer=None,
                     remote_reader=None,
                     remote_writer=None,

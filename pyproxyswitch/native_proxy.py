@@ -51,6 +51,8 @@ _WRITER_FLUSH_TIMEOUT: Final = 10.0
 _WRITER_CLOSE_TIMEOUT: Final = 10.0
 _SHUTDOWN_CLOSE_TIMEOUT: Final = 0.25
 _SERVER_CLOSE_TIMEOUT: Final = 0.5
+_EARLY_RESPONSE_DRAIN_LIMIT: Final = 16 * 1024 * 1024
+_EARLY_RESPONSE_DRAIN_TIMEOUT: Final = 10.0
 _MAX_HTTP_BODY_LENGTH: Final = (1 << 63) - 1
 _MAX_CONTENT_LENGTH_DIGITS: Final = 19
 _MAX_CHUNK_SIZE_DIGITS: Final = 16
@@ -1160,6 +1162,7 @@ class NativeProxyServer:
                     if not response.done():
                         await asyncio.wait((response,))
                     self._task_result(response, UpstreamProtocolError)
+                    await self._drain_client_upload(client_reader)
                     return
                 if not response.done():
                     await asyncio.wait((response,))
@@ -1170,11 +1173,36 @@ class NativeProxyServer:
                 self._task_result(response, UpstreamProtocolError)
                 if request_body.done():
                     self._task_result(request_body, ClientProtocolError)
+                else:
+                    request_body.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await request_body
+                    await self._drain_client_upload(client_reader)
         finally:
             for task in (request_body, response):
                 if not task.done():
                     task.cancel()
             await asyncio.gather(request_body, response, return_exceptions=True)
+
+    async def _drain_client_upload(self, client_reader: asyncio.StreamReader) -> None:
+        """Consume the remainder of an upload rejected by an early response.
+
+        Closing a client connection that still has unread request bytes makes
+        the TCP stack send a reset, which can destroy the early response that
+        was just relayed.  Read and discard the rest of the body instead,
+        bounded so a slow or hostile client cannot pin the handler.
+        """
+
+        try:
+            async with asyncio.timeout(_EARLY_RESPONSE_DRAIN_TIMEOUT):
+                remaining = _EARLY_RESPONSE_DRAIN_LIMIT
+                while remaining:
+                    block = await client_reader.read(min(_BUFFER_SIZE, remaining))
+                    if not block:
+                        return
+                    remaining -= len(block)
+        except (TimeoutError, OSError, asyncio.IncompleteReadError):
+            return
 
     async def _relay_http_upgrade(
         self,
