@@ -1,3 +1,4 @@
+import json
 import logging
 
 import pytest
@@ -429,6 +430,32 @@ def test_listener_start_failure_is_visible_in_tray(qapp, tmp_path, monkeypatch) 
         assert errors and "port already in use" in errors[0]
     finally:
         window.cleanup_tray_icon()
+
+
+def test_welcome_is_shown_only_on_first_start(qapp, tmp_path, monkeypatch) -> None:
+    config = _make_config(tmp_path)
+    messages = []
+    monkeypatch.setattr(QtWidgets.QSystemTrayIcon, "isSystemTrayAvailable", lambda: True)
+    monkeypatch.setattr(QtWidgets.QSystemTrayIcon, "show", lambda self: None)
+    monkeypatch.setattr(
+        "pyproxyswitch.gui.main_window.ProxyManager.start_proxy", lambda self, name: None
+    )
+    monkeypatch.setattr(main_window.Window, "showWelcome", lambda self: messages.append(True))
+
+    first = main_window.Window()
+    try:
+        assert messages == [True]
+        assert config.get("SHOW_WELCOME") == 0
+        saved = json.loads(config.get_config_path().read_text(encoding="utf-8"))
+        assert saved["SHOW_WELCOME"] == 0
+    finally:
+        first.cleanup_tray_icon()
+
+    second = main_window.Window()
+    try:
+        assert messages == [True]
+    finally:
+        second.cleanup_tray_icon()
 
 
 def test_failed_proxy_save_restores_table_and_config(qapp, tmp_path, monkeypatch) -> None:

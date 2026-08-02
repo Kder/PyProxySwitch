@@ -22,6 +22,7 @@ def test_defaults_do_not_contain_backend_selector(tmp_path):
     assert "CMD" not in config
     assert config.get("LOCAL_ADDRESS") == "127.0.0.1"
     assert config.get("LOCAL_PORT") == 8888
+    assert config.get("SHOW_WELCOME") == 1
 
 
 def test_load_migrates_old_settings_without_retaining_backend(tmp_path):
@@ -108,7 +109,7 @@ def test_malformed_persisted_settings_are_repaired(tmp_path):
     assert config.get("LOCAL_ADDRESS") == "127.0.0.1"
     assert config.get("LOCAL_PORT") == 8888
     assert config.get("LOG_PATH") == ""
-    assert config.get("SHOW_WELCOME") == 0
+    assert config.get("SHOW_WELCOME") == 1
 
 
 def test_fractional_local_port_is_rejected_instead_of_truncated(tmp_path):

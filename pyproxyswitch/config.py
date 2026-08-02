@@ -253,7 +253,7 @@ class ConfigManager:
             "LOCAL_ADDRESS": "127.0.0.1",
             "LOCAL_PORT": 8888,
             "LOG_PATH": "",
-            "SHOW_WELCOME": 0,
+            "SHOW_WELCOME": 1,
         }
 
     def __getitem__(self, key: str) -> Any:
