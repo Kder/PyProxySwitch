@@ -1389,7 +1389,7 @@ class NativeProxyServer:
                 chunk_size = self._parse_http_chunk_size(size_line[:-2])
             except ProxyProtocolError as exc:
                 raise error(str(exc)) from exc
-            writer.write(size_line)
+            self._write_open(writer, size_line)
             await self._maybe_drain(writer, activity)
 
             if chunk_size:
@@ -1410,7 +1410,7 @@ class NativeProxyServer:
                 )
                 if terminator != b"\r\n":
                     raise error(f"Invalid {description} chunk terminator")
-                writer.write(terminator)
+                self._write_open(writer, terminator)
                 await self._maybe_drain(writer, activity)
                 continue
 
@@ -1423,7 +1423,7 @@ class NativeProxyServer:
                 if trailer_size > _HEADER_LIMIT:
                     raise error(f"{description} chunk trailers are too large")
                 if trailer_line == b"\r\n":
-                    writer.write(trailer_line)
+                    self._write_open(writer, trailer_line)
                     await self._drain(writer, activity)
                     return
                 try:
@@ -1434,7 +1434,7 @@ class NativeProxyServer:
                     raise error(str(exc)) from exc
                 if name.lower() in _FORBIDDEN_TRAILER_FIELDS:
                     raise error(f"Forbidden HTTP trailer field: {name}")
-                writer.write(trailer_line)
+                self._write_open(writer, trailer_line)
                 await self._maybe_drain(writer, activity)
 
     async def _copy_http_body_bytes(
@@ -1458,7 +1458,7 @@ class NativeProxyServer:
                 error,
                 activity,
             )
-            writer.write(data)
+            self._write_open(writer, data)
             remaining -= len(data)
             await self._maybe_drain(writer, activity)
 
@@ -1500,9 +1500,22 @@ class NativeProxyServer:
                         writer.write_eof()
                 return
             activity.touch()
-            writer.write(data)
+            self._write_open(writer, data)
             if writer.transport.get_write_buffer_size() >= _WRITE_HIGH_WATER:
                 await self._drain(writer, activity)
+
+    @staticmethod
+    def _write_open(writer: asyncio.StreamWriter, data: bytes) -> None:
+        """Stop streaming as soon as a send marks the transport as closing."""
+
+        if writer.is_closing():
+            raise ConnectionResetError("Proxy transport is closing")
+        writer.write(data)
+        # Selector transports mark themselves closing synchronously when
+        # socket.send() fails.  Detect that state before another chunk can
+        # produce asyncio's repeated "socket.send() raised exception" warning.
+        if writer.is_closing():
+            raise ConnectionResetError("Proxy transport closed during write")
 
     async def _maybe_drain(
         self, writer: asyncio.StreamWriter, activity: _ConnectionActivity

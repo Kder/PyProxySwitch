@@ -1806,6 +1806,21 @@ class UpstreamChainTests(ProxyHarness):
 
 
 class RegressionTests(ProxyHarness):
+    async def test_relay_stops_when_transport_closes_during_write(self):
+        """A failed send must not turn later chunks into asyncio warnings."""
+
+        proxy = NativeProxyServer(port=0)
+        reader = mock.Mock()
+        reader.read = mock.AsyncMock(return_value=b"x" * 1024)
+        writer = mock.Mock()
+        writer.is_closing.side_effect = (False, True)
+
+        with self.assertRaisesRegex(ConnectionResetError, "closed during write"):
+            await proxy._pipe(reader, writer)
+
+        reader.read.assert_awaited_once_with(native_proxy._BUFFER_SIZE)
+        writer.write.assert_called_once_with(b"x" * 1024)
+
     async def test_slow_reader_is_not_truncated(self):
         """Regression #1: closing must flush, not abort after 250 ms."""
         size = 8 * 1024 * 1024
