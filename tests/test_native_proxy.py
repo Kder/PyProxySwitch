@@ -955,6 +955,90 @@ class HttpForwardTests(ProxyHarness):
         self.assertIn(b"Transfer-Encoding: chunked\r\n", head)
         self.assertIn(b"Trailer: X-Sum\r\n", head)
 
+    async def test_early_rejection_during_chunked_upload_never_drops_client(self):
+        """A server that rejects a chunked upload early and closes must not
+        leave the client with a silent reset: it either relays the early
+        response or synthesizes a gateway error."""
+
+        async def handler(reader, writer):
+            await reader.readuntil(b"\r\n\r\n")
+            await reader.read(256)  # consume part of the upload, then reject
+            writer.write(
+                b"HTTP/1.1 413 Payload Too Large\r\n"
+                b"Content-Length: 6\r\nConnection: close\r\n\r\n"
+                b"denied"
+            )
+            await writer.drain()
+            writer.close()
+
+        origin = await self.serve(handler)
+        proxy = await self.start_proxy()
+        chunk = b"4000\r\n" + (b"x" * 0x4000) + b"\r\n"
+        request = (
+            f"POST / HTTP/1.1\r\nHost: {LOCAL}:{origin}\r\n".encode()
+            + b"Transfer-Encoding: chunked\r\n\r\n"
+            + chunk * 64
+            + b"0\r\n\r\n"
+        )
+
+        # The proxy uploads concurrently with relaying the early response.
+        # Repeat so the scheduling race is exercised on every platform; the
+        # client must always receive an HTTP response, never zero bytes.
+        for _ in range(8):
+            reader, writer = await self.connect(proxy)
+            try:
+                writer.write(request)
+                await writer.drain()
+                raw = await read_until_eof(reader)
+                self.assertTrue(
+                    raw.startswith(b"HTTP/1.1 413 ") or raw.startswith(b"HTTP/1.1 502 "),
+                    raw[:80],
+                )
+            finally:
+                writer.close()
+                with contextlib.suppress(Exception):
+                    await writer.wait_closed()
+
+    async def test_upload_reset_waits_for_inflight_early_response(self):
+        """A write-side upload failure must not cancel an early response that
+        the upstream has already started sending."""
+
+        proxy = NativeProxyServer(LOCAL, 0, Upstream.direct(), idle_timeout=30.0)
+        response_relayed = asyncio.Event()
+        relayed = False
+
+        async def failing_upload(*_args, **_kwargs):
+            raise ConnectionResetError("upstream closed during upload")
+
+        async def slow_response(*_args, **_kwargs):
+            nonlocal relayed
+            await response_relayed.wait()
+            relayed = True
+            return False
+
+        with (
+            mock.patch.object(proxy, "_forward_http_body", failing_upload),
+            mock.patch.object(proxy, "_forward_http_response", slow_response),
+        ):
+            task = asyncio.create_task(
+                proxy._relay_http_request(
+                    client_reader=None,
+                    client_writer=None,
+                    remote_reader=None,
+                    remote_writer=None,
+                    request_method="POST",
+                    framing=native_proxy._HttpBodyFraming("chunked"),
+                    progress=native_proxy._ResponseProgress(),
+                )
+            )
+            await asyncio.sleep(0.05)
+            self.assertFalse(
+                task.done(), "early response was cancelled by the upload reset"
+            )
+            response_relayed.set()
+            await asyncio.wait_for(task, 2.0)
+            self.assertTrue(relayed)
+
     async def test_pipelined_second_request_is_not_forwarded(self):
         received: list[bytes] = []
 

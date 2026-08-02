@@ -805,6 +805,15 @@ class NativeProxyServer:
         except ProxyProtocolError:
             await self._send_http_error(client_writer, 502, "Bad Gateway", progress)
             raise
+        except OSError as exc:
+            # The upstream connection died mid-request (for example an early
+            # rejection followed by a TCP reset).  Surface a gateway error
+            # instead of dropping the client silently; the synthetic response
+            # is suppressed automatically once a final response has started.
+            await self._send_http_error(client_writer, 502, "Bad Gateway", progress)
+            raise UpstreamProtocolError(
+                f"HTTP {request.method} request failed: {exc}"
+            ) from exc
         finally:
             await self._close_writer(remote_writer)
 
@@ -1170,7 +1179,17 @@ class NativeProxyServer:
                 (request_body, response), return_when=asyncio.FIRST_COMPLETED
             )
             if request_body in done:
-                self._task_result(request_body, ClientProtocolError)
+                try:
+                    self._task_result(request_body, ClientProtocolError)
+                except OSError:
+                    # The upstream stopped reading the upload, typically an
+                    # early rejection (401/413) followed by a close.  It may
+                    # already have sent a complete final response; finish
+                    # relaying it before surfacing the upload failure.
+                    if not response.done():
+                        await asyncio.wait((response,))
+                    self._task_result(response, UpstreamProtocolError)
+                    return
                 if not response.done():
                     await asyncio.wait((response,))
                 self._task_result(response, UpstreamProtocolError)
