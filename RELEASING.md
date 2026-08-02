@@ -153,14 +153,23 @@ git submodule status --recursive
 # wheel + sdist
 uv build --python $PYTHON --no-managed-python --no-python-downloads --out-dir dist
 
-# Windows portable zip
+# Nuitka portable zip
 uv run --python $PYTHON --group build python tools/build_nuitka.py --clean
 ```
+
+便携版默认使用 Nuitka standalone 单目录模式，并生成带平台和架构标识的 zip。
+`build` 依赖组提供 Nuitka，以及 Linux 所需的 `patchelf`；Linux 还必须安装与
+`$PYTHON` 对应的 Python 开发头文件和 C 编译器，macOS 需要 Xcode Command Line
+Tools。Windows 默认生成解压即用的单目录 exe 版。
+
+Nuitka 中间产物位于 `build/nuitka/`，便携目录和 zip 位于 `release/`，不会混入
+仅存放 Python sdist/wheel 的 `dist/`。便携包内的 `portable.ini` 使配置写入
+`config/`、日志写入 `logs/`；删除该文件后恢复使用系统用户目录。
 
 输出：
 
 - `dist/*.whl`、`dist/*.tar.gz`
-- `release/PyProxySwitch-<版本>-windows-x64-portable.zip`
+- `release/PyProxySwitch-<版本>-<平台>-<架构>-portable.zip`
 
 这些本地制品用于开发验证；正式发布工作流会独立重新构建和校验。
 

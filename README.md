@@ -57,10 +57,12 @@ pipx uninstall PyProxySwitch
 
 绿色版的配置与日志保存在程序自身目录，不向系统用户目录写入应用数据，“卸载”只需删除程序文件夹。
 
-- **Nuitka 打包版：**运行 `uv run --group build python tools/build_nuitka.py`，uv 会按项目的 `build` 依赖组安装 Nuitka（以及 Linux 的 `patchelf`）并生成便携 zip；Linux 还需要与构建解释器匹配的 Python 开发头文件，Windows 下默认为单目录 exe 版，解压即用。Nuitka 中间产物写入 `build/nuitka/`，可分发目录和 zip 写入 `release/`，不会混入仅用于 Python sdist/wheel 的 `dist/`。包内的 `portable.ini` 标记使配置写入程序目录下的 `config/`、日志写入 `logs/`。删除 `portable.ini` 即恢复使用系统用户目录。
+- **Windows 便携版：**从 [GitHub Releases](https://github.com/Kder/PyProxySwitch/releases) 下载 portable zip，解压后直接运行 `PyProxySwitch.exe`。包内的 `portable.ini` 标记使配置写入程序目录下的 `config/`、日志写入 `logs/`；删除该标记即恢复使用系统用户目录。
 - **环境变量方式：**任意运行方式（源码、pip、exe）下，将 `PYPROXYSWITCH_HOME` 指向便携目录（例如 U 盘中的文件夹），`PPS.conf`、`proxy.txt` 与 `logs/` 均保存在该目录下。
 
 路径优先级为：`PYPROXYSWITCH_HOME` > `portable.ini`（仅打包后的可执行文件生效）> 系统用户目录。
+
+需要自行构建便携版的开发者请参阅 [RELEASING.md 的本地制品构建说明](RELEASING.md#单独构建本地制品)。
 
 # 用法
 
@@ -76,7 +78,10 @@ pipx uninstall PyProxySwitch
       test2 test2.com:8080 user:pass  
       test3 1.2.3.4:80  
       socks_proxy socksproxy.com:3128 SOCKS5  
+      socks4_proxy socks4.example.com:1080 alice: SOCKS4
 ```
+
+最后一行中的 `alice:` 表示 SOCKS4 User ID 为 `alice`；末尾冒号不可省略，并且冒号后不能填写密码。
 
 代理列表在运行时直接读取，不再生成各后端的 `.conf` 文件。
 

@@ -67,22 +67,20 @@ Portable mode keeps configuration and logs inside the application directory
 and does not write application data to per-user system directories. To
 uninstall it, delete the application folder.
 
-* Nuitka build: run
-  `uv run --group build python tools/build_nuitka.py`; uv installs Nuitka
-  (and `patchelf` on Linux) from the project's `build` dependency group and
-  produces a portable zip. Linux also requires the Python development headers
-  matching the build interpreter. On Windows the default is a one-directory
-  executable build. Nuitka intermediates are written to `build/nuitka/`, while
-  distributable folders and zips are written to `release/`; `dist/` remains
-  reserved for Python sdists and wheels. The included `portable.ini` marker
+* Windows portable build: download the portable zip from
+  [GitHub Releases](https://github.com/Kder/PyProxySwitch/releases), extract it,
+  and run `PyProxySwitch.exe`. The included `portable.ini` marker
   stores configuration in `config/` and logs in `logs/` next to the executable.
-  Delete `portable.ini` to restore per-user storage.
+  Delete the marker to restore per-user storage.
 * Environment override: for source, pip, or executable runs, set
   `PYPROXYSWITCH_HOME` to the portable directory. `PPS.conf`, `proxy.txt`, and
   `logs/` will all be stored there.
 
 The precedence is `PYPROXYSWITCH_HOME`, then `portable.ini` for frozen
 executables, then the operating system's per-user directories.
+
+Developers who need to build a portable package should see the local artifact
+build instructions in `RELEASING.md`.
 
 For a source checkout, first run `pip install -e .` in the repository and then
 start `pyproxyswitch`. For the Windows portable build, run `PyProxySwitch.exe`.
