@@ -4,7 +4,7 @@
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -18,11 +18,11 @@ repos:
       - id: debug-statements
 
   # Python code formatting
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 26.5.1
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3.14
 
   # Python import sorting
   - repo: https://github.com/pycqa/isort
@@ -33,18 +33,19 @@ repos:
 
   # Python linting with ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.16.0
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
   # Type checking with mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v2.3.0
     hooks:
       - id: mypy
         additional_dependencies:
-          - PySide6>=6.5.0
+          - PySide6==6.11.1
+          - platformdirs==4.11.0
         args: [--ignore-missing-imports]
         exclude: ^tests/|^utils/
 

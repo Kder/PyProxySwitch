@@ -133,6 +133,13 @@ exclude = '''
   | __pycache__
 )/
 '''
+force-exclude = '''
+(
+    pyproxyswitch/resources/.+_ui\.py
+  | pyproxyswitch/resources/pps_qrc\.py
+  | pyproxyswitch/_version\.py
+)
+'''
 
 [tool.ruff]
 line-length = 100
