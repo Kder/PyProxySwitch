@@ -87,7 +87,7 @@ pipx uninstall PyProxySwitch
 
 # 实现与性能
 
-代理核心使用独立后台线程中的单个 `asyncio` 事件循环，采用每方向 64 KiB 分块、传输层背压、TCP_NODELAY/KEEPALIVE 和 512 KiB 写缓冲高水位。Windows Python 3.14 为规避 Proactor 清理竞态使用 SelectorEventLoop，并把有效连接上限安全地限制为 200；其他环境仍使用默认事件循环和 512 的连接上限。数据转发路径是网络 I/O 受限，不做内容解析、缓存或逐字节 Python 运算，因此目前没有引入 Cython；这也避免了额外编译链和平台相关二进制。若后续基准显示 CPU 成为瓶颈，可在不改变协议层 API 的前提下替换转发泵。
+代理核心使用独立后台线程中的单个 `asyncio` 事件循环，采用每方向 64 KiB 分块、传输层背压、TCP_NODELAY/KEEPALIVE 和 512 KiB 写缓冲高水位。Windows Python 3.14 为规避 Proactor 清理竞态使用 SelectorEventLoop，并把有效连接上限安全地限制为 200；其他环境仍使用默认事件循环和 512 的连接上限。转发时，程序只在客户端与上游连接之间按块传递数据，不解析、缓存或逐字节处理内容；实际吞吐主要取决于客户端、上游代理、目标服务器和网络状况。因此目前没有为转发泵引入 Cython，也避免了额外的编译链和平台相关二进制。若后续基准显示 Python 处理占用成为瓶颈，可在不改变协议层 API 的前提下替换转发泵。
 
 普通明文 HTTP 请求为了正确处理跨主机连接复用，会显式使用 `Connection: close`；HTTPS `CONNECT` 和 SOCKS 隧道不受此限制。
 
