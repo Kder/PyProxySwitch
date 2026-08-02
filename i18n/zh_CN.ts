@@ -14,7 +14,7 @@
         <translation type="unfinished">用户名</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="92"/>
+        <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="86"/>
         <source>Validation Error</source>
         <translation>验证错误</translation>
     </message>
@@ -22,12 +22,12 @@
 <context>
     <name>BatchImportDialog</name>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="47"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="44"/>
         <source>Batch Add/Modify/Delete Proxy</source>
         <translation>批量添加/修改/删除代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="51"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="48"/>
         <source>Please use the following syntax for one proxy per line:
 
 proxy_name address:port username:password proxy_type
@@ -56,64 +56,64 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 </translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="76"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="73"/>
         <source>Preview</source>
         <translation>预览</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="107"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="104"/>
         <source>Valid proxies found:</source>
         <translation>找到有效代理：</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="113"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="110"/>
         <source>more</source>
         <translation>更多</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="117"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="114"/>
         <source>Import Preview</source>
         <translation>导入预览</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="139"/>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="151"/>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="158"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="136"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="148"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="155"/>
         <source>Import Failed</source>
         <translation>导入失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="140"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="137"/>
         <source>No valid proxies found.</source>
         <translation>没有找到有效的代理。</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="190"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="187"/>
         <source>Export Proxies</source>
         <translation>导出代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="192"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="189"/>
         <source>Text Files (*.txt);;All Files (*)</source>
         <translation>文本文件 (*.txt);;所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="218"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="215"/>
         <source>Success</source>
         <translation>成功</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="219"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="216"/>
         <source>Proxies exported successfully</source>
         <translation>代理已成功导出</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="226"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="223"/>
         <source>Failed to export proxies</source>
         <translation>导出代理失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="231"/>
+        <location filename="../pyproxyswitch/gui/batch_import_dialog.py" line="228"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
@@ -195,73 +195,73 @@ socks_proxy 203.0.113.5:1080 SOCKS5
         <translation>恢复原配置失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="246"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="248"/>
         <source>Port must be between 1 and 65535</source>
         <translation>端口必须在1到65535之间</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="249"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="251"/>
         <source>Port must be a valid number</source>
         <translation>端口必须是有效的数字</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="295"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="299"/>
         <source>Name</source>
         <translation>代理名称</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="296"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="300"/>
         <source>Address</source>
         <translation>地址</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="297"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="301"/>
         <source>Port</source>
         <translation>端口</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="298"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="302"/>
         <source>Type</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="299"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="303"/>
         <source>Username</source>
         <translation>用户名</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="300"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="304"/>
         <source>Password</source>
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="385"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="389"/>
         <source>Failed to read proxy list file</source>
         <translation>读取代理列表文件失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="407"/>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="606"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="411"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="608"/>
         <source>Failed to save proxy list</source>
         <translation>保存代理列表失败</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="436"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="440"/>
         <source>A proxy with this name already exists</source>
         <translation>已存在同名代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="442"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="446"/>
         <source>Please select a proxy to modify</source>
         <translation>请选择要修改的代理</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="513"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="517"/>
         <source>Confirm Delete</source>
         <translation>确认删除</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="514"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="518"/>
         <source>Are you sure you want to delete this proxy?</source>
         <translation>您确定要删除此代理吗？</translation>
     </message>
