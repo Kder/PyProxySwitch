@@ -4,7 +4,6 @@ include README.md
 include README_EN.txt
 include RELEASING.md
 include releases.toml
-include requirements.txt
 recursive-include pyproxyswitch/data *.qm PPS.conf proxy.txt
 recursive-include pyproxyswitch/resources *.ui
 recursive-include i18n *.ts
