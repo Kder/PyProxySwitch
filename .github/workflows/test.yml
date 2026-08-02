@@ -208,6 +208,7 @@ jobs:
           uv sync --extra dev --python "${{ steps.python.outputs.python }}"
 
       - name: Run tests
+        shell: bash
         run: |
           uv run --python "${{ steps.python.outputs.python }}" \
             python -m pytest --cov=pyproxyswitch --cov-report=xml \
