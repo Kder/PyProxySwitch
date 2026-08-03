@@ -72,6 +72,7 @@ def main(log_level: int | str | None = None) -> None:
         else:
             # 如果已经有handler，直接使用现有logger
             logger = root_logger
+            logger.setLevel(logging.DEBUG)
             # 确保控制台处理器的级别正确
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler) and not isinstance(

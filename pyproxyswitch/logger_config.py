@@ -106,6 +106,9 @@ def setup_logger(
                 handler, logging.FileHandler
             ):
                 handler.setLevel(log_level)
+        # 外部预置 handler 时 logger 自身级别可能高于 DEBUG，会提前过滤掉
+        # 本应由文件 handler 记录的调试日志；统一放行后由各 handler 自行过滤。
+        logger.setLevel(logging.DEBUG)
         return logger
 
     logger.setLevel(logging.DEBUG)

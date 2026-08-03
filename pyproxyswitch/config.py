@@ -77,8 +77,6 @@ class ConfigManager:
                     loaded = json.load(config_file)
                 if not isinstance(loaded, dict):
                     raise ValueError("The configuration root must be an object")
-                if "FISRT_RUN" in loaded and "FIRST_RUN" not in loaded:
-                    loaded["FIRST_RUN"] = loaded.pop("FISRT_RUN")
                 self._config = self._normalize_config(defaults | loaded, defaults)
             else:
                 self._config = defaults
@@ -86,8 +84,10 @@ class ConfigManager:
             logger.error("Failed to load configuration: %s", exc)
             self._config = defaults
 
-        # Obsolete backend-selection settings are deliberately not persisted.
+        # Obsolete settings are deliberately not persisted.
         self._config.pop("CMD", None)
+        self._config.pop("FIRST_RUN", None)
+        self._config.pop("FISRT_RUN", None)
         self._load_proxies()
 
     def _load_proxies(self) -> None:
@@ -183,13 +183,18 @@ class ConfigManager:
         lang = values.get("LANG")
         normalized["LANG"] = lang if lang in {"zh_CN", "en"} else defaults["LANG"]
 
-        for key in ("DEBUG", "FIRST_RUN", "SHOW_WELCOME"):
+        for key in ("DEBUG", "SHOW_WELCOME"):
             value = values.get(key)
             if isinstance(value, bool):
                 flag = int(value)
-            elif isinstance(value, (str, int, float)):
+            elif isinstance(value, int):
+                flag = value
+            elif isinstance(value, float):
+                # 非整数值（如 1.5）不能静默截断，与 LOCAL_PORT 的处理一致。
+                flag = int(value) if value.is_integer() else defaults[key]
+            elif isinstance(value, str):
                 try:
-                    flag = int(value)
+                    flag = int(value.strip())
                 except (OverflowError, ValueError):
                     flag = defaults[key]
             else:
@@ -245,7 +250,6 @@ class ConfigManager:
             "CONNECT_TIMEOUT": 15,
             "DEBUG": 0,
             "DEFAULT_ITEM": "NoProxy",
-            "FIRST_RUN": 0,
             "LANG": "zh_CN",
             "LAST_ITEM": "NoProxy",
             "LOCAL_ADDRESS": "127.0.0.1",

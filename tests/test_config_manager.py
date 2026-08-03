@@ -20,6 +20,7 @@ def test_defaults_do_not_contain_backend_selector(tmp_path):
     config = make_config(tmp_path)
 
     assert "CMD" not in config
+    assert "FIRST_RUN" not in config
     assert config.get("LOCAL_ADDRESS") == "127.0.0.1"
     assert config.get("LOCAL_PORT") == 8888
     assert config.get("SHOW_WELCOME") == 1
@@ -28,11 +29,12 @@ def test_defaults_do_not_contain_backend_selector(tmp_path):
 def test_load_migrates_old_settings_without_retaining_backend(tmp_path):
     config = make_config(
         tmp_path,
-        {"CMD": "old-backend", "FISRT_RUN": 1, "LOCAL_PORT": 9000},
+        {"CMD": "old-backend", "FISRT_RUN": 1, "FIRST_RUN": 1, "LOCAL_PORT": 9000},
     )
 
     assert "CMD" not in config
-    assert config.get("FIRST_RUN") == 1
+    assert "FIRST_RUN" not in config
+    assert "FISRT_RUN" not in config
     assert config.get("LOCAL_PORT") == 9000
 
 
@@ -116,6 +118,18 @@ def test_fractional_local_port_is_rejected_instead_of_truncated(tmp_path):
     config = make_config(tmp_path, {"LOCAL_PORT": 8888.9})
 
     assert config.get("LOCAL_PORT") == 8888
+
+
+def test_fractional_flag_is_rejected_instead_of_truncated(tmp_path):
+    config = make_config(tmp_path, {"DEBUG": 1.5})
+
+    assert config.get("DEBUG") == 0
+
+
+def test_integral_float_flag_is_accepted(tmp_path):
+    config = make_config(tmp_path, {"DEBUG": 1.0})
+
+    assert config.get("DEBUG") == 1
 
 
 def test_oversized_connect_timeout_is_repaired(tmp_path):
