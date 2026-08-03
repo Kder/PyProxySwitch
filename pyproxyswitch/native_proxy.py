@@ -1063,7 +1063,7 @@ class NativeProxyServer:
             domain = _validate_destination_host(host).encode("ascii") + b"\x00"
             raw_address = b"\x00\x00\x00\x01"
         user = upstream.username.encode("utf-8")
-        if b"\x00" in user or len(user) > _HEADER_LIMIT:
+        if b"\x00" in user or len(user) > _MAX_SOCKS_FIELD_LENGTH:
             raise ProxyProtocolError("Invalid SOCKS4 user ID")
         writer.write(b"\x04\x01" + struct.pack(">H", port) + raw_address + user + b"\x00" + domain)
         await writer.drain()
@@ -1990,10 +1990,6 @@ class NativeProxyServer:
 
         name, separator, version = protocol.partition("/")
         return name.lower(), version if separator else None
-
-    @classmethod
-    def _is_http_upgrade(cls, headers: Sequence[tuple[str, str]]) -> bool:
-        return bool(cls._http_upgrade_protocols(headers))
 
     @classmethod
     def _parse_authority(cls, authority: str, default_port: int) -> tuple[str, int]:

@@ -9,6 +9,7 @@ import logging
 import re
 import shlex
 import socket
+import string
 
 from PySide6.QtCore import QObject, QRegularExpression, Signal
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
@@ -19,6 +20,8 @@ logger = logging.getLogger("PyProxySwitch")
 
 ParsedProxy = tuple[str, str, str, str, str, str]
 ValidatedProxy = tuple[str, str, int, str, str, str]
+
+_ALLOWED_USERNAME_CHARS = frozenset(string.ascii_letters + string.digits + "_-@.+")
 
 
 class ProxyValidator(QObject):
@@ -252,14 +255,17 @@ class ProxyValidator(QObject):
         if any(ord(char) < 32 or ord(char) == 127 for char in username):
             raise ValidationError(ErrorCode.VALIDATION_USERNAME_CONTROL_CHARACTER)
 
-        # 检查是否包含危险字符
-        dangerous_chars = ["<", ">", '"', "'", ";", "|", "&", "`", ":", "\n", "\r"]
-        for char in dangerous_chars:
-            if char in username:
-                raise ValidationError(
-                    ErrorCode.VALIDATION_USERNAME_DANGEROUS_CHARACTER,
-                    params={"character": char},
-                )
+        # 与 GUI 输入框的 QRegularExpressionValidator 保持一致，避免同一
+        # 用户名在批量导入/表格编辑与添加对话框两条路径上规则不一致。
+        invalid = next(
+            (char for char in username if char not in _ALLOWED_USERNAME_CHARS),
+            "",
+        )
+        if invalid:
+            raise ValidationError(
+                ErrorCode.VALIDATION_USERNAME_DANGEROUS_CHARACTER,
+                params={"character": invalid},
+            )
 
         return username
 

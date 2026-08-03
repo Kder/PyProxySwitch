@@ -11,7 +11,7 @@
     <message>
         <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="40"/>
         <source>Username</source>
-        <translation type="unfinished">用户名</translation>
+        <translation>用户名</translation>
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/add_proxy_dialog.py" line="86"/>

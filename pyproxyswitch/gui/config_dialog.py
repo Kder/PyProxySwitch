@@ -164,10 +164,6 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 self.proxy_pass, Qt.Horizontal, self.tr("Password", "Config_Dialog")
             )
 
-            # 清除右键菜单缓存，强制下次显示时重新创建（使用新语言）
-            if hasattr(self, "_context_menu"):
-                delattr(self, "_context_menu")
-
         # 调用父类的changeEvent处理其他事件
         super().changeEvent(event)
 

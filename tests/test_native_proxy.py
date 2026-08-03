@@ -1859,6 +1859,25 @@ class UpstreamChainTests(ProxyHarness):
         self.assertTrue(raw.startswith(b"HTTP/1.1 502 "))
         self.assertEqual([], record)
 
+    async def test_socks4_upstream_rejects_oversized_user_id(self):
+        record: list[tuple] = []
+        upstream_port = await self.fake_socks4_proxy(record)
+        upstream = Upstream(
+            name="s4",
+            proxy_type="SOCKS4",
+            host=LOCAL,
+            port=upstream_port,
+            username="x" * 256,
+        )
+        proxy = await self.start_proxy(upstream=upstream)
+
+        raw = await self.http_roundtrip(
+            proxy, b"CONNECT example.test:443 HTTP/1.1\r\nHost: x\r\n\r\n"
+        )
+
+        self.assertTrue(raw.startswith(b"HTTP/1.1 502 "), raw[:64])
+        self.assertEqual([], record)
+
     async def test_socks4_upstream_rejects_invalid_reply_version(self):
         async def handler(reader, writer):
             head = await reader.readexactly(8)

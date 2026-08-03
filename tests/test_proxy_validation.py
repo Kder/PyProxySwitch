@@ -256,6 +256,12 @@ class TestProxyValidatorUsername:
             with pytest.raises(ValidationError):
                 proxy_validator.validate_username(f"user{char}name")
 
+    def test_username_rejects_chars_outside_gui_validator(self, proxy_validator):
+        """与添加对话框的输入正则保持一致的字符集"""
+        for username in ("user name", "user!name", "user#name"):
+            with pytest.raises(ValidationError):
+                proxy_validator.validate_username(username)
+
     @pytest.mark.parametrize("control", ["\x00", "\t", "\x7f"])
     def test_invalid_username_control_chars(self, proxy_validator, control):
         with pytest.raises(ValidationError) as exc_info:
