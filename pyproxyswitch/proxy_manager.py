@@ -4,14 +4,34 @@
 
 from __future__ import annotations
 
+import errno
 import logging
 import threading
 from typing import TYPE_CHECKING
 
 from pyproxyswitch.errors import ConfigError, ErrorCode, ProxyStartError
 from pyproxyswitch.native_proxy import NativeProxyServer, Upstream
+from pyproxyswitch.port_diagnostics import find_port_owner
 
 logger = logging.getLogger("PyProxySwitch")
+
+_ADDR_IN_USE_ERRNOS = {errno.EADDRINUSE, getattr(errno, "WSAEADDRINUSE", 10048)}
+
+
+def _find_os_error(exc: BaseException, *, _depth: int = 0) -> OSError | None:
+    """Walk the cause/context chain for the underlying ``OSError``."""
+
+    if _depth > 8:
+        return None
+    if isinstance(exc, OSError):
+        return exc
+    for chained in (exc.__cause__, exc.__context__):
+        if chained is not None:
+            found = _find_os_error(chained, _depth=_depth + 1)
+            if found is not None:
+                return found
+    return None
+
 
 if TYPE_CHECKING:
     from pyproxyswitch.config import ConfigManager
@@ -187,7 +207,38 @@ class ProxyManager:
                     self._server = fallback
                 except Exception:
                     logger.exception("Failed to restore the previous listener")
-            raise ProxyStartError(error_code, detail=str(exc)) from exc
+            raise self._bind_failure(error_code, host, port, exc) from exc
+
+    @staticmethod
+    def _bind_failure(
+        error_code: ErrorCode,
+        host: str,
+        port: int,
+        exc: BaseException,
+    ) -> ProxyStartError:
+        """Explain an address-in-use failure with the process holding the port."""
+
+        os_error = _find_os_error(exc)
+        if os_error is None or os_error.errno not in _ADDR_IN_USE_ERRNOS:
+            return ProxyStartError(error_code, detail=str(exc))
+        owner = find_port_owner(port, host)
+        if owner is not None:
+            logger.error(
+                "Port %s:%s is already held by %s",
+                host,
+                port,
+                owner.describe(),
+            )
+            return ProxyStartError(
+                ErrorCode.PROXY_PORT_IN_USE,
+                params={"host": host, "port": port, "process": owner.describe()},
+                detail=str(exc),
+            )
+        return ProxyStartError(
+            ErrorCode.PROXY_PORT_IN_USE_UNKNOWN,
+            params={"host": host, "port": port},
+            detail=str(exc),
+        )
 
     def _create_server(self, host: str, port: int, upstream: Upstream) -> NativeProxyServer:
         return NativeProxyServer(

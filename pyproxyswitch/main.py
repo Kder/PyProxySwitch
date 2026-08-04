@@ -86,8 +86,20 @@ def main(log_level: int | str | None = None) -> None:
         app.setApplicationVersion(__version__)
         app.setQuitOnLastWindowClosed(False)
 
+        # 单实例检查：第二次启动唤起已有实例后退出
+        from pyproxyswitch.single_instance import SingleInstanceGuard
+
+        instance_guard = SingleInstanceGuard(app)
+        if not instance_guard.try_become_primary():
+            if language.startswith("zh"):
+                print("PyProxySwitch 已在运行，已唤起正在运行的实例。")
+            else:
+                print("PyProxySwitch is already running; the existing instance was activated.")
+            sys.exit(0)
+
         # 创建并显示主窗口
         _window = Window()
+        instance_guard.activated.connect(_window.on_external_activation)
 
         # 启动事件循环
         sys.exit(app.exec())

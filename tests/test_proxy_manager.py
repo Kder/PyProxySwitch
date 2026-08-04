@@ -1,6 +1,10 @@
+import errno
+import socket
+
 import pytest
 
 from pyproxyswitch.errors import ConfigError, ErrorCode, ProxyStartError
+from pyproxyswitch.port_diagnostics import PortOwner
 from pyproxyswitch.proxy_manager import ProxyManager
 
 
@@ -219,3 +223,72 @@ def test_failed_listener_change_restores_previous_upstream(fake_server):
     assert manager.server.port == 8888
     assert manager.server.upstream.name == "one"
     assert manager.server.is_running
+
+
+class AddrInUseServer(FakeServer):
+    """Simulate a listener whose bind fails with EADDRINUSE."""
+
+    def start(self, timeout=5):
+        error = OSError(errno.EADDRINUSE, "Address already in use")
+        raise RuntimeError("Cannot start native proxy: [Errno 98]") from error
+
+
+@pytest.fixture
+def addr_in_use_server(monkeypatch):
+    AddrInUseServer.instances.clear()
+    monkeypatch.setattr("pyproxyswitch.proxy_manager.NativeProxyServer", AddrInUseServer)
+    return AddrInUseServer
+
+
+def test_addr_in_use_reports_port_owner(addr_in_use_server, monkeypatch):
+    monkeypatch.setattr(
+        "pyproxyswitch.proxy_manager.find_port_owner",
+        lambda port, host=None: PortOwner(4321, "fakeproc"),
+    )
+    manager = ProxyManager(StubConfig())
+
+    with pytest.raises(ProxyStartError) as exc_info:
+        manager.start_proxy("NoProxy")
+
+    assert exc_info.value.code == ErrorCode.PROXY_PORT_IN_USE
+    assert exc_info.value.params == {
+        "host": "127.0.0.1",
+        "port": 8888,
+        "process": "fakeproc (PID 4321)",
+    }
+    assert "fakeproc (PID 4321)" in exc_info.value.localized("zh_CN")
+    assert "fakeproc (PID 4321)" in exc_info.value.localized("en")
+
+
+def test_addr_in_use_without_identifiable_owner(addr_in_use_server, monkeypatch):
+    monkeypatch.setattr("pyproxyswitch.proxy_manager.find_port_owner", lambda port, host=None: None)
+    manager = ProxyManager(StubConfig())
+
+    with pytest.raises(ProxyStartError) as exc_info:
+        manager.start_proxy("NoProxy")
+
+    assert exc_info.value.code == ErrorCode.PROXY_PORT_IN_USE_UNKNOWN
+    assert exc_info.value.params == {"host": "127.0.0.1", "port": 8888}
+    assert "8888" in exc_info.value.localized("zh_CN")
+
+
+def test_real_listener_reports_occupied_port():
+    """Bind a real socket and let the real native server hit EADDRINUSE."""
+
+    blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    blocker.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    blocker.bind(("127.0.0.1", 0))
+    blocker.listen(1)
+    port = blocker.getsockname()[1]
+    try:
+        manager = ProxyManager(StubConfig(LOCAL_PORT=port))
+        with pytest.raises(ProxyStartError) as exc_info:
+            manager.start_proxy("NoProxy")
+    finally:
+        blocker.close()
+
+    assert exc_info.value.code in (
+        ErrorCode.PROXY_PORT_IN_USE,
+        ErrorCode.PROXY_PORT_IN_USE_UNKNOWN,
+    )
+    assert exc_info.value.params["port"] == port

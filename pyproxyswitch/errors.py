@@ -68,6 +68,8 @@ class ErrorCode(StrEnum):
     PROXY_START_FAILED = "proxy.start.failed"
     PROXY_RESTART_FAILED = "proxy.restart.failed"
     PROXY_RECONFIGURE_FAILED = "proxy.reconfigure.failed"
+    PROXY_PORT_IN_USE = "proxy.port.in_use"
+    PROXY_PORT_IN_USE_UNKNOWN = "proxy.port.in_use_unknown"
 
 
 _MESSAGES: dict[ErrorCode, dict[str, str]] = {
@@ -262,6 +264,26 @@ _MESSAGES: dict[ErrorCode, dict[str, str]] = {
     ErrorCode.PROXY_RECONFIGURE_FAILED: {
         "en": "Failed to reconfigure proxy service",
         "zh_CN": "代理服务重新配置失败",
+    },
+    ErrorCode.PROXY_PORT_IN_USE: {
+        "en": (
+            "Cannot listen on {host}:{port} because the port is already in use by "
+            "{process}. Free the port or choose another local proxy port."
+        ),
+        "zh_CN": (
+            "无法在 {host}:{port} 上监听：端口已被 {process} 占用。"
+            "请释放该端口，或修改本地代理端口。"
+        ),
+    },
+    ErrorCode.PROXY_PORT_IN_USE_UNKNOWN: {
+        "en": (
+            "Cannot listen on {host}:{port} because the port is already in use by "
+            "another process. Free the port or choose another local proxy port."
+        ),
+        "zh_CN": (
+            "无法在 {host}:{port} 上监听：端口已被其他进程占用。"
+            "请释放该端口，或修改本地代理端口。"
+        ),
     },
 }
 

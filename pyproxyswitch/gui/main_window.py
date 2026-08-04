@@ -203,6 +203,11 @@ class Window(QtWidgets.QDialog):
             pass
 
     @Slot()
+    def on_external_activation(self) -> None:
+        """二次启动请求唤起本实例时显示配置对话框（与点击托盘图标一致）"""
+        self.config()
+
+    @Slot()
     def config(self) -> None:
         """显示配置对话框"""
         from .config_dialog import Config_Dialog
