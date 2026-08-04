@@ -190,7 +190,7 @@ socks_proxy 203.0.113.5:1080 SOCKS5
         <translation>Password</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="238"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="239"/>
         <source>Failed to restore the previous configuration</source>
         <translation>Failed to restore the previous configuration</translation>
     </message>
