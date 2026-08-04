@@ -386,6 +386,21 @@ def test_gui_entry_point_keeps_tray_app_alive(monkeypatch) -> None:
         def exec(self):
             return 0
 
+    class FakeWindow:
+        def on_external_activation(self):
+            pass
+
+    class FakeSignal:
+        def connect(self, slot):
+            pass
+
+    class FakeInstanceGuard:
+        def __init__(self, app):
+            self.activated = FakeSignal()
+
+        def try_become_primary(self):
+            return True
+
     class FakeConfig:
         def get(self, key, default=None):
             return 0
@@ -398,7 +413,10 @@ def test_gui_entry_point_keeps_tray_app_alive(monkeypatch) -> None:
         # Leaving the fake class installed until fixture teardown breaks that hook.
         with monkeypatch.context() as scoped_monkeypatch:
             scoped_monkeypatch.setattr(QtWidgets, "QApplication", FakeApplication)
-            scoped_monkeypatch.setattr(main_window, "Window", lambda: object())
+            scoped_monkeypatch.setattr(main_window, "Window", FakeWindow)
+            scoped_monkeypatch.setattr(
+                "pyproxyswitch.single_instance.SingleInstanceGuard", FakeInstanceGuard
+            )
             scoped_monkeypatch.setattr("pyproxyswitch.config.ConfigManager", FakeConfig)
             with pytest.raises(SystemExit, match="0"):
                 application.main()
@@ -406,6 +424,61 @@ def test_gui_entry_point_keeps_tray_app_alive(monkeypatch) -> None:
         root_logger.handlers = previous_handlers
 
     assert events == [False]
+
+
+def test_second_launch_exits_after_activating_primary(monkeypatch, capsys) -> None:
+    class FakeApplication:
+        def __init__(self, args):
+            pass
+
+        def setApplicationName(self, name):
+            pass
+
+        def setApplicationVersion(self, version):
+            pass
+
+        def setQuitOnLastWindowClosed(self, enabled):
+            pass
+
+        def exec(self):
+            raise AssertionError("a second launch must never enter the event loop")
+
+    class FakeSignal:
+        def connect(self, slot):
+            pass
+
+    class SecondaryInstanceGuard:
+        def __init__(self, app):
+            self.activated = FakeSignal()
+
+        def try_become_primary(self):
+            return False
+
+    class FakeConfig:
+        def get(self, key, default=None):
+            return 0
+
+    window_calls = []
+    root_logger = logging.getLogger("PyProxySwitch")
+    previous_handlers = root_logger.handlers[:]
+    root_logger.handlers = [logging.NullHandler()]
+    try:
+        with monkeypatch.context() as scoped_monkeypatch:
+            scoped_monkeypatch.setattr(QtWidgets, "QApplication", FakeApplication)
+            scoped_monkeypatch.setattr(
+                main_window, "Window", lambda: window_calls.append(1) or object()
+            )
+            scoped_monkeypatch.setattr(
+                "pyproxyswitch.single_instance.SingleInstanceGuard", SecondaryInstanceGuard
+            )
+            scoped_monkeypatch.setattr("pyproxyswitch.config.ConfigManager", FakeConfig)
+            with pytest.raises(SystemExit, match="0"):
+                application.main()
+    finally:
+        root_logger.handlers = previous_handlers
+
+    assert window_calls == []
+    assert "already running" in capsys.readouterr().out
 
 
 def test_listener_start_failure_is_visible_in_tray(qapp, tmp_path, monkeypatch) -> None:
