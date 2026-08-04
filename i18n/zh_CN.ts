@@ -190,7 +190,7 @@ socks_proxy 203.0.113.5:1080 SOCKS5
         <translation>密码</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/config_dialog.py" line="239"/>
+        <location filename="../pyproxyswitch/gui/config_dialog.py" line="238"/>
         <source>Failed to restore the previous configuration</source>
         <translation>恢复原配置失败</translation>
     </message>
@@ -449,29 +449,29 @@ PyProxySwitch无法启动。</translation>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="240"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="245"/>
         <source>About PyProxySwitch</source>
         <translation>关于PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="243"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="248"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright © 2009-2026 Kder&lt;/p&gt;&lt;p&gt;使用 Python 原生 HTTP/SOCKS 服务的跨平台代理切换程序。&lt;/p&gt;&lt;p&gt;采用 Apache License 2.0 授权。&lt;/p&gt;&lt;p&gt;更多信息请访问 &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/main_window.py" line="130"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="263"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="275"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="268"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="280"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="276"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="281"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>代理已切换，但无法保存当前选择。</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="304"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="309"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>我在这儿，欢迎使用PyProxySwitch！</translation>
     </message>
