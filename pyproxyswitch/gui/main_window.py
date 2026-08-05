@@ -7,7 +7,6 @@
 """
 
 import sys
-from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QLibraryInfo, Slot
@@ -138,18 +137,16 @@ class Window(QtWidgets.QDialog):
         """Watch the configuration files so external edits take effect at once."""
 
         self._config_watcher = QtCore.QFileSystemWatcher(self)
-        self._watched_config_paths = {
-            str(self._config.get_config_path()),
-            str(self._config.get_proxy_list_path()),
+        # 只监听所在目录：Windows 上直接监听文件会占用句柄，使原子保存的
+        # os.replace 间歇失败；目录事件同样涵盖文件内容的修改和替换。
+        directories = {
+            str(path.parent)
+            for path in (
+                self._config.get_config_path(),
+                self._config.get_proxy_list_path(),
+            )
         }
-        for path in self._watched_config_paths:
-            if Path(path).exists():
-                self._config_watcher.addPath(path)
-        # The parent directory is watched too, so a file deleted and recreated
-        # by an editor is picked up again.
-        for directory in {str(Path(path).parent) for path in self._watched_config_paths}:
-            self._config_watcher.addPath(directory)
-        self._config_watcher.fileChanged.connect(self._on_config_filesystem_event)
+        self._config_watcher.addPaths(sorted(directories))
         self._config_watcher.directoryChanged.connect(self._on_config_filesystem_event)
 
         # Editors often save in several steps; collapse a burst into one reload.
@@ -157,11 +154,6 @@ class Window(QtWidgets.QDialog):
         self._config_reload_timer.timeout.connect(self._reload_external_config)
 
     def _on_config_filesystem_event(self, _path: str) -> None:
-        # An atomic save replaces the file, which drops it from the watcher.
-        watched_now = set(self._config_watcher.files())
-        for path in self._watched_config_paths:
-            if path not in watched_now and Path(path).exists():
-                self._config_watcher.addPath(path)
         self._config_reload_timer.start()
 
     def _route_state(self) -> tuple:
