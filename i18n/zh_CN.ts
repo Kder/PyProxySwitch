@@ -412,66 +412,66 @@ socks_proxy 203.0.113.5:1080 SOCKS5
 <context>
     <name>Window</name>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="84"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="85"/>
         <source>System Tray</source>
         <translation>系统托盘</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="86"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="87"/>
         <source>I&apos;ve not detected any system tray on this system.
 PyProxySwitch cannot start.</source>
         <translation>错误：未找到系统托盘。
 PyProxySwitch无法启动。</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="107"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="108"/>
         <source>Proxy service starting</source>
         <translation>代理服务正在启动</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="143"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="218"/>
         <source>Proxy service unavailable</source>
         <translation>代理服务不可用</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="179"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="254"/>
         <source>Config</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="182"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="257"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="187"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="262"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="245"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="320"/>
         <source>About PyProxySwitch</source>
         <translation>关于PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="248"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="323"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright © 2009-2026 Kder&lt;/p&gt;&lt;p&gt;使用 Python 原生 HTTP/SOCKS 服务的跨平台代理切换程序。&lt;/p&gt;&lt;p&gt;采用 Apache License 2.0 授权。&lt;/p&gt;&lt;p&gt;更多信息请访问 &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="130"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="268"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="280"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="131"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="343"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="355"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="281"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="356"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>代理已切换，但无法保存当前选择。</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="309"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="384"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>我在这儿，欢迎使用PyProxySwitch！</translation>
     </message>
