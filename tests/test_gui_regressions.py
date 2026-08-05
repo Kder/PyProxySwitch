@@ -601,7 +601,8 @@ def test_external_proxy_list_edit_refreshes_menu_and_route(qapp, tmp_path, monke
 
 
 def test_self_save_does_not_reapply_route(qapp, tmp_path, monkeypatch) -> None:
-    _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
+    config = _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
+    assert config.save_proxies()
     started = []
     window = _make_watched_window(tmp_path, monkeypatch, started)
     try:
