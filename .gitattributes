@@ -1,0 +1,7 @@
+# Keep line endings normalized to LF so that generated artifacts such as
+# translation catalog line numbers stay consistent between Windows and CI
+# Linux checkouts.
+*.py text eol=lf
+*.ui text eol=lf
+*.ts text eol=lf
+*.qm binary
