@@ -7,6 +7,7 @@
 """
 
 import sys
+from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QLibraryInfo, Slot
@@ -130,6 +131,80 @@ class Window(QtWidgets.QDialog):
                 self.tr("Error"),
                 localized_error_message(e),
             )
+
+        self._watch_config_files()
+
+    def _watch_config_files(self) -> None:
+        """Watch the configuration files so external edits take effect at once."""
+
+        self._config_watcher = QtCore.QFileSystemWatcher(self)
+        self._watched_config_paths = {
+            str(self._config.get_config_path()),
+            str(self._config.get_proxy_list_path()),
+        }
+        for path in self._watched_config_paths:
+            if Path(path).exists():
+                self._config_watcher.addPath(path)
+        # The parent directory is watched too, so a file deleted and recreated
+        # by an editor is picked up again.
+        for directory in {str(Path(path).parent) for path in self._watched_config_paths}:
+            self._config_watcher.addPath(directory)
+        self._config_watcher.fileChanged.connect(self._on_config_filesystem_event)
+        self._config_watcher.directoryChanged.connect(self._on_config_filesystem_event)
+
+        # Editors often save in several steps; collapse a burst into one reload.
+        self._config_reload_timer = QtCore.QTimer(self, singleShot=True, interval=300)
+        self._config_reload_timer.timeout.connect(self._reload_external_config)
+
+    def _on_config_filesystem_event(self, _path: str) -> None:
+        # An atomic save replaces the file, which drops it from the watcher.
+        watched_now = set(self._config_watcher.files())
+        for path in self._watched_config_paths:
+            if path not in watched_now and Path(path).exists():
+                self._config_watcher.addPath(path)
+        self._config_reload_timer.start()
+
+    def _route_state(self) -> tuple:
+        """Return the on-disk state that decides the tray menu and the route."""
+
+        return (
+            self._config.get_proxies(),
+            self._config.get("LOCAL_ADDRESS"),
+            self._config.get("LOCAL_PORT"),
+            self._config.get("CONNECT_TIMEOUT"),
+        )
+
+    @Slot()
+    def _reload_external_config(self) -> None:
+        """Reload externally edited settings and re-apply the current route."""
+
+        old_state = self._route_state()
+        self._config.reload()
+        if self._route_state() == old_state:
+            return  # 应用自身只保存了 LAST_ITEM 之类的无关设置
+        get_logger().info("Configuration files changed on disk; reloading")
+
+        self.proxy_list = self._config.get_proxies()
+        self.proxy_names = [i[0] for i in self.proxy_list]
+        self.proxy_names.append("NoProxy")
+        if self.item_text not in self.proxy_names:
+            self.item_text = "NoProxy"
+        self.refresh_menu()
+
+        try:
+            self.proxy_manager.start_proxy(self.item_text)
+        except Exception as e:
+            get_logger().error(f"Failed to apply the reloaded configuration: {e}")
+            self.set_proxy_service_available(False)
+            if self.trayIcon is not None:
+                self.trayIcon.showMessage(
+                    "PyProxySwitch",
+                    localized_error_message(e),
+                    QtWidgets.QSystemTrayIcon.MessageIcon.Warning,
+                    5 * 1000,
+                )
+            return
+        self.set_proxy_service_available(True)
 
     def set_proxy_service_available(self, available: bool) -> None:
         """Update the tray state so a failed listener is never shown as healthy."""

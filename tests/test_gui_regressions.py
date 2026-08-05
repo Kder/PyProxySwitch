@@ -566,3 +566,69 @@ def test_inline_edit_cannot_persist_incomplete_socks5_credentials(
     assert config.get_proxies()[0][4:] == ("", "")
     assert dialog.data_model.data(dialog.data_model.index(0, dialog.proxy_user)) == ""
     assert errors and "同时提供" in errors[0]
+
+
+def _make_watched_window(tmp_path, monkeypatch, started):
+    """Build a Window whose route changes are recorded instead of applied."""
+
+    monkeypatch.setattr(QtWidgets.QSystemTrayIcon, "isSystemTrayAvailable", lambda: True)
+    monkeypatch.setattr(QtWidgets.QSystemTrayIcon, "show", lambda self: None)
+    monkeypatch.setattr(
+        "pyproxyswitch.gui.main_window.ProxyManager.start_proxy",
+        lambda self, name: started.append(name),
+    )
+    return main_window.Window()
+
+
+def test_external_proxy_list_edit_refreshes_menu_and_route(qapp, tmp_path, monkeypatch) -> None:
+    _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
+    started = []
+    window = _make_watched_window(tmp_path, monkeypatch, started)
+    try:
+        assert started == ["NoProxy"]
+
+        (tmp_path / "proxy.txt").write_text(
+            "one localhost:8080\ntwo localhost:8081\n", encoding="utf-8"
+        )
+        window._reload_external_config()
+
+        assert started == ["NoProxy", "NoProxy"]
+        assert window.proxy_names == ["one", "two", "NoProxy"]
+        menu_texts = [action.text() for action in window.trayIconMenu.actions()]
+        assert "two" in menu_texts
+    finally:
+        window.cleanup_tray_icon()
+
+
+def test_self_save_does_not_reapply_route(qapp, tmp_path, monkeypatch) -> None:
+    _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
+    started = []
+    window = _make_watched_window(tmp_path, monkeypatch, started)
+    try:
+        assert started == ["NoProxy"]
+
+        # 自身保存 LAST_ITEM 等无关设置不应触发菜单刷新或路由重建。
+        window._config.set("LAST_ITEM", "NoProxy")
+        assert window._config.save()
+        window._reload_external_config()
+
+        assert started == ["NoProxy"]
+    finally:
+        window.cleanup_tray_icon()
+
+
+def test_removed_current_proxy_falls_back_to_no_proxy(qapp, tmp_path, monkeypatch) -> None:
+    config = _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
+    config.set("LAST_ITEM", "one")
+    started = []
+    window = _make_watched_window(tmp_path, monkeypatch, started)
+    try:
+        assert started == ["one"]
+
+        (tmp_path / "proxy.txt").write_text("two localhost:8081\n", encoding="utf-8")
+        window._reload_external_config()
+
+        assert window.item_text == "NoProxy"
+        assert started == ["one", "NoProxy"]
+    finally:
+        window.cleanup_tray_icon()
