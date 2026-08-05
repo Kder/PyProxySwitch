@@ -7,6 +7,7 @@
 """
 
 import logging
+import threading
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
@@ -14,6 +15,7 @@ from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 from pyproxyswitch.config import ConfigManager
 from pyproxyswitch.errors import ErrorCode
+from pyproxyswitch.proxy_check import check_proxy
 from pyproxyswitch.proxy_validation import ProxyValidator, ValidationError
 
 # 导入UI文件
@@ -26,6 +28,16 @@ from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
 from .error_display import localized_error_message
 
 logger = logging.getLogger("PyProxySwitch")
+
+_CHECK_PENDING_COLOR = QtGui.QColor("#9e9e9e")
+_CHECK_REACHABLE_COLOR = QtGui.QColor("#2e7d32")
+_CHECK_UNREACHABLE_COLOR = QtGui.QColor("#c62828")
+
+
+class _ProxyCheckEmitter(QtCore.QObject):
+    """Delivers background connectivity results to the GUI thread."""
+
+    result = QtCore.Signal(str, bool)
 
 
 class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
@@ -99,6 +111,12 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.checkBox_debug.stateChanged.connect(self.change_debug)
         self.checkBox_show_welcome.stateChanged.connect(self.change_show_welcome)
         self.le_localport.editingFinished.connect(self.change_localport)
+
+        # 打开对话框后自动在后台检测各上游连通性，并以颜色标示结果
+        self._closing = False
+        self._check_timer = QtCore.QTimer(self, singleShot=True, interval=500)
+        self._check_timer.timeout.connect(self._start_proxy_checks)
+        self._start_proxy_checks()
 
     def show_context_menu(self, pnt):
         """显示右键菜单"""
@@ -339,6 +357,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         # 保存更改
         if self.save_proxies():
             self.refresh_menu()
+            self._schedule_proxy_checks()
 
     def _validate_cell_data(self, row, col, value):
         """验证单元格数据"""
@@ -412,6 +431,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
 
         # 保存并刷新
         self.refresh_menu()
+        self._schedule_proxy_checks()
 
     def add_proxy(self):
         """添加代理"""
@@ -432,6 +452,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 # 保存到配置文件
                 if self.save_proxies():
                     self.refresh_menu()
+                    self._schedule_proxy_checks()
             else:
                 self.show_error(self.tr("A proxy with this name already exists"))
 
@@ -500,6 +521,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 # 保存到配置文件
                 if self.save_proxies():
                     self.refresh_menu()
+                    self._schedule_proxy_checks()
 
             except Exception as e:
                 self.show_error(localized_error_message(e))
@@ -520,6 +542,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
                 # 刷新菜单
                 if self.save_proxies():
                     self.refresh_menu()
+                    self._schedule_proxy_checks()
 
     def refresh_menu(self):
         """刷新托盘菜单"""
@@ -605,6 +628,60 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
             return False
         return True
 
+    def _schedule_proxy_checks(self) -> None:
+        """Debounce bursts of edits into one connectivity check round."""
+
+        self._check_timer.start()
+
+    def _table_proxies(self) -> list:
+        """Return the proxies currently shown in the table."""
+
+        return [
+            tuple(self.data_model.data(self.data_model.index(row, col)) for col in range(6))
+            for row in range(self.data_model.rowCount())
+        ]
+
+    def _start_proxy_checks(self) -> None:
+        """Probe every listed upstream in the background and color its name."""
+
+        if self._closing:
+            return
+        proxies = self._table_proxies()
+        for row in range(self.data_model.rowCount()):
+            self.data_model.item(row, self.proxy_name).setForeground(_CHECK_PENDING_COLOR)
+        if not proxies:
+            return
+        timeout = float(self._config.get("CONNECT_TIMEOUT", 15))
+        # The emitter stays parentless: its connection is dropped automatically
+        # if the dialog is destroyed while a check round is still running.
+        emitter = _ProxyCheckEmitter()
+        emitter.result.connect(self._apply_check_result)
+
+        def worker() -> None:
+            for name, host, port, kind, user, pwd in proxies:
+                try:
+                    port_number = int(port)
+                except (TypeError, ValueError):
+                    emitter.result.emit(name, False)
+                    continue
+                emitter.result.emit(
+                    name, check_proxy(host, port_number, kind, user, pwd, timeout=timeout)
+                )
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _apply_check_result(self, name: str, reachable: bool) -> None:
+        """Color the proxy name green when reachable and red otherwise."""
+
+        for row in range(self.data_model.rowCount()):
+            item = self.data_model.item(row, self.proxy_name)
+            if item is not None and item.text() == name:
+                item.setForeground(
+                    _CHECK_REACHABLE_COLOR if reachable else _CHECK_UNREACHABLE_COLOR
+                )
+                return
+
     def done(self, r):
         """对话框完成时调用"""
+        self._closing = True
         super().done(r)

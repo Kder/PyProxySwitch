@@ -10,3 +10,6 @@
   `uv run --python <resolved-path> --group build python tools/build_nuitka.py`.
 - Use git to track changes, including submodules. Auto commit msg and push.
 - Do not send optional commentary.
+- Keep every change minimal: touch the fewest files and lines needed, add no
+  speculative configurability or abstractions, and do not refactor surrounding
+  code. This applies to all current and future modifications.

@@ -633,3 +633,25 @@ def test_removed_current_proxy_falls_back_to_no_proxy(qapp, tmp_path, monkeypatc
         assert started == ["one", "NoProxy"]
     finally:
         window.cleanup_tray_icon()
+
+
+def test_connectivity_results_color_proxy_names(qapp, tmp_path, monkeypatch) -> None:
+    _make_config(
+        tmp_path,
+        [
+            ("one", "localhost", "8080", "HTTP", "", ""),
+            ("two", "localhost", "8081", "SOCKS5", "", ""),
+        ],
+    )
+    # 自动触发的后台检测被替换掉，测试只验证结果如何标示。
+    monkeypatch.setattr(Config_Dialog, "_start_proxy_checks", lambda self: None)
+    dialog = Config_Dialog()
+
+    dialog._apply_check_result("one", True)
+    dialog._apply_check_result("two", False)
+
+    colors = {}
+    for row in range(dialog.data_model.rowCount()):
+        item = dialog.data_model.item(row, dialog.proxy_name)
+        colors[item.text()] = item.foreground().color().name()
+    assert colors == {"one": "#2e7d32", "two": "#c62828"}
