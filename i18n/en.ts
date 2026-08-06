@@ -444,34 +444,44 @@ PyProxySwitch cannot start.</translation>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="254"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="252"/>
+        <source>Copy proxy address</source>
+        <translation>Copy proxy address</translation>
+    </message>
+    <message>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="255"/>
+        <source>Open config directory</source>
+        <translation>Open config directory</translation>
+    </message>
+    <message>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="260"/>
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="312"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="331"/>
         <source>About PyProxySwitch</source>
         <translation>About PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="315"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="334"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/main_window.py" line="130"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="335"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="347"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="354"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="366"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="348"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="367"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>Proxy switched, but the selection could not be saved.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="376"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="395"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>I&apos;m here, welcome to PyProxySwitch!</translation>
     </message>

@@ -444,34 +444,44 @@ PyProxySwitch无法启动。</translation>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="254"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="252"/>
+        <source>Copy proxy address</source>
+        <translation>复制代理地址</translation>
+    </message>
+    <message>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="255"/>
+        <source>Open config directory</source>
+        <translation>打开配置目录</translation>
+    </message>
+    <message>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="260"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="312"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="331"/>
         <source>About PyProxySwitch</source>
         <translation>关于PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="315"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="334"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright © 2009-2026 Kder&lt;/p&gt;&lt;p&gt;使用 Python 原生 HTTP/SOCKS 服务的跨平台代理切换程序。&lt;/p&gt;&lt;p&gt;采用 Apache License 2.0 授权。&lt;/p&gt;&lt;p&gt;更多信息请访问 &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/main_window.py" line="130"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="335"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="347"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="354"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="366"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="348"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="367"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>代理已切换，但无法保存当前选择。</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="376"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="395"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>我在这儿，欢迎使用PyProxySwitch！</translation>
     </message>
