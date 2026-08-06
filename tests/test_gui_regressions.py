@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 
 import pytest
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -682,6 +683,6 @@ def test_open_config_dir_uses_config_parent(qapp, tmp_path, monkeypatch) -> None
         window.open_config_dir()
         assert opened
         assert opened[0].isLocalFile()
-        assert opened[0].toLocalFile() == str(tmp_path)
+        assert Path(opened[0].toLocalFile()) == tmp_path
     finally:
         window.cleanup_tray_icon()
