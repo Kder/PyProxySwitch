@@ -249,6 +249,12 @@ class Window(QtWidgets.QDialog):
         self.aboutAction = self.trayIconMenu.addAction(self.tr("About"))
         self.aboutAction.triggered.connect(self.about)
 
+        self.copyAddressAction = self.trayIconMenu.addAction(self.tr("Copy proxy address"))
+        self.copyAddressAction.triggered.connect(self.copy_proxy_address)
+
+        self.openConfigDirAction = self.trayIconMenu.addAction(self.tr("Open config directory"))
+        self.openConfigDirAction.triggered.connect(self.open_config_dir)
+
         self.trayIconMenu.addSeparator()
 
         self.quitAction = self.trayIconMenu.addAction(self.tr("Quit"))
@@ -303,6 +309,19 @@ class Window(QtWidgets.QDialog):
             # 如果当前代理不在列表中，切换到NoProxy
             if self.item_text not in self.proxy_names:
                 self.switchProxy("NoProxy")
+
+    @Slot()
+    def copy_proxy_address(self) -> None:
+        """复制本地代理监听地址到剪贴板"""
+        address = f"{self._config.get('LOCAL_ADDRESS', '127.0.0.1')}:{self._config.get('LOCAL_PORT', 8888)}"
+        QtGui.QGuiApplication.clipboard().setText(address)
+
+    @Slot()
+    def open_config_dir(self) -> None:
+        """用系统文件管理器打开配置目录"""
+        QtGui.QDesktopServices.openUrl(
+            QtCore.QUrl.fromLocalFile(str(self._config.get_config_path().parent))
+        )
 
     @Slot()
     def about(self) -> None:

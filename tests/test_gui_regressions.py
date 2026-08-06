@@ -2,7 +2,7 @@ import json
 import logging
 
 import pytest
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import pyproxyswitch.gui.main_window as main_window
 import pyproxyswitch.main as application
@@ -655,3 +655,33 @@ def test_connectivity_results_color_proxy_names(qapp, tmp_path, monkeypatch) -> 
         item = dialog.data_model.item(row, dialog.proxy_name)
         colors[item.text()] = item.foreground().color().name()
     assert colors == {"one": "#2e7d32", "two": "#c62828"}
+
+
+def test_tray_menu_copies_proxy_address(qapp, tmp_path, monkeypatch) -> None:
+    _make_config(tmp_path)
+    started = []
+    window = _make_watched_window(tmp_path, monkeypatch, started)
+    try:
+        menu_texts = [action.text() for action in window.trayIconMenu.actions()]
+        assert window.tr("Copy proxy address") in menu_texts
+        assert window.tr("Open config directory") in menu_texts
+
+        window.copy_proxy_address()
+        assert QtGui.QGuiApplication.clipboard().text() == "127.0.0.1:8888"
+    finally:
+        window.cleanup_tray_icon()
+
+
+def test_open_config_dir_uses_config_parent(qapp, tmp_path, monkeypatch) -> None:
+    _make_config(tmp_path)
+    started = []
+    opened = []
+    monkeypatch.setattr(QtGui.QDesktopServices, "openUrl", lambda url: opened.append(url))
+    window = _make_watched_window(tmp_path, monkeypatch, started)
+    try:
+        window.open_config_dir()
+        assert opened
+        assert opened[0].isLocalFile()
+        assert opened[0].toLocalFile() == str(tmp_path)
+    finally:
+        window.cleanup_tray_icon()
