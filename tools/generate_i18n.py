@@ -57,7 +57,35 @@ def find_pyside6_tool(tool_name: str) -> str:
     )
 
 
-def update_translation_sources(output_dir: Path) -> None:
+def _copy_as_lf(source: Path, target: Path) -> None:
+    """Copy a text file converting every line ending to LF."""
+
+    target.write_bytes(source.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
+
+
+def normalize_sources(work_dir: Path) -> list[Path]:
+    """Copy translatable sources into work_dir with LF-only line endings.
+
+    lupdate records source line numbers in the TS files, and those numbers
+    depend on the source line endings. Normalizing keeps generated catalogs
+    identical between CRLF working copies and LF CI checkouts.
+    """
+
+    normalized = []
+    for source in SOURCE_PATHS:
+        target = work_dir / source.relative_to(PROJECT_ROOT)
+        if source.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+            for file in source.glob("*.py"):
+                _copy_as_lf(file, target / file.name)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            _copy_as_lf(source, target)
+        normalized.append(target)
+    return normalized
+
+
+def update_translation_sources(output_dir: Path, source_paths) -> None:
     """Merge translatable strings from Python and Qt Designer sources into TS files."""
 
     lupdate = find_pyside6_tool("pyside6-lupdate")
@@ -68,13 +96,34 @@ def update_translation_sources(output_dir: Path) -> None:
             "-no-obsolete",
             "-extensions",
             "py,ui",
-            *(str(path) for path in SOURCE_PATHS),
+            *(str(path) for path in source_paths),
             "-ts",
             *(str(path) for path in ts_paths),
         ],
         cwd=PROJECT_ROOT,
         check=True,
     )
+
+
+def refresh_catalogs(output_dir: Path) -> int:
+    """Regenerate the TS catalogs in output_dir from LF-normalized sources."""
+
+    with tempfile.TemporaryDirectory(prefix=".i18n-build-", dir=PROJECT_ROOT) as temp_dir:
+        work_dir = Path(temp_dir)
+        ts_dir = work_dir / I18N_DIR.name
+        ts_dir.mkdir()
+        for ts_name, _ in TRANSLATIONS:
+            tracked = I18N_DIR / ts_name
+            if tracked.is_file():
+                shutil.copy2(tracked, ts_dir / ts_name)
+
+        update_translation_sources(ts_dir, normalize_sources(work_dir))
+        completed_count = complete_english_translations(ts_dir / "en.ts")
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        for ts_name, _ in TRANSLATIONS:
+            shutil.copy2(ts_dir / ts_name, output_dir / ts_name)
+        return completed_count
 
 
 def complete_english_translations(ts_path: Path) -> int:
@@ -135,15 +184,9 @@ def check_generated_translations() -> bool:
     """Return whether tracked TS and QM files match freshly generated files."""
 
     stale: list[Path] = []
-    with tempfile.TemporaryDirectory(prefix=".i18n-build-", dir=PROJECT_ROOT) as temp_dir:
+    with tempfile.TemporaryDirectory(prefix=".i18n-check-", dir=PROJECT_ROOT) as temp_dir:
         temporary_dir = Path(temp_dir)
-        for ts_name, _ in TRANSLATIONS:
-            source = I18N_DIR / ts_name
-            if source.is_file():
-                shutil.copy2(source, temporary_dir / ts_name)
-
-        update_translation_sources(temporary_dir)
-        complete_english_translations(temporary_dir / "en.ts")
+        refresh_catalogs(temporary_dir)
         compile_translations(temporary_dir, temporary_dir)
 
         for ts_name, qm_name in TRANSLATIONS:
@@ -167,8 +210,7 @@ def generate_translations(action: str) -> None:
     """Run the requested translation generation stage."""
 
     if action in {"all", "update"}:
-        update_translation_sources(I18N_DIR)
-        completed_count = complete_english_translations(I18N_DIR / "en.ts")
+        completed_count = refresh_catalogs(I18N_DIR)
         print(f"Completed {completed_count} English translation(s) from source text.")
     if action in {"all", "compile"}:
         compile_translations(I18N_DIR, COMPILED_DIR)
