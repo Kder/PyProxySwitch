@@ -137,23 +137,30 @@ class Window(QtWidgets.QDialog):
         """Watch the configuration files so external edits take effect at once."""
 
         self._config_watcher = QtCore.QFileSystemWatcher(self)
-        # 只监听所在目录：Windows 上直接监听文件会占用句柄，使原子保存的
-        # os.replace 间歇失败；目录事件同样涵盖文件内容的修改和替换。
-        directories = {
-            str(path.parent)
-            for path in (
-                self._config.get_config_path(),
-                self._config.get_proxy_list_path(),
-            )
-        }
-        self._config_watcher.addPaths(sorted(directories))
+        # 目录和文件都要监听：目录事件能捕获原子保存（写临时文件再替换），
+        # 但原地改写文件内容不会产生目录事件，只能靠文件监视。
+        self._watch_config_file_paths()
         self._config_watcher.directoryChanged.connect(self._on_config_filesystem_event)
+        self._config_watcher.fileChanged.connect(self._on_config_filesystem_event)
 
         # Editors often save in several steps; collapse a burst into one reload.
         self._config_reload_timer = QtCore.QTimer(self, singleShot=True, interval=300)
         self._config_reload_timer.timeout.connect(self._reload_external_config)
 
+    def _watch_config_file_paths(self) -> None:
+        """(Re-)watch the config files; atomic saves drop existing file watches."""
+
+        files = [
+            str(self._config.get_config_path()),
+            str(self._config.get_proxy_list_path()),
+        ]
+        paths = {path for path in files if QtCore.QFile.exists(path)}
+        paths.update(str(QtCore.QFileInfo(path).absolutePath()) for path in files)
+        # addPaths 忽略已在监视的路径，重复调用是安全的。
+        self._config_watcher.addPaths(sorted(paths))
+
     def _on_config_filesystem_event(self, _path: str) -> None:
+        self._watch_config_file_paths()
         self._config_reload_timer.start()
 
     def _route_state(self) -> tuple:

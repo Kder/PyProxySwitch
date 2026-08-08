@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 import pytest
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtTest, QtWidgets
 
 import pyproxyswitch.gui.main_window as main_window
 import pyproxyswitch.main as application
@@ -654,6 +654,27 @@ def test_removed_current_proxy_falls_back_to_no_proxy(qapp, tmp_path, monkeypatc
 
         assert window.item_text == "NoProxy"
         assert started == ["one", "NoProxy"]
+    finally:
+        window.cleanup_tray_icon()
+
+
+def test_inplace_edit_fires_watcher_and_reloads(qapp, tmp_path, monkeypatch) -> None:
+    """A non-atomic in-place edit must reach the reload through the real watcher."""
+
+    config = _make_config(tmp_path, [("one", "localhost", "8080", "HTTP", "", "")])
+    assert config.save()
+    assert config.save_proxies()
+    started = []
+    window = _make_watched_window(tmp_path, monkeypatch, started)
+    try:
+        assert started == ["NoProxy"]
+
+        # write_text 截断并原地写入，不产生 rename，仅靠目录监视发现不了。
+        (tmp_path / "proxy.txt").write_text("two localhost:8081\n", encoding="utf-8")
+        QtTest.QTest.qWait(1000)
+
+        assert window.proxy_names == ["two", "NoProxy"]
+        assert started == ["NoProxy", "NoProxy"]
     finally:
         window.cleanup_tray_icon()
 
