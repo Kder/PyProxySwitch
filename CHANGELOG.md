@@ -3,6 +3,30 @@
 
 本文件由 `releases.toml` 自动生成。This file is generated from `releases.toml`.
 
+## 4.1.0 — 2026-08-08
+
+### 中文
+
+新增命令行代理管理与前台监听、单实例唤起、配置热重载与上游连通性检测，并强化代理协议与发布 CI 稳定性。
+
+- 新增 list/current/use/add/del/start 子命令，可在不启动 GUI 的情况下管理代理并前台运行本地监听器。
+- 通过 QLocalServer 强制单实例运行；二次启动会唤起已有实例，并在端口被占用时定位占用进程。
+- 自动监视配置文件目录与文件，外部原地修改或原子替换后无需重开对话框即可热重载并重新应用路由。
+- 在配置对话框中后台检测各上游连通性并以颜色标示，托盘新增复制监听地址和打开配置目录操作，表格与对话框统一掩码显示代理密码。
+- 加固原生代理：被拒绝的上传保留早期响应、限制残留上传排空、修复断连后的重复 asyncio 写警告，并收紧 SOCKS4/用户名等边界校验。
+- 统一 LF 与生成文件规则，CI 使用 uv 并在测试前重装项目包以刷新版本元数据，避免 versioning 测试误报。
+
+### English
+
+Add CLI proxy management and a foreground listener, single-instance activation, config hot reload and upstream connectivity checks, and harden proxy protocol and release CI stability.
+
+- Add list/current/use/add/del/start CLI subcommands to manage proxies and run the foreground listener without the GUI.
+- Enforce a single instance with QLocalServer; a second launch activates the existing one, and port conflicts now identify the owning process.
+- Watch both config files and their directory so external in-place or atomic edits hot-reload and reapply the current route without reopening dialogs.
+- Probe upstream connectivity in the background and color results in the config dialog; add tray actions to copy the listener address and open the config directory, and mask proxy passwords consistently.
+- Harden the native proxy: preserve early responses for rejected uploads, bound residual upload draining, stop repeated asyncio write warnings after disconnects, and tighten SOCKS4/username boundary validation.
+- Normalize LF and generated-file rules, move CI to uv, and reinstall the project package before tests so version metadata is refreshed and versioning tests stay reliable.
+
 ## 4.0.5 — 2026-08-01
 
 ### 中文
