@@ -2,35 +2,16 @@
 
 from __future__ import annotations
 
-import argparse
+import sys
 
-from . import __version__
+from .cli import create_parser
+from .cli import main as _cli_main
 
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="PyProxySwitch - cross-platform proxy switcher",
-        prog="pyproxyswitch",
-    )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"PyProxySwitch {__version__}",
-    )
-    parser.add_argument(
-        "--log-level",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        default=None,
-        help="override the configured logging level",
-    )
-    return parser
+__all__ = ["create_parser", "main"]
 
 
 def main() -> None:
-    args = create_parser().parse_args()
-    from .main import main as gui_main
-
-    gui_main(log_level=args.log_level)
+    sys.exit(_cli_main())
 
 
 if __name__ == "__main__":

@@ -90,8 +90,8 @@ Homepage = "http://pyproxyswitch.kder.info"
 Repository = "https://github.com/kder/PyProxySwitch"
 "Bug Reports" = "https://github.com/kder/PyProxySwitch/issues"
 
-[project.gui-scripts]
-pyproxyswitch = "pyproxyswitch.main:main"
+[project.scripts]
+pyproxyswitch = "pyproxyswitch.__main__:main"
 
 [tool.setuptools]
 include-package-data = true
