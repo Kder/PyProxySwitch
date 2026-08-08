@@ -27,13 +27,13 @@ def test_setuptools_scm_is_the_only_configured_version_source() -> None:
     assert "dynamic" not in config["tool"]["setuptools"]
 
 
-def test_packaging_and_readmes_expose_only_the_gui_entry_point() -> None:
+def test_packaging_and_readmes_expose_only_the_cli_entry_point() -> None:
     config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     chinese_readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     english_readme = (REPO_ROOT / "README_EN.txt").read_text(encoding="utf-8")
 
-    assert "scripts" not in config["project"]
-    assert config["project"]["gui-scripts"] == {"pyproxyswitch": "pyproxyswitch.main:main"}
+    assert "gui-scripts" not in config["project"]
+    assert config["project"]["scripts"] == {"pyproxyswitch": "pyproxyswitch.__main__:main"}
     for readme in (chinese_readme, english_readme):
         assert "pyproxyswitch-cli" not in readme
         assert "python PyProxySwitch.py" not in readme
