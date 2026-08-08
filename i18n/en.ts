@@ -429,59 +429,59 @@ PyProxySwitch cannot start.</translation>
         <translation>Proxy service starting</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="210"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="217"/>
         <source>Proxy service unavailable</source>
         <translation>Proxy service unavailable</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="246"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="253"/>
         <source>Config</source>
         <translation>Config</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="249"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="256"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="252"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="259"/>
         <source>Copy proxy address</source>
         <translation>Copy proxy address</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="255"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="262"/>
         <source>Open config directory</source>
         <translation>Open config directory</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="260"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="267"/>
         <source>Quit</source>
         <translation>Quit</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="331"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="338"/>
         <source>About PyProxySwitch</source>
         <translation>About PyProxySwitch</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="334"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="341"/>
         <source>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Copyright 2009-2026 Kder&lt;/p&gt;&lt;p&gt;A cross-platform proxy switcher with a native Python HTTP/SOCKS server.&lt;/p&gt;&lt;p&gt;Licensed under Apache License 2.0&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&apos;http://pyproxyswitch.kder.info&apos;&gt;http://pyproxyswitch.kder.info&lt;/a&gt; for more information.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../pyproxyswitch/gui/main_window.py" line="130"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="354"/>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="366"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="361"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="373"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="367"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="374"/>
         <source>Proxy switched, but the selection could not be saved.</source>
         <translation>Proxy switched, but the selection could not be saved.</translation>
     </message>
     <message>
-        <location filename="../pyproxyswitch/gui/main_window.py" line="395"/>
+        <location filename="../pyproxyswitch/gui/main_window.py" line="402"/>
         <source>I&apos;m here, welcome to PyProxySwitch!</source>
         <translation>I&apos;m here, welcome to PyProxySwitch!</translation>
     </message>
