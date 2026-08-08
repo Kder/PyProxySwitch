@@ -20,6 +20,24 @@ def test_log_level_is_only_overridden_when_explicitly_requested() -> None:
     assert parser.parse_args(["--log-level", "DEBUG"]).log_level == "DEBUG"
 
 
+def test_explicit_log_level_applies_to_subcommands(tmp_path, monkeypatch) -> None:
+    config = _make_config(tmp_path)
+    calls: list[str] = []
+    monkeypatch.setattr(cli, "setup_logger", lambda log_level: calls.append(log_level))
+
+    assert cli.main(["--log-level", "DEBUG", "current"], config=config) == 0
+    assert calls == ["DEBUG"]
+
+
+def test_subcommands_without_log_level_do_not_configure_logger(tmp_path, monkeypatch) -> None:
+    config = _make_config(tmp_path)
+    calls: list[str] = []
+    monkeypatch.setattr(cli, "setup_logger", lambda log_level: calls.append(log_level))
+
+    assert cli.main(["current"], config=config) == 0
+    assert calls == []
+
+
 def test_subcommand_parsing() -> None:
     parser = create_parser()
 

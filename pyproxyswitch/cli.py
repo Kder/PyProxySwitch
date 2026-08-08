@@ -10,6 +10,7 @@ import threading
 from . import __version__
 from .config import ConfigManager
 from .errors import LocalizedError, format_cli_error
+from .logger_config import setup_logger
 from .proxy_manager import ProxyManager
 from .proxy_validation import ProxyValidator
 
@@ -155,6 +156,9 @@ def main(argv: list[str] | None = None, config: ConfigManager | None = None) -> 
 
         gui_main(log_level=args.log_level)
         return 0
+
+    if args.log_level is not None:
+        setup_logger(log_level=args.log_level)
 
     if config is None:
         config = ConfigManager()
