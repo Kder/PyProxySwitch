@@ -64,6 +64,25 @@ class ProxyPortDelegate(QtWidgets.QStyledItemDelegate):
         editor.setGeometry(option.rect)
 
 
+class ProxyPasswordDelegate(QtWidgets.QStyledItemDelegate):
+    """tableView的lineedit代理，用于以掩码显示和编辑密码"""
+
+    def displayText(self, value, locale):
+        """非空密码显示为掩码，模型中的真实值保持不变"""
+        return "●●●" if str(value) else ""
+
+    def createEditor(self, parent, option, index):
+        """创建LineEdit"""
+        editor = QtWidgets.QLineEdit(parent)
+        editor.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
+
+        return editor
+
+    def updateEditorGeometry(self, editor, option, index):
+        """更新Editor"""
+        editor.setGeometry(option.rect)
+
+
 class ProxyNameDelegate(QtWidgets.QStyledItemDelegate):
     """tableView的lineedit代理，用于限制输入数据不含特殊字符"""
 

@@ -24,7 +24,12 @@ from pyproxyswitch.resources.pps_conf_ui import Ui_Dialog_Config
 from .batch_import_dialog import BatchImportDialog
 
 # 导入代理类
-from .delegates import ProxyNameDelegate, ProxyPortDelegate, ProxyTypeDelegate
+from .delegates import (
+    ProxyNameDelegate,
+    ProxyPasswordDelegate,
+    ProxyPortDelegate,
+    ProxyTypeDelegate,
+)
 from .error_display import localized_error_message
 
 logger = logging.getLogger("PyProxySwitch")
@@ -95,6 +100,7 @@ class Config_Dialog(QtWidgets.QDialog, Ui_Dialog_Config):
         self.tableView.setItemDelegateForColumn(self.proxy_type, ProxyTypeDelegate(self))
         self.tableView.setItemDelegateForColumn(self.proxy_port, ProxyPortDelegate(self))
         self.tableView.setItemDelegateForColumn(self.proxy_name, ProxyNameDelegate(self))
+        self.tableView.setItemDelegateForColumn(self.proxy_pass, ProxyPasswordDelegate(self))
 
         # 连接信号
         self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)

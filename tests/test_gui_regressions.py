@@ -72,6 +72,28 @@ def test_socks4_dialog_uses_user_id_and_hides_password(qapp) -> None:
     assert dialog.le_password.text() == ""
 
 
+def test_add_proxy_dialog_masks_password_input(qapp) -> None:
+    dialog = AddProxy_Dialog()
+
+    assert dialog.le_password.echoMode() == QtWidgets.QLineEdit.EchoMode.Password
+
+
+def test_config_table_masks_password_but_keeps_real_value(qapp, tmp_path) -> None:
+    _make_config(
+        tmp_path, [("alpha", "alpha.example", "8001", "HTTP", "alice", "secret")]
+    )
+    dialog = Config_Dialog()
+    index = dialog.data_model.index(0, dialog.proxy_pass)
+    delegate = dialog.tableView.itemDelegateForColumn(dialog.proxy_pass)
+
+    assert delegate.displayText("secret", QtCore.QLocale()) == "●●●"
+    assert delegate.displayText("", QtCore.QLocale()) == ""
+    assert dialog.data_model.data(index) == "secret"
+
+    editor = delegate.createEditor(dialog.tableView, None, index)
+    assert editor.echoMode() == QtWidgets.QLineEdit.EchoMode.Password
+
+
 def test_invalid_sorted_edit_reverts_its_own_row(qapp, tmp_path, monkeypatch) -> None:
     _make_config(
         tmp_path,

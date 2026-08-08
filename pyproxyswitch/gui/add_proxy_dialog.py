@@ -31,6 +31,7 @@ class AddProxy_Dialog(QtWidgets.QDialog, Ui_Dialog_AddProxy):
         self.le_proxy_name.setValidator(self.validator.get_name_validator())
         self.le_username.setValidator(self.validator.get_username_validator())
         self.le_password.setValidator(self.validator.get_password_validator())
+        self.le_password.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
         self.comboBox_type.currentTextChanged.connect(self._update_auth_fields)
         self.checkBox_proxy_auth.toggled.connect(self._update_auth_fields)
         self._update_auth_fields()
