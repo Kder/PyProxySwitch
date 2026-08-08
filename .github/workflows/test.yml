@@ -101,7 +101,8 @@ jobs:
 
       - name: Sync dependencies from uv.lock
         run: |
-          uv sync --extra dev --python "${{ steps.python.outputs.python }}"
+          uv sync --extra dev --python "${{ steps.python.outputs.python }}" \
+            --reinstall-package PyProxySwitch
 
       - name: Lint with Ruff
         run: |
@@ -154,7 +155,8 @@ jobs:
 
       - name: Sync dependencies from uv.lock
         run: |
-          uv sync --extra dev --python "${{ steps.python.outputs.python }}"
+          uv sync --extra dev --python "${{ steps.python.outputs.python }}" \
+            --reinstall-package PyProxySwitch
 
       - name: Type check with mypy
         run: |
@@ -205,7 +207,8 @@ jobs:
 
       - name: Sync dependencies from uv.lock
         run: |
-          uv sync --extra dev --python "${{ steps.python.outputs.python }}"
+          uv sync --extra dev --python "${{ steps.python.outputs.python }}" \
+            --reinstall-package PyProxySwitch
 
       - name: Run tests
         shell: bash
