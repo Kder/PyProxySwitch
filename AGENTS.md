@@ -8,7 +8,16 @@
 - Run the Nuitka builder with the `build` dependency group:
   `uv run --python <resolved-path> --group build python tools/build_nuitka.py`.
 - Use git to track changes, including submodules. Auto commit msg and push.
-- Make sure all tests passed before push.
+- Run `uv sync --python <resolved-path> --extra dev --reinstall-package
+  PyProxySwitch` before running local tests; a plain sync does not refresh the
+  editable install's version metadata and leaves the versioning tests failing.
+- Before pushing, pass every check in RELEASING.md's "按需高级操作参考 →
+  单独运行检查" section. When `pyproxyswitch/gui/*.py` or
+  `pyproxyswitch/resources/*.ui` change, regenerate with `tools/generate_ui.py`
+  and `tools/generate_i18n.py` in the SAME commit — lupdate records source
+  line numbers in `i18n/*.ts`, so any line shift otherwise fails CI's
+  `generate_i18n.py --check` with "Out of date".
+- Make sure all tests and checks in `RELEASING.md` pass before pushing.
 - Do not send optional commentary.
 - Keep every change minimal: touch the fewest files and lines needed, add no
   speculative configurability or abstractions, and do not refactor surrounding
