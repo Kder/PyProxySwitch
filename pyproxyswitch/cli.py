@@ -69,7 +69,8 @@ def _resolve_current_name(config: ConfigManager) -> str:
 
 def _cmd_list(config: ConfigManager) -> int:
     current = _resolve_current_name(config)
-    for name, host, port, kind, user, _password in config.get_proxies():
+    for proxy in config.get_proxies():
+        name, host, port, kind, user = proxy[:5]
         marker = "*" if name == current else " "
         auth = f" (user: {user})" if user else ""
         print(f"{marker} {name}\t{kind}\t{host}:{port}{auth}")
